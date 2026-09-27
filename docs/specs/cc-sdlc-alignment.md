@@ -196,7 +196,7 @@ used by the story plans.
 
 Each phase is one or more PRs and leaves the plugin working.
 
-1. **Hygiene first (low risk).** R-H1, R-H3, R-H4, R-H5, R-H7, R-H9, R-P2, R-V4. No change to behaviour.
+1. **Hygiene first (low risk).** R-H1, R-H3, R-H4, R-H5, R-H7, R-H9, R-P2, R-V4. No change to behaviour. (done)
 2. **Package split.** R-H2, R-H6, and strict validation in CI.
 3. **The verdict CLI skeleton** in Python (D1): `status`, `plan new/check/accept`, templates, checkpoint commits (R-V1–2, R-S3, R-S6, R-A2–3, R-C1). The existing `/crewforge5:plan` flow keeps working alongside it.
 4. **Planning stages** on the CLI: `plan`, `design` and `build new/accept` (R-S2), with the `intent-scout`, `design-panel` and `plan-critic` workflows (R-W1–3).

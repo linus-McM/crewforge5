@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+Phase 1 of `docs/specs/cc-sdlc-alignment.md` (hygiene, no behaviour change).
+
+- Root `CLAUDE.md` (Commands / Architecture / Conventions / Things Claude gets wrong) and a `justfile` (`test lint gates check hooks opus fable`).
+- Removed the 8 historical sprint plans from `skills/team-sprint/references/docs/plans/`; ADRs moved to `docs/adr/`. Tests that read the recon plan now read `scripts/fixtures/recon/output-grammar.md`; `parse_stories.bats`'s real-plan test runs against a trimmed fixture instead of always skipping.
+- One `bats-fallback.sh` (`scripts/tests/lib/`) replaces three copies.
+- CI now runs the self-improve, sprint-watchdog, token-slim and team-sprint-planner suites.
+- Every agent declares `name`, `description`, `tools` and `model`.
+- The `.`-defaulting `CREWFORGE5_ROOT` fallback is gone from every `/crewforge5:plan` call site: its gates use the driver-derived root, its docs `${CLAUDE_PLUGIN_ROOT}`.
+- `scripts/tests/repo_hygiene.bats` pins all of the above.
+
 ## 0.4.4 — 2026-08-26
 
 ### Added
