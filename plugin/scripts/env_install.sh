@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# env_install.sh — publish CREWFORGE5_ROOT (and optionally CREWFORGE5_HOOKS)
-# through settings.json's `env` block, so neither has to be exported by hand.
+# env_install.sh — publish CREWFORGE5_ROOT through settings.json's `env` block,
+# so it does not have to be exported by hand.
 #
 #   env_install.sh report     [--user|--project DIR]
 #   env_install.sh install    [--user|--project DIR] [--hooks] [--root DIR]
@@ -15,9 +15,7 @@
 #     resolved to the user's own repo once the plugin was installed elsewhere;
 #     they now self-locate or use the harness-expanded plugin root instead.
 #   - Hooks are spawned by the harness from hooks.json, not by the model. They
-#     never see anything a Bash call exported, in any session, so
-#     `export CREWFORGE5_HOOKS=1` in a session could not arm a hook even in
-#     principle.
+#     never see anything a Bash call exported, in any session.
 #
 # settings.json's `env` block reaches both: it is in the environment of the Bash
 # tool AND of every hook subprocess. Verified against Claude Code 2.1.246 with a
@@ -25,10 +23,10 @@
 # <UNSET>). The docs do not currently mention this, so it is asserted by
 # `env_install.bats` rather than trusted to stay true.
 #
-# WHY THE HOOKS FLAG IS SEPARATE. `bash-guard` DENIES commands. Arming it is a
-# consent decision, which is why README ships it off. `install` writes the root
-# alone; `--hooks` is the only thing that writes CREWFORGE5_HOOKS=1, and the
-# report says plainly which state it is in.
+# HOOKS ARE NO LONGER ARMED HERE (spec R-G1). Every hook now acts only in a
+# project with .crewforge5.toml, off via `[hooks] enabled = false`, so the old
+# `--hooks` flag (which wrote CREWFORGE5_HOOKS=1) is accepted and ignored with a
+# note, and install/uninstall remove a CREWFORGE5_HOOKS=1 an older version left.
 #
 # Exits 0 on success, 1 on a refused install, 2 on usage error.
 set -uo pipefail
@@ -97,11 +95,11 @@ root_is_sane() { [ -f "$1/.claude-plugin/plugin.json" ]; }
 # gains our keys and keeps every other key, and the rest of the file is
 # untouched. json.dump with indent=2 matches what Claude Code writes.
 # --------------------------------------------------------------------------
-merge_env() { # $1 = settings path, $2 = root, $3 = write-hooks (0|1), $4 = remove (0|1)
+merge_env() { # $1 = settings path, $2 = root, $3 = unused (the retired --hooks), $4 = remove (0|1)
   python3 - "$@" <<'PY'
 import json, os, sys
 
-path, root, want_hooks, remove = sys.argv[1], sys.argv[2], sys.argv[3] == "1", sys.argv[4] == "1"
+path, root, remove = sys.argv[1], sys.argv[2], sys.argv[4] == "1"  # argv[3] was the retired --hooks flag
 
 data = {}
 if os.path.exists(path) and os.path.getsize(path) > 0:
@@ -123,11 +121,11 @@ before = dict(env)
 
 if remove:
     env.pop("CREWFORGE5_ROOT", None)
-    env.pop("CREWFORGE5_HOOKS", None)
 else:
     env["CREWFORGE5_ROOT"] = root
-    if want_hooks:
-        env["CREWFORGE5_HOOKS"] = "1"
+# The retired opt-in value; CREWFORGE5_HOOKS=off (the R-C2 off switch) is the user's and stays.
+if env.get("CREWFORGE5_HOOKS") == "1":
+    env.pop("CREWFORGE5_HOOKS")
 
 if env:
     data["env"] = env
@@ -178,9 +176,8 @@ case "$MODE" in
     echo "resolved root: $ROOT"
     root_is_sane "$ROOT" || echo "  WARNING   no .claude-plugin/plugin.json under the resolved root"
     echo "  current   CREWFORGE5_ROOT=$(read_env_key "$SETTINGS" CREWFORGE5_ROOT)"
-    echo "  current   CREWFORGE5_HOOKS=$(read_env_key "$SETTINGS" CREWFORGE5_HOOKS)"
     echo
-    echo "install writes CREWFORGE5_ROOT; --hooks also arms the three opt-in hooks."
+    echo "install writes CREWFORGE5_ROOT. Hooks need no install: they act in projects with .crewforge5.toml."
     ;;
 
   install)
@@ -190,8 +187,8 @@ case "$MODE" in
       exit 1
     fi
     merge_env "$SETTINGS" "$ROOT" "$WANT_HOOKS" 0 || exit 1
-    if [ "$WANT_HOOKS" -ne 1 ]; then
-      echo "  note      hooks left OFF; re-run with --hooks to arm bash-guard, learn-capture, learn-nudge"
+    if [ "$WANT_HOOKS" -eq 1 ]; then
+      echo "  note      --hooks is retired: hooks act in any project with .crewforge5.toml ([hooks] enabled = false turns them off)"
     fi
     echo "  note      takes effect in the next session"
     ;;

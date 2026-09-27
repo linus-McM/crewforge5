@@ -86,3 +86,7 @@ Return JSON only as your final message:
 ## Completion gate
 
 Do not return until ALL hold: (1) `.claude/crews/<lang>.profile.md` exists on disk and you have Read it back, (2) every line in the profile is evidence-backed or explicitly flagged `UNVERIFIED`, (3) the five command fields are filled or marked UNVERIFIED, (4) the output JSON is emitted. If any fails, keep working — do not report done.
+
+## Hooks
+
+If a hook denies a command, quote the denial; never rewrite, encode, split or relocate a command to get past a hook.

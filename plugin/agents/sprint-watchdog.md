@@ -290,3 +290,7 @@ Before reporting your audit complete:
    the guard fails open, so an empty list proves nothing. If you
    reported clean on Step A alone, you have just become the problem
    you are auditing. Audit yourself again.
+
+## Hooks
+
+If a hook denies a command, quote the denial; never rewrite, encode, split or relocate a command to get past a hook.

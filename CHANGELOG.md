@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+Phase 5 of `docs/specs/cc-sdlc-alignment.md` (build stage: TDD evidence, guardrail hooks, story executor).
+
+- `crewforge5 build red|green <step>` run `[commands] test` (red must fail, green must pass after a red) and append `{step, phase, sha, ts, exit}` to `crewforge5/<slug>/tdd.jsonl`; `tdd.complete()` checks every Order-of-work step has a red→green pair (R-T1, R-T2). `build sync` lists files changed since acceptance that plan.md does not name; `build fix on|off` is bug-fix mode (R-T3, R-T4). State: `build-state.json`.
+- `/crewforge5:build implement`: red→green per step, sync, `build(<slug>): <step>` commits, `/simplify` then sync (R-T6). `/crewforge5:execute` on an accepted plan.md is its alias; team-sprint still runs stamped plans.
+- `crewforge5:story-executor` (from team-sprint): one agent per step in its own git worktree, writing only there and returning test and change commits the command applies around red/green (R-W2, R-W5).
+- Python `pre-edit`/`post-edit` hooks: protected paths, the fix-mode test lock, and a notice for files missing from plan.md (R-G2, R-G3); ≤10 s, offline (R-G7).
+- **Breaking:** `CREWFORGE5_HOOKS=1` is retired. Every hook (bash-guard, learn-capture, learn-nudge included) acts only in projects with `.crewforge5.toml`; off: `[hooks] enabled = false` or `CREWFORGE5_HOOKS=off`. `env_install.sh --hooks` is ignored (R-G1). bash-guard's rules are unchanged, but heredoc bodies and quoted prose no longer match (R-G4).
+- Every plugin agent carries the never-work-around-a-hook line and declares no hooks/permissionMode (R-G6); the crew factory seeds generated developers and testers with a red/green `## Done` contract (R-T5).
+
 Phase 4 of `docs/specs/cc-sdlc-alignment.md` (planning stages as slash commands).
 
 - `/crewforge5:plan`, `/crewforge5:design` and `/crewforge5:build` (`new | check | accept | status`) are commands in `plugin/commands/` over the verdict CLI: the R-V5 preamble, least-privilege `allowed-tools`, at most 40 lines each (R-S1, R-S2, R-V5). `plan new` folds in the adhd/grill-me interview, `design new` the tech-debt audit (Concerns) and GOAL_IMPACT trace (Requirements), `build new` the team-sprint-planner story contract. Only a human accepts, through AskUserQuestion.

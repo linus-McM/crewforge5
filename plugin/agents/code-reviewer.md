@@ -169,3 +169,7 @@ Close every review with:
 - Follow up on previously raised issues when reviewing updated code
 
 Always prioritize security, correctness, and maintainability while providing constructive feedback that helps teams grow and improve code quality.
+
+## Hooks
+
+If a hook denies a command, quote the denial; never rewrite, encode, split or relocate a command to get past a hook.

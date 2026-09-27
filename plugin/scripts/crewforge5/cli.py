@@ -11,7 +11,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import checkpoint, stages, workflows
+from . import build, checkpoint, stages, tdd, workflows
 from .project import Blocked, fail
 
 
@@ -24,6 +24,11 @@ def lifecycle(stage: str, action: str):
 
 COMMANDS = {
     **{(s, act): lifecycle(s, act) for s in stages.ORDER for act in ("new", "check", "accept")},
+    ("build", "accept"): lambda root, arg, ns: build.accept(root, ns.slug),
+    ("build", "red"): lambda root, arg, ns: tdd.cycle(root, ns.slug, "red", arg),
+    ("build", "green"): lambda root, arg, ns: tdd.cycle(root, ns.slug, "green", arg),
+    ("build", "sync"): lambda root, arg, ns: build.sync(root, ns.slug),
+    ("build", "fix"): lambda root, arg, ns: build.fix(root, ns.slug, arg),
     ("workflows", "list"): lambda root, arg, ns: workflows.catalog(root),
     ("workflows", "env"): lambda root, arg, ns: workflows.env(root),
     ("status", None): lambda root, arg, ns: stages.status(root, ns.slug),
@@ -49,7 +54,7 @@ def parser() -> argparse.ArgumentParser:
         st = sub.add_parser(stage, parents=[common])
         if actions:
             st.add_argument("action", choices=actions)
-            st.add_argument("arg", nargs="?", help="title (plan new)")
+            st.add_argument("arg", nargs="?", help="title (plan new), step (build red|green), on|off (build fix)")
     return ap
 
 

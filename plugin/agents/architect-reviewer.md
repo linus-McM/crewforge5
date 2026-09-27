@@ -56,3 +56,7 @@ Provide a structured review with:
 - **Long-Term Implications**: The long-term effects of the changes on maintainability and scalability.
 
 Remember: Good architecture enables change. Flag anything that makes future changes harder.
+
+## Hooks
+
+If a hook denies a command, quote the denial; never rewrite, encode, split or relocate a command to get past a hook.

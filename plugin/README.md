@@ -146,35 +146,33 @@ tree once the plugin lives anywhere but the repo you are standing in): the flow
 driver locates the plugin from its own path, and the commands use the
 harness-expanded `${CLAUDE_PLUGIN_ROOT}`. A test fails if the fallback returns.
 
-## The opinionated hooks are OFF by default
+## The hooks act only in CrewForge5 projects
 
-CrewForge5 ships three hooks that would otherwise change how your session
-behaves without asking:
+Every hook CrewForge5 ships is inert unless the project has `.crewforge5.toml`
+(the first `/crewforge5:plan new` writes it), and `[hooks] enabled = false`
+there turns them all off:
 
 | Hook | Event | What it does |
 | --- | --- | --- |
-| `bash-guard` | `PreToolUse(Bash)` | **Denies** `git add -A`, `git add .`, and `find` from `/` or `~` |
+| `pre-edit` | `PreToolUse(Edit\|Write\|MultiEdit)` | **Denies** edits under `[build] protected_paths`, and to test files (`[build] test_globs`) while `build fix on` |
+| `post-edit` | `PostToolUse(Edit\|Write\|MultiEdit)` | Says when the edited file is missing from the accepted plan.md's Files that change |
+| `bash-guard` | `PreToolUse(Bash)` | **Denies** `git add -A`, `git add .`, and `find` from `/` or `~`; heredoc bodies and quoted prose never match |
 | `learn-capture` | `PostToolUse(Bash)` | Appends a ledger line when a skill's own script reports a failure |
 | `learn-nudge` | `SessionStart` | One line when the ledger has ≥5 undistilled entries |
+| session start | `SessionStart` | Merges `[workflows.env]` (see [The verdict CLI](#the-verdict-cli)) |
 
-All three exit immediately unless you opt in:
+`pre-edit` and `post-edit` run `scripts/hook.py` through `uv run --offline
+--no-project`; like every hook but session start they finish within 10 s, and
+none installs anything or reaches the network. The old opt-in,
+`CREWFORGE5_HOOKS=1` (written by `env_install.sh --hooks`), is retired: `--hooks`
+is accepted and ignored, and `install` removes a leftover `=1`. Hooks are
+spawned by the harness, so a session `export` never reaches them; to switch
+them off by environment, put `CREWFORGE5_HOOKS=off` in `settings.json`'s `env`
+block.
 
-```bash
-bash "$CREWFORGE5_ROOT/scripts/env_install.sh" install --hooks
-```
-
-`--hooks` is the only thing that sets `CREWFORGE5_HOOKS=1`; installing the root
-alone leaves them off. Exporting the variable in a session has no effect at all
-here — hooks are spawned by the harness from `hooks.json`, so they never inherit
-anything a session set, which makes `settings.json` the only channel that can
-arm them. Re-run without `--hooks`, or `uninstall`, to turn them back off.
-
-A fourth hook, `sprint-watchdog-guard`, is always registered but inert: it does
-nothing until a sprint arms it with an activation file in the repo, and goes
-inert again at teardown.
-
-The workflow-env `SessionStart` hook is not opt-in either, but it does nothing
-outside a project that has `.crewforge5.toml`; see [The verdict CLI](#the-verdict-cli).
+`sprint-watchdog-guard` is always registered but inert: it does nothing until a
+sprint arms it with an activation file in the repo, and goes inert again at
+teardown.
 
 ## Dependencies
 
@@ -235,12 +233,25 @@ human accepts: the command asks through AskUserQuestion before it runs `accept`.
 `build check` also refuses an Order-of-work step that names no failing test, and
 a `Risk: high` plan without a `Tech lead: <name>` line under Risks.
 
+**Build.** After `build accept`, `build red <n>` runs `[commands] test` and
+succeeds only when it fails; `build green <n>` succeeds only when it passes after
+a red for the same Order-of-work step. Each success appends `{step, phase, sha,
+ts, exit}` to `crewforge5/<slug>/tdd.jsonl`, and a step is done only with a red
+then a green. `build sync` lists every file changed since the plan was accepted
+(committed or not) that plan.md's Files that change does not name: add it there
+in the same commit, or revert it. `build fix on|off` is bug-fix mode, in which
+the `pre-edit` hook denies edits to test files. `crewforge5/<slug>/build-state.json`
+holds the acceptance commit and fix mode. `/crewforge5:execute` on an accepted
+plan.md is an alias for `/crewforge5:build implement`.
+
 Config lives in `.crewforge5.toml` (the first `new` writes it from
 `templates/crewforge5.toml`). It is deep-merged over the defaults:
 `[project] home` (the feature folder, default `crewforge5`, or set
-`CREWFORGE5_HOME`) and `[build] require_adversarial_stamp` (when true,
-`build check` needs the planner's `adversarial-review: status=clean|user-override`
-stamp in `plan.md`).
+`CREWFORGE5_HOME`), `[commands] test` (what `build red|green` run),
+`[build] require_adversarial_stamp` (when true, `build check` needs the
+planner's `adversarial-review: status=clean|user-override` stamp in `plan.md`),
+`[build] protected_paths` and `test_globs` (read by the `pre-edit` hook), and
+`[hooks] enabled`.
 
 **Checkpoints.** Each `accept` commits only the plugin's output, which is the
 home directory plus `[checkpoint] paths`. The commit subject is
@@ -256,12 +267,18 @@ Every layer has one off switch in config and one environment variable:
 | --- | --- | --- |
 | Checkpoint commits | `[checkpoint] enabled = false` | `CREWFORGE5_CHECKPOINT=off` |
 | Stage workflows | `[workflows] enabled = false` (`auto_env = false` stops only the env merge) | `CREWFORGE5_WORKFLOWS=off` |
+| Hooks | `[hooks] enabled = false` | `CREWFORGE5_HOOKS=off` (in `settings.json`'s `env` block) |
 
 **Workflows.** Each planning command runs one read-only Workflow script from
 `workflows/`, as `crewforge5:<name>`: `intent-scout` (plan), `design-panel`
-(design) and `plan-critic` (build). Every finding goes to a skeptic, and an
-optional `pack` argument is read as data, never instructions. They are advisory:
-the command writes the artifact and the CLI still decides. `crewforge5
+(design) and `plan-critic` (build). `build implement` runs `story-executor`
+over a wave of independent steps: one agent per step in its own git worktree,
+writing only there and returning a branch with a test commit and a change
+commit, which the command applies step by step around `build red` and `build
+green`. Every finding goes to a skeptic, and an
+optional `pack` argument is read as data, never instructions. The planning
+workflows are read-only and advisory: the command writes the artifact and the
+CLI still decides. `crewforge5
 workflows list` reads the catalog from each script's `meta` and says whether the
 layer is on; when it is off, or the Workflow tool is missing, every step has an
 inline fallback. Plugin settings cannot set env, so a `SessionStart` hook

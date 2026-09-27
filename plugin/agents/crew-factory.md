@@ -32,6 +32,16 @@ Every stack claim baked into a generated agent must trace to the stack profile o
     idioms, anti-patterns — all copied verbatim from the verified profile>
    ```
    followed by senior-developer responsibilities (idiomatic implementation, error handling, framework API correctness, minimal surgical changes).
+   **Done means red then green.** The generated developer and tester also carry this section verbatim, because a step is claimed done only through the build gate, never by assertion:
+   ```
+   ## Done
+   A plan.md Order-of-work step is done only when `crewforge5 build red <n>` reported ok (its test failed first) and
+   then `crewforge5 build green <n>` reported ok, both logged to crewforge5/<slug>/tdd.jsonl. The tester writes the
+   failing test and runs `build red`; the developer makes it pass without editing the test and runs `build green`.
+   Quote both verdicts when you report; never claim a step done without them. In a story-executor worktree the
+   command runs red/green after it applies your branch: return the test commit and the change commit instead.
+   Run it as `uv run --no-project "$(cat "${XDG_STATE_HOME:-$HOME/.local/state}/crewforge5/root")/scripts/crewforge5.py" build ...`.
+   ```
 5. **Validate it**: run `agent-validator` over the developer agent. It is hidden from the catalogue, so the `Skill` tool cannot reach it — resolve it instead:
 
    ```bash
@@ -55,7 +65,7 @@ Every stack claim baked into a generated agent must trace to the stack profile o
 |------|---------|------------------|-------------------------------|------------------|
 | developer (base) | yes | `python-pro`/`golang-pro`/`typescript-pro`/`rn-engineer`/`powershell-engineer` | Read, Write, Edit, Bash, Glob, Grep | built in Phase 2 — seed for all others |
 | architect | yes | `architect-reviewer` | Read, Glob, Grep, Bash | layering, module boundaries, dep direction, SOLID, idiomatic project layout |
-| tester | yes | `go-svelte-test`/`rn-test` | Read, Write, Edit, Glob, Grep, Bash | framework, fixtures, mocking, RED-phase TDD, coverage cmd + threshold from profile |
+| tester | yes | `go-svelte-test`/`rn-test` | Read, Write, Edit, Glob, Grep, Bash | framework, fixtures, mocking, RED-phase TDD (`crewforge5 build red <n>`, the `## Done` section), coverage cmd + threshold from profile |
 | profiler | yes | `go-svelte-performance`/`rn-optimizer` | Read, Write, Edit, Bash, Glob, Grep | hot-path + memory, lang profiler from profile, benchmark harness |
 | security | yes | `security-reviewer` | Read, Grep, Glob, Bash | lang vuln classes + SAST tool from profile; anti-fabrication on findings. Registry agent is stack-agnostic and covers all security surfaces — reuse fits most stacks |
 | code-reviewer | yes | `code-reviewer` | Read, Write, Edit, Bash, Glob, Grep | correctness + bugs on a diff; deliver findings as the final agent return (this row grants no SendMessage — final return IS the delivery) |
@@ -154,4 +164,8 @@ Return the manifest JSON as your final message, plus a one-line summary: how man
 
 ## Completion gate
 
-Do not report done until ALL hold: (1) the senior-developer agent exists and reached grade A, (2) every generated role agent reached grade A — if any is stuck below A, stop and escalate rather than shipping it, (3) `.claude/crews/<lang>.json` exists on disk with `commands` copied verbatim from the verified profile and every enabled role mapped to a real agent name, (4) the `validation` map records grade A for each generated agent, (5) every skill named in `skills` (and in any generated agent's `## Skills` section) passed the loadability probe, (6) `.claude/rules/<lang>.md` exists — written this run or already present and reviewed. If any fails, keep working.
+Do not report done until ALL hold: (1) the senior-developer agent exists and reached grade A, (2) every generated role agent reached grade A, and the developer and tester carry the `## Done` section — if any is stuck below A, stop and escalate rather than shipping it, (3) `.claude/crews/<lang>.json` exists on disk with `commands` copied verbatim from the verified profile and every enabled role mapped to a real agent name, (4) the `validation` map records grade A for each generated agent, (5) every skill named in `skills` (and in any generated agent's `## Skills` section) passed the loadability probe, (6) `.claude/rules/<lang>.md` exists — written this run or already present and reviewed. If any fails, keep working.
+
+## Hooks
+
+If a hook denies a command, quote the denial; never rewrite, encode, split or relocate a command to get past a hook.

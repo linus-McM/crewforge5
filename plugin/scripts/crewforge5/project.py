@@ -20,7 +20,7 @@ CONFIG_NAME = ".crewforge5.toml"
 DEFAULT_CONFIG = (TEMPLATES / "crewforge5.toml").read_text()
 DEFAULTS = tomllib.loads(DEFAULT_CONFIG)
 # Layers with an off switch (R-C2): `[<layer>] enabled = false` or CREWFORGE5_<LAYER>=off.
-LAYERS = ("checkpoint", "workflows")
+LAYERS = ("checkpoint", "workflows", "hooks")
 
 
 class Blocked(Exception):
@@ -140,3 +140,28 @@ def write_json(path: Path, data) -> None:
 
 def today() -> str:
     return datetime.now(UTC).date().isoformat()
+
+
+def now_iso() -> str:
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def head(root: Path) -> str:
+    """The HEAD commit, or "" outside a repository or before the first commit."""
+    result = run_git(root, "rev-parse", "HEAD")
+    return result.stdout.strip() if result.returncode == 0 else ""
+
+
+def read_jsonl(path: Path) -> list[dict]:
+    if not path.exists():
+        return []
+    try:
+        return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    except json.JSONDecodeError as err:
+        return fail(f"{path.name} is not valid JSON lines ({err.msg}); fix or delete the bad line", path=str(path))
+
+
+def append_jsonl(path: Path, row: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a") as fh:
+        fh.write(json.dumps(row) + "\n")

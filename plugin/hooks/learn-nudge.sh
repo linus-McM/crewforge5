@@ -17,8 +17,11 @@ set -uo pipefail
 
 exec 2>/dev/null
 
-# OFF BY DEFAULT, like every opinionated hook this plugin ships. CREWFORGE5_HOOKS=1.
-[ "${CREWFORGE5_HOOKS:-0}" = "1" ] || exit 0
+# Only in a project with .crewforge5.toml, unless its [hooks] enabled = false
+# (spec R-G1; hooks-on.sh holds the rule every hook shares).
+# shellcheck source=hooks-on.sh
+. "$(dirname "${BASH_SOURCE[0]}")/hooks-on.sh" || exit 0
+crewforge5_hooks_on || exit 0
 
 THRESHOLD="${LEARN_NUDGE_THRESHOLD:-5}"
 # Same resolution as ledger.sh — state dir, not config dir, when nothing is set.

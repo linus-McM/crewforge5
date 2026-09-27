@@ -36,6 +36,27 @@ _frontmatter() {
   [ "$n" -ge 1 ]
 }
 
+# --- R-G6: agents never work around a hook, and declare none of their own ----
+
+@test "R-G6: every plugin agent says never to work around a hook" {
+  local f bad="" n=0
+  local line='If a hook denies a command, quote the denial; never rewrite, encode, split or relocate a command to get past a hook.'
+  for f in "$ROOT"/agents/*.md; do
+    n=$((n + 1))
+    grep -qF "$line" "$f" || bad="$bad ${f#"$ROOT"/}"
+  done
+  if [ -n "$bad" ]; then echo "agents without the hook line:$bad"; false; fi
+  [ "$n" -ge 1 ]
+}
+
+@test "R-G6: no plugin agent declares hooks or permissionMode" {
+  local f bad=""
+  for f in "$ROOT"/agents/*.md; do
+    _frontmatter "$f" | grep -qE '^(hooks|permissionMode):' && bad="$bad ${f#"$ROOT"/}"
+  done
+  if [ -n "$bad" ]; then echo "agents declaring hooks/permissionMode:$bad"; false; fi
+}
+
 # --- R-V4: no call site falls back to `.` for the plugin root ----------------
 
 @test "R-V4: no shipped file falls back to the current directory for CREWFORGE5_ROOT" {

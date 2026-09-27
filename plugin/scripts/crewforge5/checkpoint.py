@@ -8,9 +8,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from . import build
 from . import project as p
 from .project import fail
 
+# The CLI's own bookkeeping (build.STATE) rides along with a boundary without counting as an extra file.
+BOOKKEEPING = (build.STATE,)
 IN_PROGRESS = ("MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "rebase-merge", "rebase-apply")
 
 
@@ -27,7 +30,7 @@ def busy(root: Path) -> bool:
 def subject(root: Path, stage: str, action: str, produced: Path, files: list[str]) -> str:
     """`<stage>(<slug>): <action> — <artifact>`, plus ` (+N files)` for anything else that rides along."""
     scope = produced.parent.name if produced.parent != p.home(root) else ""
-    extras = len(files) - (p.rel(root, produced) in files)
+    extras = len([f for f in files if f != p.rel(root, produced) and Path(f).name not in BOOKKEEPING])
     tail = f" (+{extras} file{'s' if extras > 1 else ''})" if extras else ""
     return f"{stage}{f'({scope})' if scope else ''}: {action} — {produced.name}{tail}"
 

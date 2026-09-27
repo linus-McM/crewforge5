@@ -80,3 +80,37 @@ def test_design_new_carries_concerns_and_the_requirements_trace():
 def test_build_new_runs_in_plan_mode_with_test_first_steps():
     new = (COMMANDS / "build.md").read_text().split("## new", 1)[1].split("\n## ", 1)[0]
     assert "plan mode" in new and "failing test" in new
+
+
+def section(stage: str, heading: str) -> str:
+    return (COMMANDS / f"{stage}.md").read_text().split(f"\n## {heading}", 1)[1].split("\n## ", 1)[0]
+
+
+def test_build_implements_red_green_per_step_then_simplifies():
+    """R-T1, R-T3, R-T6: red then green per step, sync, a per-step commit, /simplify then sync at the end."""
+    implement = section("build", "implement")
+    order = [implement.index(s) for s in ("build red <n>", "build green <n>", "build sync", "build(<slug>): <step>", "/simplify")]
+    assert order == sorted(order)
+    assert "build sync` once more" in implement.split("/simplify", 1)[1]
+
+
+def test_build_runs_the_story_executor_with_an_inline_fallback():
+    """R-W2, R-W3: the parallel path is the story-executor workflow; the command applies each branch and runs the gate."""
+    implement = section("build", "implement")
+    line = next(line for line in implement.splitlines() if f"crewforge5:{workflows.CATALOG['implement']}" in line)
+    assert "Inline fallback:" in line and "cherry-pick -n <test_commit>" in line
+    assert line.index("<test_commit>") < line.index("build red <n>") < line.index("-n <commit>") < line.index("build green <n>")
+
+
+def test_build_fix_mode_locks_tests():
+    fix = section("build", "fix on | fix off")
+    assert "crewforge5 build fix on" in fix and "denies edits to test files" in fix and "crewforge5 build fix off" in fix
+    for action in ("implement", "red", "green", "sync", "fix on|off"):
+        assert action in frontmatter(COMMANDS / "build.md")["argument-hint"]
+
+
+def test_execute_takes_an_accepted_feature_plan():
+    """R-S7 adapter: `next` after `build accept` is /crewforge5:execute, which runs build implement on plan.md."""
+    skill = (PLUGIN_ROOT / "skills/execute/SKILL.md").read_text()
+    alias = skill.split("## An accepted `crewforge5/<slug>/plan.md`", 1)[1].split("\n## ", 1)[0]
+    assert "/crewforge5:build implement --slug <slug>" in alias and "accepted" in alias and "crewforge5:story-executor" in alias

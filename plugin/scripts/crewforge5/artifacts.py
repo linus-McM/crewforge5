@@ -24,6 +24,7 @@ STEP = re.compile(r"^\s*(\d+)[.)]\s+(.*)$", re.MULTILINE)
 # Risk: high plans name the tech lead who accepts them (R-A2).
 TECH_LEAD = re.compile(r"^\s*(?:[-*]\s*)?Tech lead:\s*(?!<)\S", re.MULTILINE | re.IGNORECASE)
 METADATA = ("Status", "Risk")
+BULLET = re.compile(r"^(?:[-*]|\d+[.)])\s+")  # a list marker only, so `.gitignore` keeps its dot
 STATUSES = ("draft", "accepted")
 RISKS = ("low", "medium", "high")
 
@@ -97,6 +98,34 @@ def plan_problems(md: str) -> list[str]:
     if meta(md, "Risk") == "high" and not TECH_LEAD.search(found.get("Risks", "")):
         problems.append("Risk: high needs a `Tech lead: <name>` line under Risks; the tech lead accepts this plan")
     return problems
+
+
+def steps(md: str) -> list[str]:
+    """The Order-of-work step numbers, in plan order."""
+    return [n for n, _ in STEP.findall(sections(md).get("Order of work", ""))]
+
+
+def list_items(body: str) -> list[str]:
+    """Paths from a bulleted or comma-separated section body: the first word of each item, `(new)` and backticks stripped."""
+    items: list[str] = []
+    for line in body.splitlines():
+        if PLACEHOLDER.match(line):
+            continue
+        line = BULLET.sub("", re.sub(r"\([^)]*\)", "", line).replace("`", "").strip()).strip()
+        items += [part.split()[0].rstrip(":") for part in line.split(",") if part.strip()]  # a path, then any prose
+    return items
+
+
+def glob_regex(pattern: str) -> re.Pattern:
+    """gitignore-style: `**` spans directories, `*` stays in one segment, a bare name matches at any depth."""
+    pattern = pattern.removeprefix("**/")
+    body = re.escape(pattern).replace(r"\*\*/", "(?:.*/)?").replace(r"\*\*", ".*").replace(r"\*", "[^/]*")
+    prefix = "" if "/" in pattern else "(?:.*/)?"
+    return re.compile(f"^{prefix}{body}$")
+
+
+def matches(rel: str, globs: list[str]) -> bool:
+    return any(glob_regex(g).match(rel) for g in globs)
 
 
 def stamped(md: str) -> bool:

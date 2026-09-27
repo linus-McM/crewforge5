@@ -92,3 +92,7 @@ two unrelated Lambdas at boot.
 Your structured final return IS the delivery (see `$CLAUDE_CONFIG_DIR/CLAUDE.md`). Return both sections in
 full plus a findings list in the reviewer contract's shape, each finding carrying `quoted_evidence`
 from the plan and `codebase_grep` from a command you ran. Do not describe the report — return it.
+
+## Hooks
+
+If a hook denies a command, quote the denial; never rewrite, encode, split or relocate a command to get past a hook.

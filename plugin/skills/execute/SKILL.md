@@ -7,6 +7,10 @@ You are running `crewforge5:execute`: a stamped plan in, a merged commit out. Th
 
 The plan must already be adversarial-clean. Reviewing it is `crewforge5:plan-legacy`'s job, and Phase 1 hard-STOPs a plan nobody reviewed.
 
+## An accepted `crewforge5/<slug>/plan.md` (the alias, spec R-S7)
+
+When the input is a feature folder's `plan.md`, or no plan is named and `crewforge5 status` answers `next: /crewforge5:execute`, this skill is only an alias and the sprint below does not run. Run `uv run --no-project "${CLAUDE_PLUGIN_ROOT}/scripts/crewforge5.py" status --slug <slug>`: unless `plan.md` is `accepted`, stop and follow its `next`. Otherwise do `/crewforge5:build implement --slug <slug>` exactly as `${CLAUDE_PLUGIN_ROOT}/commands/build.md` states (red then green per step, the `crewforge5:story-executor` waves, sync, `/simplify`), then the review stage once it ships. Say which underlying commands you ran. The team-sprint path below stays for stamped `docs/plans/` plans until the two have been measured on a real sprint (R-W5).
+
 ## Path aliases
 
 - `$FLOW` — `${CREWFORGE5_ROOT}/scripts/flow/`, the shared driver: `flow_next.sh`, `flow_gate.sh`, `flow_state.sh`, `subskill_resolve.sh`.

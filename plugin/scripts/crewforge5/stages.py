@@ -11,7 +11,7 @@ from .project import fail
 # stage -> the artifact it writes. The order is the pipeline: each accepted artifact gates the next stage.
 ARTIFACTS = {"plan": "intent.md", "design": "spec.md", "build": "plan.md"}
 ORDER = list(ARTIFACTS)
-# Until the build/review stages run on the CLI, an accepted plan.md goes to the execute flow (R-S7 alias).
+# An accepted plan.md goes to the execute alias (R-S7), which runs `/crewforge5:build implement` and then review.
 AFTER_BUILD = "/crewforge5:execute"
 
 

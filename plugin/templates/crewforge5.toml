@@ -4,8 +4,16 @@
 [project]
 home = "crewforge5"         # feature folders live in <home>/<slug>/; CREWFORGE5_HOME overrides
 
+[commands]
+test = ""                   # the project's test command; `build red` needs it to fail, `build green` to pass
+
 [build]
 require_adversarial_stamp = false   # `build check` needs an adversarial-review stamp in plan.md when true
+protected_paths = []        # globs the pre-edit hook never lets Claude edit, e.g. "src/gen/**"
+test_globs = ["tests/**", "test/**", "test_*.py", "*_test.py", "*_test.go", "*.test.*", "*.spec.*", "*.bats"]   # read-only while `build fix on`
+
+[hooks]
+enabled = true              # guardrail hooks (pre/post-edit, bash-guard, learn-capture, learn-nudge) in this project; CREWFORGE5_HOOKS=off in settings.json env also disables
 
 [checkpoint]
 enabled = true              # commit the stage's output at each accept; CREWFORGE5_CHECKPOINT=off also disables

@@ -1,6 +1,7 @@
 """Stage workflows (R-W1-R-W4): the catalog of plugin Workflow scripts and the env that turns the Workflow tool on.
 
-Each planning stage ships one read-only `workflows/<name>.js`, run as `crewforge5:<name>`. Its `export const meta`
+Each planning stage ships one read-only `workflows/<name>.js`, run as `crewforge5:<name>`; the build command's
+implementation step runs `story-executor`, which writes only inside its git worktrees. Its `export const meta`
 is written as JSON so this module can read it. Plugin settings cannot set env, so `env` merges `[workflows.env]` into
 the project's `.claude/settings.local.json` (never overwriting a value already there) and appends `export` lines to
 `CLAUDE_ENV_FILE` when a SessionStart hook provides one. Only CLAUDE_CODE_WORKFLOW* keys, only in projects with a
@@ -21,8 +22,10 @@ DIR = p.PLUGIN_ROOT / "workflows"
 PREFIX = "crewforge5"
 SETTINGS = ".claude/settings.local.json"
 KEY = re.compile(r"CLAUDE_CODE_WORKFLOW[A-Z0-9_]*")  # a checked-in config must not reach PATH, NODE_OPTIONS or the shell
-# stage -> the workflow its command runs; every step that runs one has an inline fallback (R-W3).
-CATALOG = {"plan": "intent-scout", "design": "design-panel", "build": "plan-critic"}
+# step -> the workflow its command runs; every step that runs one has an inline fallback (R-W3). The planning stages'
+# workflows are read-only; `implement` (the build command's implementation step) writes only inside its worktrees.
+CATALOG = {"plan": "intent-scout", "design": "design-panel", "build": "plan-critic", "implement": "story-executor"}
+WRITERS = ("story-executor",)
 
 
 def enabled(root: Path) -> bool:
