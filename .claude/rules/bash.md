@@ -52,7 +52,7 @@ Non-obvious only.
 - **Schema validation is pure jq.** `crews.schema.json` is the readable
   statement; the enforcing copy is jq inside `crew_check.sh`. Change one and you
   must change the other.
-- **No machine-specific paths** in `skills/`, `agents/`, `hooks/`, `rules/`. CI
+- **No machine-specific paths** in `plugin/{skills,agents,hooks,rules}/`. CI
   greps for `~/.claude` and `/Users/` and fails the build. Use
   `${CREWFORGE5_ROOT}`.
 - **Always-loaded context is a release gate.** `budget_check.sh` currently
@@ -71,15 +71,15 @@ Every command below was run in this repo on 2026-08-11 and its result observed.
 
 ```bash
 # Tests — 654 passing, 0 failing, exit 0
-bats skills/team-sprint/scripts/tests/*.bats
+bats plugin/skills/team-sprint/scripts/tests/*.bats
 
 # Lint — clean, exit 0
-shellcheck skills/team-sprint/scripts/*.sh scripts/*.sh
+shellcheck plugin/skills/team-sprint/scripts/*.sh plugin/scripts/*.sh scripts/*.sh
 
 # Release gates — all PASS
-bash scripts/budget_check.sh      # 1141 tok of 1200; 59 tok headroom
-bash scripts/name_check.sh        # names match paths
-bash scripts/validate_all.sh      # 32 components structurally clean
+bash plugin/scripts/budget_check.sh      # 1141 tok of 1200; 59 tok headroom
+bash plugin/scripts/name_check.sh        # names match paths
+bash plugin/scripts/validate_all.sh      # 32 components structurally clean
 ```
 
 There is no coverage, typecheck or build command for this stack; the manifest

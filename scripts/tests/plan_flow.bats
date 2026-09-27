@@ -16,7 +16,7 @@
 source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
 
 setup() {
-  ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd -P)"
+  ROOT="$(cd "$BATS_TEST_DIRNAME/../../plugin" && pwd -P)"
   FLOW_STATE="$ROOT/scripts/flow/flow_state.sh"
   FLOW_NEXT="$ROOT/scripts/flow/flow_next.sh"
   FLOW_GATE="$ROOT/scripts/flow/flow_gate.sh"

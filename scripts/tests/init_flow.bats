@@ -10,7 +10,7 @@
 source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
 
 setup() {
-  ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd -P)"
+  ROOT="$(cd "$BATS_TEST_DIRNAME/../../plugin" && pwd -P)"
   INIT_DIR="$ROOT/skills/init"
   MANIFEST="$INIT_DIR/phases.json"
   SKILL_MD="$INIT_DIR/SKILL.md"

@@ -11,10 +11,10 @@ run is marked explicitly as *not verified*; nothing here is recalled.
 | --- | --- | --- |
 | Language | bash (POSIX-ish shell) | `detect_language.sh` → `STATUS=OK LANG=bash` |
 | Interpreter on PATH | GNU bash 3.2.57(1) arm64-apple-darwin26 at `/bin/bash` | `bash --version` |
-| Shebang convention | `#!/usr/bin/env bash` in 23 of 23 scripts | `head -1 skills/team-sprint/scripts/*.sh` |
+| Shebang convention | `#!/usr/bin/env bash` in 23 of 23 scripts | `head -1 plugin/skills/team-sprint/scripts/*.sh` |
 | Shell scripts | 62 `*.sh` | `find . -name '*.sh'` |
 | Test files | 44 `*.bats` | `find . -name '*.bats'` |
-| Skills | 25 | `ls skills/` |
+| Skills | 25 | `ls plugin/skills/` |
 
 macOS ships bash 3.2 — no associative arrays, no `${var^^}`, no `mapfile`.
 CI runs ubuntu-latest **and** macos-latest, so BSD/GNU differences (`stat -f`,
@@ -40,19 +40,19 @@ Run and observed this session:
 
 ```bash
 # Tests — 655 passing, 0 failing
-bats skills/team-sprint/scripts/tests/*.bats
+bats plugin/skills/team-sprint/scripts/tests/*.bats
 
 # Lint — clean, exit 0, both script trees
-shellcheck skills/team-sprint/scripts/*.sh
-shellcheck scripts/*.sh
+shellcheck plugin/skills/team-sprint/scripts/*.sh
+shellcheck plugin/scripts/*.sh scripts/*.sh
 
 # Release gates (all PASS)
-bash scripts/budget_check.sh      # always-loaded context ceiling
-bash scripts/name_check.sh        # component names match their paths
-bash scripts/validate_all.sh      # 32 components structurally clean
+bash plugin/scripts/budget_check.sh      # always-loaded context ceiling
+bash plugin/scripts/name_check.sh        # component names match their paths
+bash plugin/scripts/validate_all.sh      # 32 components structurally clean
 ```
 
-`bash scripts/budget_check.sh` printed:
+`bash plugin/scripts/budget_check.sh` printed:
 
 ```
 always-loaded: 4564 chars (~1141 tok) across 24 descriptions; 10 skills hidden
@@ -63,7 +63,7 @@ PASS: 59 tok of headroom
 ### The aggregate suite was RED at survey time — since fixed
 
 ```bash
-bash skills/team-sprint/scripts/tests/run-all.sh   # exited 1 at commit 1fa2245
+bash plugin/skills/team-sprint/scripts/tests/run-all.sh   # exited 1 at commit 1fa2245
 ```
 
 Steps 1 (shellcheck) and 2 (bats, 654/654 at survey time) passed; step 3 failed because
@@ -110,16 +110,16 @@ Non-obvious only — anything you would learn by reading two scripts is omitted.
 - **Schema validation is pure jq.** `crews.schema.json` is the human-readable
   statement; the enforcing copy is jq inside `crew_check.sh`. Change one and you
   must change the other.
-- **No machine-specific paths** in `skills/`, `agents/`, `hooks/`, `rules/`. CI
+- **No machine-specific paths** in `plugin/skills/`, `agents/`, `hooks/`, `rules/`. CI
   greps for `~/.claude` and `/Users/` and fails the build. Use
   `${CREWFORGE5_ROOT}`.
 - **Always-loaded context is a release gate.** Adding an unhidden skill without
   paying for it fails `budget_check.sh`. Headroom is currently 59 tokens.
 - **bats tests carry a fallback.** They source
-  `skills/team-sprint/scripts/tests/lib/bats-fallback.sh` so they can run under
+  `plugin/skills/team-sprint/scripts/tests/lib/bats-fallback.sh` so they can run under
   plain `bash <file>` when bats is absent.
 - Tests live beside the code they cover, in
-  `skills/team-sprint/scripts/tests/*.bats`.
+  `plugin/skills/team-sprint/scripts/tests/*.bats`.
 
 ## Anti-patterns in this repo
 

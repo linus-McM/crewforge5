@@ -2,9 +2,9 @@
   "language": "bash",
   "stack_profile": ".claude/crews/bash.profile.md",
   "commands": {
-    "test": "bats skills/team-sprint/scripts/tests/*.bats",
+    "test": "bats plugin/skills/team-sprint/scripts/tests/*.bats",
     "coverage": "",
-    "lint": "shellcheck skills/team-sprint/scripts/*.sh scripts/*.sh",
+    "lint": "shellcheck plugin/skills/team-sprint/scripts/*.sh plugin/scripts/*.sh scripts/*.sh",
     "typecheck": "",
     "build": ""
   },

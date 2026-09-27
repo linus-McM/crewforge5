@@ -1,24 +1,27 @@
 # CrewForge5 — dev recipes. Every recipe runs what CI runs (.github/workflows/ci.yml).
-# The plugin is the repo root until the plugin/ split (spec R-H2), so --plugin-dir is `.`.
+# The installable package is plugin/ (spec R-H2); the repo root is dev tooling.
 
 # Start Claude (Opus) in auto permission mode with this plugin loaded
 opus:
-    @claude --permission-mode auto --model opus --plugin-dir .
+    @claude --permission-mode auto --model opus --plugin-dir plugin
 
 # Start Claude (Fable) in auto permission mode with this plugin loaded
 fable:
-    @claude --permission-mode auto --model fable --plugin-dir .
+    @claude --permission-mode auto --model fable --plugin-dir plugin
 
-# Run every bats suite (the team-sprint aggregate also runs its shellcheck + lint_skill)
+# Run every test suite: bats (the team-sprint aggregate also runs its shellcheck + lint_skill) and pytest
 test:
-    @bash skills/team-sprint/scripts/tests/run-all.sh
+    @bash plugin/skills/team-sprint/scripts/tests/run-all.sh
     @bats scripts/tests/
-    @bash skills/team-sprint-planner/scripts/tests/run-all.sh
-    @bats skills/self-improve/scripts/tests/ skills/sprint-watchdog/tests/ skills/token-slim/tests/
+    @bash plugin/skills/team-sprint-planner/scripts/tests/run-all.sh
+    @bats plugin/skills/self-improve/scripts/tests/ plugin/skills/sprint-watchdog/tests/ plugin/skills/token-slim/tests/
+    @uv run --group dev pytest
 
-# shellcheck every shipped script
+# shellcheck the dev and shipped scripts (the pre-commit and CI scope); ruff over the dev Python
 lint:
-    @find scripts skills -name '*.sh' -exec shellcheck {} +
+    @find scripts plugin/scripts plugin/skills -name '*.sh' -exec shellcheck {} +
+    @uv run --group dev ruff check scripts tests
+    @uv run --group dev ruff format --check scripts tests
 
 # Install the pre-commit hooks (.pre-commit-config.yaml — the same set CI runs)
 hooks:
@@ -28,16 +31,13 @@ hooks:
 precommit:
     @uvx pre-commit run --all-files --show-diff-on-failure
 
-# Release gates: context budget, names, structure, degradation, manifests
+# Release gates: context budget, names, structure, degradation, manifests (strict)
 gates:
-    @bash scripts/budget_check.sh --verbose
-    @bash scripts/name_check.sh
-    @bash scripts/validate_all.sh
+    @bash plugin/scripts/budget_check.sh --verbose
+    @bash plugin/scripts/name_check.sh
+    @bash plugin/scripts/validate_all.sh
     @bash scripts/verify_degradation.sh
-    # Not --strict yet: the plugin root is the repo root until R-H2, so the dev
-    # CLAUDE.md there raises one "not loaded as project context" warning. Phase 2
-    # (R-H2) moves the package to plugin/ and restores `--strict plugin`.
-    @claude plugin validate .claude-plugin/plugin.json
+    @claude plugin validate --strict plugin
     @claude plugin validate --strict .
 
 # Full gate: tests, lint, pre-commit, release gates

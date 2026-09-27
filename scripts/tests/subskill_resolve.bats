@@ -11,7 +11,7 @@
 source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
 
 setup() {
-  ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd -P)"
+  ROOT="$(cd "$BATS_TEST_DIRNAME/../../plugin" && pwd -P)"
   RESOLVE="$ROOT/scripts/flow/subskill_resolve.sh"
 
   TMP="$(cd "$(mktemp -d)" && pwd -P)"

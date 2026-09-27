@@ -5,6 +5,16 @@ on:
     branches: [main]
   pull_request:
 
+# contents: write is for the `version` job only, which pushes a bump commit to
+# the PR's head branch (spec R-H6). Every other job only reads.
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # The suite is developed on macOS and shipped to whoever installs it, so
   # Linux is not a nice-to-have here — `stat -f`, `sed -i ''` and BSD flag order
@@ -34,8 +44,10 @@ jobs:
           # under it — CI installing the older one is the point, not a problem.
           bats --version; jq --version; shellcheck --version | head -3
 
+      # The installable package is plugin/ (spec R-H2); the repo root holds only
+      # dev tooling, the repo-level bats suite (scripts/tests) and pytest (tests/).
       - name: Shell toolchain suite
-        run: bash skills/team-sprint/scripts/tests/run-all.sh
+        run: bash plugin/skills/team-sprint/scripts/tests/run-all.sh
 
       # The plugin's own scripts live outside the team-sprint tree, so run-all.sh
       # never sees them. sprint_init.sh writes into a stranger's repo and is the
@@ -47,7 +59,7 @@ jobs:
           # `find skills` step below never reaches scripts/, which left the
           # shared flow driver — the thing init, plan and execute all run on —
           # linted by nothing. find covers the next subdirectory on day one.
-          find scripts -name '*.sh' -exec shellcheck {} +
+          find scripts plugin/scripts -name '*.sh' -exec shellcheck {} +
           bats scripts/tests/
 
       # Four suites ran in no job at all until this step (spec R-H5).
@@ -56,10 +68,10 @@ jobs:
       - name: Skill-local suites
         run: |
           set -euo pipefail
-          bash skills/team-sprint-planner/scripts/tests/run-all.sh
-          bats skills/self-improve/scripts/tests/ \
-               skills/sprint-watchdog/tests/ \
-               skills/token-slim/tests/
+          bash plugin/skills/team-sprint-planner/scripts/tests/run-all.sh
+          bats plugin/skills/self-improve/scripts/tests/ \
+               plugin/skills/sprint-watchdog/tests/ \
+               plugin/skills/token-slim/tests/
 
       # run-all.sh lints only skills/team-sprint/scripts, and the step above only
       # scripts/. That left 27 shipped scripts across nine other skills linted by
@@ -71,9 +83,9 @@ jobs:
           # `find -exec … +`, not mapfile: macOS runners are bash 3.2, where
           # mapfile does not exist. The repo's own stack profile records that
           # constraint and this step broke it on the first macOS run.
-          n="$(find skills -name '*.sh' -not -path 'skills/team-sprint/scripts/*' | wc -l | tr -d ' ')"
+          n="$(find plugin/skills -name '*.sh' -not -path 'plugin/skills/team-sprint/scripts/*' | wc -l | tr -d ' ')"
           printf 'linting %s scripts outside the two main trees\n' "$n"
-          find skills -name '*.sh' -not -path 'skills/team-sprint/scripts/*' -exec shellcheck {} +
+          find plugin/skills -name '*.sh' -not -path 'plugin/skills/team-sprint/scripts/*' -exec shellcheck {} +
 
   # P2.3 — the story is "optional tooling degrades visibly". The `tests` job above
   # installs bats, jq and shellcheck on every runner, so it proves the opposite:
@@ -94,6 +106,21 @@ jobs:
       - name: Every entry point reaches a verdict without the optional tools
         run: bash scripts/verify_degradation.sh
 
+  # The dev Python at the root: scripts/bump_version.py and its pytest suite
+  # (spec R-H6). The plugin's own Python gate layer joins in phase 3.
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v5
+      - name: pytest
+        run: uv run --group dev pytest
+      - name: ruff
+        run: |
+          set -euo pipefail
+          uv run --group dev ruff check scripts tests
+          uv run --group dev ruff format --check scripts tests
+
   gates:
     runs-on: ubuntu-latest
     steps:
@@ -102,39 +129,37 @@ jobs:
       # The release gate the Definition of Done names: always-loaded context.
       # A commit that adds an unhidden skill without paying for it fails here.
       - name: Context budget
-        run: bash scripts/budget_check.sh --verbose
+        run: bash plugin/scripts/budget_check.sh --verbose
 
       - name: Names match paths
-        run: bash scripts/name_check.sh
+        run: bash plugin/scripts/name_check.sh
 
       # R-H5: the same hooks a contributor runs locally (`just hooks`).
       - uses: astral-sh/setup-uv@v5
       - name: Pre-commit hooks
         run: uvx pre-commit run --all-files --show-diff-on-failure
 
-      # R-H5: the marketplace validates strictly. The plugin manifest validates
-      # without --strict until R-H2 (phase 2) moves the package to plugin/: the
-      # repo root is still the plugin root, so the dev CLAUDE.md there raises a
-      # single "not loaded as project context" warning. Phase 2 switches this to
-      # `plugin validate --strict plugin`.
+      # R-H5: both manifests validate strictly. plugin/ is the plugin root
+      # (R-H2), so the dev CLAUDE.md at the repo root is outside it and no
+      # longer raises the "not loaded as project context" warning.
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
       - name: Plugin and marketplace manifests validate
         run: |
           set -euo pipefail
+          npx --yes @anthropic-ai/claude-code plugin validate --strict plugin
           npx --yes @anthropic-ai/claude-code plugin validate --strict .
-          npx --yes @anthropic-ai/claude-code plugin validate .claude-plugin/plugin.json
 
       - name: Structural self-validation
-        run: bash scripts/validate_all.sh
+        run: bash plugin/scripts/validate_all.sh
 
       - name: Manifests parse and agree on version
         run: |
           set -euo pipefail
           python3 - <<'PY'
           import json, sys
-          plugin = json.load(open(".claude-plugin/plugin.json"))
+          plugin = json.load(open("plugin/.claude-plugin/plugin.json"))
           market = json.load(open(".claude-plugin/marketplace.json"))
           entries = [p for p in market["plugins"] if p["name"] == plugin["name"]]
           if not entries:
@@ -153,10 +178,52 @@ jobs:
           # two dead skill references past this gate, which only knew the macOS one.
           # `/home/runner` is excluded — CI's own checkout path is not coupling.
           hits="$(grep -rn -e '~/\.claude' -e '/Users/' -e '/home/[a-z]' \
-                    skills/ agents/ hooks/ rules/ 2>/dev/null | grep -v '/home/runner' || true)"
+                    plugin/skills/ plugin/agents/ plugin/hooks/ plugin/rules/ \
+                    plugin/commands/ plugin/scripts/ 2>/dev/null | grep -v '/home/runner' || true)"
           if [ -n "$hits" ]; then
             printf '%s\n' "$hits"
             echo "the lines above hardcode one machine's paths"
             exit 1
           fi
           echo "ok — no hardcoded config paths"
+
+  # R-H6: versions are not bumped by hand. On a same-repo PR, once every check
+  # is green, bump plugin.json, marketplace.json, pyproject.toml and uv.lock by
+  # the PR's label (`major|minor|patch`, bare or `release:<part>`; default
+  # patch), date the CHANGELOG's `## Unreleased` heading, and push the bump to
+  # the PR branch — but only when the PR has not bumped already relative to the
+  # base ref. Ported from cc_sdlc's ci.yml. A push made with GITHUB_TOKEN does
+  # not start another CI run; the push to main after merge re-checks it.
+  version:
+    name: version bump into the PR
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    needs: [tests, degradation, python, gates]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
+      - name: Bump every version file when the PR has not bumped yet
+        env:
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -eu
+          # The manifest lives under plugin/ since the R-H2 split; fall back to
+          # the old root path while the base branch still has it.
+          base_json=$(git show "origin/${BASE_REF}:plugin/.claude-plugin/plugin.json" 2>/dev/null \
+                      || git show "origin/${BASE_REF}:.claude-plugin/plugin.json")
+          base_version=$(printf '%s' "$base_json" | uv run --no-project python -c 'import json,sys; print(json.load(sys.stdin)["version"])')
+          part=$(uv run --no-project python -c 'import os, sys; sys.path.insert(0, "scripts"); import bump_version as b; print(b.part_from_labels(os.environ["LABELS"].split(",")))')
+          uv run --no-project scripts/bump_version.py --part "$part" --base "$base_version"
+          if git diff --quiet; then echo "no bump needed"; exit 0; fi
+          new=$(uv run --no-project python -c 'import json; print(json.load(open("plugin/.claude-plugin/plugin.json"))["version"])')
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add plugin/.claude-plugin/plugin.json .claude-plugin/marketplace.json pyproject.toml uv.lock CHANGELOG.md
+          git commit -m "chore(release): bump version to ${new} (${part}, PR #${PR_NUMBER})"
+          git push origin "HEAD:${HEAD_REF}"

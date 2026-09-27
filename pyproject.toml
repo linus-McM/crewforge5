@@ -1,0 +1,41 @@
+# Dev tooling only: the plugin itself ships from plugin/ and has no Python
+# runtime dependencies (spec D1: stdlib under `uv run --no-project`).
+[project]
+name = "crewforge5-plugin"
+version = "0.4.4"
+description = "Claude Code plugin CrewForge5: dev tooling (pytest, ruff) for the repo, not the shipped package"
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["scripts"]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 240
+target-version = "py311"
+src = ["scripts", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "C4",  # flake8-comprehensions
+    "PTH", # flake8-use-pathlib
+    "RUF", # ruff-specific
+]
+ignore = [
+    "E501", # line length is the formatter's job
+]

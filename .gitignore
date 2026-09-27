@@ -9,5 +9,8 @@ graphify-out/
 ceilings.json
 ledger/
 team-sprint.config.yaml
-skills/.token-slim/
+.token-slim/
 .recon/
+.venv/
+.pytest_cache/
+.ruff_cache/

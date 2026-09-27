@@ -16,7 +16,7 @@
 # the version it was proven against.
 
 setup() {
-  ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd -P)"
+  ROOT="$(cd "$BATS_TEST_DIRNAME/../../plugin" && pwd -P)"
   ENVI="$ROOT/scripts/env_install.sh"
   TMP="$(cd "$(mktemp -d)" && pwd -P)"
   PROJ="$TMP/proj"

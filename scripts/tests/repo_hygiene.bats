@@ -7,7 +7,9 @@
 source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
 
 setup() {
-  ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd -P)"
+  # REPO is the dev checkout; ROOT is the installable package under it (R-H2).
+  REPO="$(cd "$BATS_TEST_DIRNAME/../.." && pwd -P)"
+  ROOT="$REPO/plugin"
 }
 
 # Frontmatter block of a markdown file: the lines between the first two `---`.
@@ -42,7 +44,7 @@ _frontmatter() {
   pat='${CREWFORGE5_ROOT'':-.}'
   # CHANGELOG.md and docs/specs/ quote the retired pattern as history; they are
   # the only places it may appear.
-  hits="$(cd "$ROOT" && grep -rnF --exclude-dir=.git --exclude-dir=specs \
+  hits="$(cd "$REPO" && grep -rnF --exclude-dir=.git --exclude-dir=specs \
             --exclude=CHANGELOG.md -e "$pat" . || true)"
   if [ -n "$hits" ]; then
     printf '%s\n' "$hits"
@@ -55,12 +57,12 @@ _frontmatter() {
 
 @test "R-H4: exactly one bats-fallback.sh exists, and it is a regular file" {
   local found n
-  found="$(cd "$ROOT" && find . -name 'bats-fallback.sh' -not -path './.git/*')"
+  found="$(cd "$REPO" && find . -name 'bats-fallback.sh' -not -path './.git/*')"
   n="$(printf '%s\n' "$found" | grep -c . || true)"
   if [ "$n" -ne 1 ]; then printf 'copies:\n%s\n' "$found"; false; fi
   [ "$found" = "./scripts/tests/lib/bats-fallback.sh" ]
-  [ -f "$ROOT/scripts/tests/lib/bats-fallback.sh" ]
-  [ ! -L "$ROOT/scripts/tests/lib/bats-fallback.sh" ]
+  [ -f "$REPO/scripts/tests/lib/bats-fallback.sh" ]
+  [ ! -L "$REPO/scripts/tests/lib/bats-fallback.sh" ]
 }
 
 # --- R-H3: historical plans no longer ship ----------------------------------
@@ -72,20 +74,47 @@ _frontmatter() {
   if [ -n "$dirs" ]; then printf 'still present:\n%s\n' "$dirs"; false; fi
   hits="$(cd "$ROOT" && grep -rnF -e "$pat" skills agents scripts hooks rules commands 2>/dev/null || true)"
   if [ -n "$hits" ]; then printf '%s\n' "$hits"; false; fi
-  [ -f "$ROOT/docs/adr/README.md" ]
+  [ -f "$REPO/docs/adr/README.md" ]
 }
 
 # --- R-H5: CI runs every bats suite -----------------------------------------
 
 @test "R-H5: every directory holding .bats files is run by a CI step" {
   local ci d missing="" n=0
-  ci="$ROOT/.github/workflows/ci.yml"
+  ci="$REPO/.github/workflows/ci.yml"
   [ -f "$ci" ]
-  for d in $(cd "$ROOT" && find . -name '*.bats' -not -path './.git/*' \
+  for d in $(cd "$REPO" && find . -name '*.bats' -not -path './.git/*' \
                -exec dirname {} \; | sed 's|^\./||' | sort -u); do
     n=$((n + 1))
     grep -qF "$d" "$ci" || missing="$missing $d"
   done
   if [ -n "$missing" ]; then echo "bats suites no CI step names:$missing"; false; fi
   [ "$n" -ge 5 ]
+}
+
+# --- R-H2: plugin/ is the installable package --------------------------------
+
+@test "R-H2: the package lives under plugin/ and nothing of it is left at the root" {
+  local d
+  [ -f "$ROOT/.claude-plugin/plugin.json" ]
+  [ ! -e "$REPO/.claude-plugin/plugin.json" ]
+  for d in agents commands hooks rules skills; do
+    [ -d "$ROOT/$d" ] || { echo "plugin/$d missing"; false; }
+    [ ! -e "$REPO/$d" ] || { echo "$d/ still at the repo root"; false; }
+  done
+}
+
+@test "R-H2: the marketplace installs plugin/ through git-subdir" {
+  local m="$REPO/.claude-plugin/marketplace.json"
+  [ "$(jq -r '.plugins[0].source.source' "$m")" = "git-subdir" ]
+  [ "$(jq -r '.plugins[0].source.path' "$m")" = "plugin" ]
+  [ "$(jq -r '.metadata.pluginRoot' "$m")" = "./plugin" ]
+}
+
+@test "R-H2: dev-only trees do not ship inside plugin/" {
+  local d
+  for d in .github docs .claude scripts/tests; do
+    [ ! -e "$ROOT/$d" ] || { echo "plugin/$d ships dev tooling"; false; }
+  done
+  [ ! -e "$ROOT/CLAUDE.md" ]
 }

@@ -10,7 +10,12 @@
     {
       "name": "crewforge5",
       "description": "Three commands over one repo: /crewforge5:init audits and slims your Claude config, /crewforge5:plan turns a goal into an adversarially-reviewed plan, and /crewforge5:execute drives that plan to a merged commit with a generated agent crew and its quality gates.",
-      "source": "./",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/linus-McM/crewforge5.git",
+        "path": "plugin",
+        "ref": "main"
+      },
       "version": "0.4.4",
       "category": "development",
       "keywords": [
@@ -19,7 +24,12 @@
         "code-review",
         "tdd",
         "orchestration"
-      ]
+      ],
+      "homepage": "https://github.com/linus-McM/crewforge5"
     }
-  ]
+  ],
+  "metadata": {
+    "description": "Marketplace for the crewforge5 plugin; add with `claude plugin marketplace add linus-McM/crewforge5`.",
+    "pluginRoot": "./plugin"
+  }
 }

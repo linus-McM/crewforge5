@@ -18,7 +18,7 @@
 source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
 
 setup() {
-  ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd -P)"
+  ROOT="$(cd "$BATS_TEST_DIRNAME/../../plugin" && pwd -P)"
   GRADE="$ROOT/skills/skill-validator/scripts/grade.sh"
   AGENT_V="$ROOT/skills/agent-validator/scripts/validate_agent.sh"
   SKILL_V="$ROOT/skills/skill-validator/scripts/validate_structure.sh"

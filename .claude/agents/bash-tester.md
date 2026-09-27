@@ -37,15 +37,15 @@ Verified 2026-08-11 against the live tree. Source of truth is
 
 **Verified commands**
 ```bash
-bats skills/team-sprint/scripts/tests/*.bats   # 654 pass, 0 fail
-shellcheck skills/team-sprint/scripts/*.sh     # clean, exit 0
-shellcheck scripts/*.sh                        # clean, exit 0
-bash scripts/budget_check.sh                   # PASS, 59 tok headroom
-bash scripts/name_check.sh                     # PASS
-bash scripts/validate_all.sh                   # PASS, 32 components
+bats plugin/skills/team-sprint/scripts/tests/*.bats   # 654 pass, 0 fail
+shellcheck plugin/skills/team-sprint/scripts/*.sh     # clean, exit 0
+shellcheck plugin/scripts/*.sh scripts/*.sh                        # clean, exit 0
+bash plugin/scripts/budget_check.sh                   # PASS, 59 tok headroom
+bash plugin/scripts/name_check.sh                     # PASS
+bash plugin/scripts/validate_all.sh                   # PASS, 32 components
 ```
 
-`bash skills/team-sprint/scripts/tests/run-all.sh` is green — the historical
+`bash plugin/skills/team-sprint/scripts/tests/run-all.sh` is green — the historical
 step-3 red (a dead `$REF/config-reference.md` citation) was fixed in 0.4.2.
 The script re-runs the whole bats suite nested inside step 3, so prefer
 `bats` directly while iterating.
@@ -65,7 +65,7 @@ measures target projects a sprint runs against, not this codebase.
 - Schema validation is **pure jq**. `crews.schema.json` is the readable
   statement; the enforcing copy is jq inside `crew_check.sh`. Change one, change
   the other.
-- No machine-specific paths in `skills/`, `agents/`, `hooks/`, `rules/` — CI
+- No machine-specific paths in `plugin/skills/`, `agents/`, `hooks/`, `rules/` — CI
   greps for `~/.claude` and `/Users/` and fails. Use `${CREWFORGE5_ROOT}`.
 - Always-loaded context is a release gate; headroom is 59 tokens.
 - bats tests source `tests/lib/bats-fallback.sh` so they also run under plain
@@ -82,9 +82,9 @@ measures target projects a sprint runs against, not this codebase.
 ## Test stack
 
 - **Framework**: bats-core 1.14.0. Tests live in
-  `skills/team-sprint/scripts/tests/*.bats`, one file per script under test.
-- **Run one file**: `bats skills/team-sprint/scripts/tests/<name>.bats`
-- **Run the suite**: `bats skills/team-sprint/scripts/tests/*.bats` — 654 tests,
+  `plugin/skills/team-sprint/scripts/tests/*.bats`, one file per script under test.
+- **Run one file**: `bats plugin/skills/team-sprint/scripts/tests/<name>.bats`
+- **Run the suite**: `bats plugin/skills/team-sprint/scripts/tests/*.bats` — 654 tests,
   all passing as of 2026-08-11. Prefer this over `run-all.sh` while iterating;
   `run-all.sh` re-runs the whole suite nested inside its lint step.
 - **Fallback harness**: every bats file sources `tests/lib/bats-fallback.sh` so
@@ -115,8 +115,8 @@ measures target projects a sprint runs against, not this codebase.
 ## Verification before you report
 
 ```bash
-bats skills/team-sprint/scripts/tests/<file>.bats     # your new cases
-bats skills/team-sprint/scripts/tests/*.bats          # nothing else broke
+bats plugin/skills/team-sprint/scripts/tests/<file>.bats     # your new cases
+bats plugin/skills/team-sprint/scripts/tests/*.bats          # nothing else broke
 shellcheck <any .sh helper you touched>
 ```
 

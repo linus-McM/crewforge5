@@ -38,15 +38,15 @@ Verified 2026-08-11 against the live tree. Source of truth is
 
 **Verified commands**
 ```bash
-bats skills/team-sprint/scripts/tests/*.bats   # 654 pass, 0 fail
-shellcheck skills/team-sprint/scripts/*.sh     # clean, exit 0
-shellcheck scripts/*.sh                        # clean, exit 0
-bash scripts/budget_check.sh                   # PASS, 59 tok headroom
-bash scripts/name_check.sh                     # PASS
-bash scripts/validate_all.sh                   # PASS, 32 components
+bats plugin/skills/team-sprint/scripts/tests/*.bats   # 654 pass, 0 fail
+shellcheck plugin/skills/team-sprint/scripts/*.sh     # clean, exit 0
+shellcheck plugin/scripts/*.sh scripts/*.sh                        # clean, exit 0
+bash plugin/scripts/budget_check.sh                   # PASS, 59 tok headroom
+bash plugin/scripts/name_check.sh                     # PASS
+bash plugin/scripts/validate_all.sh                   # PASS, 32 components
 ```
 
-`bash skills/team-sprint/scripts/tests/run-all.sh` is green — the historical
+`bash plugin/skills/team-sprint/scripts/tests/run-all.sh` is green — the historical
 step-3 red (a dead `$REF/config-reference.md` citation) was fixed in 0.4.2.
 The script re-runs the whole bats suite nested inside step 3, so prefer
 `bats` directly while iterating.
@@ -66,7 +66,7 @@ measures target projects a sprint runs against, not this codebase.
 - Schema validation is **pure jq**. `crews.schema.json` is the readable
   statement; the enforcing copy is jq inside `crew_check.sh`. Change one, change
   the other.
-- No machine-specific paths in `skills/`, `agents/`, `hooks/`, `rules/` — CI
+- No machine-specific paths in `plugin/skills/`, `agents/`, `hooks/`, `rules/` — CI
   greps for `~/.claude` and `/Users/` and fails. Use `${CREWFORGE5_ROOT}`.
 - Always-loaded context is a release gate; headroom is 59 tokens.
 - bats tests source `tests/lib/bats-fallback.sh` so they also run under plain
@@ -89,7 +89,7 @@ sampling tool. Do not claim to have used one. What you have:
 time bash <script>                       # wall, user, sys
 TIMEFORMAT='%R %U %S'; time <command>    # machine-readable timing
 PS4='+ $EPOCHREALTIME $LINENO: '; bash -x <script> 2>trace   # per-line stamps
-bats --timing skills/team-sprint/scripts/tests/<file>.bats   # per-test timing
+bats --timing plugin/skills/team-sprint/scripts/tests/<file>.bats   # per-test timing
 ```
 
 `bash -x` with a timestamped `PS4` is the closest thing to a line profiler here.

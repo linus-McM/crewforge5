@@ -7,7 +7,7 @@
 # tested — a gate that fires on every reflow is a gate people learn to bypass.
 
 setup() {
-  ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd -P)"
+  ROOT="$(cd "$BATS_TEST_DIRNAME/../../plugin" && pwd -P)"
   GATE="$ROOT/scripts/retention_gate.sh"
   TMP="$(cd "$(mktemp -d)" && pwd -P)"
   ORIG="$TMP/original.md"

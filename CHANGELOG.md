@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+Phase 2 of `docs/specs/cc-sdlc-alignment.md` (package split; no behaviour change for users).
+
+- The installable package moved to `plugin/` (R-H2): `agents/ commands/ hooks/ rules/ skills/`, the runtime scripts the skills call (`budget_check`, `name_check`, `validate_all`, `retention_gate`, `frontmatter_check`, `sprint_init`, `env_install`, `flow/`), `plugin.json`, the user README and a LICENSE copy. Tests, CI, `docs/`, `.claude/` and the `verify_*` probes stay at the root.
+- The marketplace installs `plugin/` through a `git-subdir` source (`metadata.pluginRoot: ./plugin`).
+- CI and `just gates` run `claude plugin validate --strict plugin` and `--strict .`.
+- `scripts/bump_version.py` plus a CI `version` job bump `plugin.json`, `marketplace.json`, `pyproject.toml` and `uv.lock` from the PR's `major|minor|patch` label and date `## Unreleased` (R-H6). A root `pyproject.toml` adds pytest and ruff (`uv run --group dev pytest`); ruff joins pre-commit.
+- `CLAUDE.md` records that dogfood output lives on a `dogfood` branch and `main` stays package-only (R-H8).
+- `repo_hygiene.bats` pins the layout and the `git-subdir` marketplace.
+
 Phase 1 of `docs/specs/cc-sdlc-alignment.md` (hygiene, no behaviour change).
 
 - Root `CLAUDE.md` (Commands / Architecture / Conventions / Things Claude gets wrong) and a `justfile` (`test lint precommit gates check hooks opus fable`).

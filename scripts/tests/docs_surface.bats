@@ -14,11 +14,14 @@
 source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
 
 setup() {
-  ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd -P)"
+  # REPO is the dev checkout; ROOT is the installable package (R-H2). The user
+  # README ships with the package; CHANGELOG and the marketplace stay at REPO.
+  REPO="$(cd "$BATS_TEST_DIRNAME/../.." && pwd -P)"
+  ROOT="$REPO/plugin"
   README="$ROOT/README.md"
-  CHANGELOG="$ROOT/CHANGELOG.md"
+  CHANGELOG="$REPO/CHANGELOG.md"
   PLUGIN="$ROOT/.claude-plugin/plugin.json"
-  MARKET="$ROOT/.claude-plugin/marketplace.json"
+  MARKET="$REPO/.claude-plugin/marketplace.json"
 }
 
 # The gate is the source of truth for every measured figure below.

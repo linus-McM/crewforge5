@@ -1,11 +1,12 @@
 # Install once with: just hooks   (runs: uvx pre-commit install)
 # Run everywhere with: uvx pre-commit run --all-files
-# CI runs the same thing (.github/workflows/ci.yml, gates job). ruff joins when
-# the Python gate layer lands (spec D1, phase 3).
+# CI runs the same thing (.github/workflows/ci.yml, gates job). ruff covers the
+# root dev Python (scripts/, tests/); plugin/ joins when the Python gate layer
+# lands there (spec D1, phase 3).
 minimum_pre_commit_version: "3.0.0"
 # Test fixtures are byte-exact inputs (e.g. a .gitignore with no trailing
 # newline is the case under test) — no hook rewrites them.
-exclude: ^skills/[^/]+/scripts/fixtures/
+exclude: ^plugin/skills/[^/]+/scripts/fixtures/
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -21,5 +22,15 @@ repos:
     rev: v0.11.0.1
     hooks:
       - id: shellcheck
-        # Same scope as `just lint` and the CI shellcheck steps: shipped *.sh.
-        files: ^(scripts|skills)/.*\.sh$
+        # Same scope as `just lint` and the CI shellcheck steps: the dev
+        # scripts/ and the shipped plugin/scripts and plugin/skills.
+        # plugin/hooks has never been in scope (see the spec's R-G phases).
+        files: ^(scripts|plugin/scripts|plugin/skills)/.*\.sh$
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.6
+    hooks:
+      - id: ruff-check
+        files: ^(scripts|tests)/.*\.py$
+      - id: ruff-format
+        files: ^(scripts|tests)/.*\.py$
