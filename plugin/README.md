@@ -5,13 +5,15 @@ they belong, executes work with them, and stops them rotting.
 
 ```
 /crewforge5:init    → measure, slim and validate the config you already have
-/crewforge5:plan    → a goal becomes an adversarially-reviewed plan file
-/crewforge5:execute → that plan becomes a merged commit, crew and gates included
+/crewforge5:plan    → a goal becomes crewforge5/<slug>/intent.md, accepted by a human
+/crewforge5:design  → the accepted intent becomes spec.md, accepted by a human
+/crewforge5:build   → the accepted spec becomes a test-first plan.md, accepted by a human
+/crewforge5:execute → a reviewed plan becomes a merged commit, crew and gates included
 ```
 
-Three commands is the whole surface. Everything underneath — the crew factory,
-the review fleet, the recon tooling, the distillation pass — is a sub-skill one
-of those three loads when its phase needs it.
+That is the whole surface. Everything underneath — the crew factory, the
+review fleet, the recon tooling, the distillation pass — is a sub-skill one of
+them loads when its phase needs it.
 
 ## Install
 
@@ -22,19 +24,22 @@ claude plugin install crewforge5@crewforge5
 
 Restart the session. `claude plugin details crewforge5` shows what you now carry.
 
-## The three entry points
+## The entry points
 
 Always write the namespaced form. A bare `slash-init` reaches Claude Code's own
 CLAUDE.md initializer — a different tool doing a different job — and the bare
-forms of the other two are ambiguous in the same way.
+forms of the others are ambiguous in the same way.
 
 | Command | What it does | Also triggers on |
 | --- | --- | --- |
 | `/crewforge5:init` | Gated config hygiene — measure, slim, validate, rectify and report a Claude setup's skills, agents and CLAUDE.md | "clean up my Claude config", "audit context load", "rightsize the environment" |
-| `/crewforge5:plan` | A goal becomes an adversarial-clean, execute-ready plan file | "plan this feature", "write a sprint plan" |
+| `/crewforge5:plan` | Stage 1: interview the originator into `intent.md` (`new "<title>" | check | accept | status`) | "plan this feature" |
+| `/crewforge5:design` | Stage 2: the accepted intent becomes `spec.md` with Concerns and a Requirements trace | "design this feature" |
+| `/crewforge5:build` | Stage 3: plan mode against the accepted spec writes `plan.md`, every step naming its failing test | "write the build plan" |
 | `/crewforge5:execute` | A reviewed plan becomes a merged commit — TDD agent fleet in an isolated worktree, coverage, AC/DoD and review-fleet gates, then an integration diagram and distilled learnings | "run a sprint", "execute this plan" |
 
-Each one is a state machine over a `phases.json` manifest: a phase is offered,
+`plan`, `design` and `build` are slash commands over the verdict CLI (below).
+`init` and `execute` are still flow skills; each is a state machine over a `phases.json` manifest: a phase is offered,
 its gate is run, and the verdict is written to state before the next phase is
 offered. A gate announced in prose and never run did not happen.
 
@@ -69,14 +74,15 @@ in the catalogue, so a flow reaches one through
 | `agent-validator` | `/crewforge5:init` | phase 4 |
 | `skill-rectifier` | `/crewforge5:init` | phase 5 |
 | `agent-rectifier` | `/crewforge5:init` | phase 5 |
-| `use-repo-code` | `/crewforge5:plan`, `/crewforge5:execute` | plan phase 1; execute's preflight and recon |
-| `adhd` | `/crewforge5:plan` | phase 2, parallel divergent frames |
-| `grill-me` | `/crewforge5:plan` | phase 3, the questioning loop |
-| `team-feature` | `/crewforge5:plan` | phases 0–3, the interactive ratification half |
-| `tech-debt-audit` | `/crewforge5:plan` | phase 4 |
-| `master-plan` | `/crewforge5:plan` | phases 5 and 8 — impact map, coverage check |
-| `team-sprint-planner` | `/crewforge5:plan` | phase 6, plan contract and story shape |
-| `adversarial-review` | `/crewforge5:plan`, `/crewforge5:execute` | plan phase 7; execute phase 2 under `scheduling: graph` |
+| `plan-legacy` | `/crewforge5:plan-legacy` | the old nine-phase bash planning flow, hidden; `plan`, `design` and `build` replace it |
+| `use-repo-code` | `/crewforge5:plan-legacy`, `/crewforge5:execute` | plan-legacy phase 1; execute's preflight and recon |
+| `adhd` | `/crewforge5:plan-legacy` | phase 2, parallel divergent frames (the Diverge step of `plan new`) |
+| `grill-me` | `/crewforge5:plan-legacy` | phase 3, the questioning loop (the Grill step of `plan new`) |
+| `team-feature` | `/crewforge5:plan-legacy` | phases 0–3, the interactive ratification half |
+| `tech-debt-audit` | `/crewforge5:plan-legacy` | phase 4 (the Concerns audit of `design new`) |
+| `master-plan` | `/crewforge5:plan-legacy` | phases 5 and 8 — impact map, coverage check |
+| `team-sprint-planner` | `/crewforge5:plan-legacy` | phase 6, plan contract and story shape (the Order of work of `build new`) |
+| `adversarial-review` | `/crewforge5:plan-legacy`, `/crewforge5:execute` | plan-legacy phase 7; execute phase 2 under `scheduling: graph` |
 | `team-sprint` | `/crewforge5:execute` | phases 0–7 are its phase docs, wrapped unchanged |
 | `sprint-watchdog` | `/crewforge5:execute` | phase 0, the pre-sprint audit |
 | `pre-commit-review-fleet` | `/crewforge5:execute` | phase 7, over the sprint diff |
@@ -86,7 +92,7 @@ in the catalogue, so a flow reaches one through
 | `code-reviewer` | — | same — a crew-assignable skill, distinct from the `code-reviewer` agent |
 | `playwright-cli` | — | same, for frontend AC verification |
 | `plugin-forge` | — | nothing drives it; reachable by name only |
-| `graphify` | `/crewforge5:plan`, `/crewforge5:execute` | plan phase 1 and execute phase 0 — the knowledge-graph half of recon |
+| `graphify` | `/crewforge5:plan-legacy`, `/crewforge5:execute` | plan-legacy phase 1 and execute phase 0 — the knowledge-graph half of recon |
 
 ## What it costs you
 
@@ -97,18 +103,19 @@ them. That is the plugin's rent, and it is measured rather than asserted:
 bash "$CREWFORGE5_ROOT/scripts/budget_check.sh" --verbose
 ```
 
-The bundle is **~495 tokens** always-loaded across 11 catalogue entries, against
+The bundle is **~524 tokens** always-loaded across 13 catalogue entries, against
 a budget of **550** — one description's worth of headroom, so rewording a
 trigger phrase does not turn the build red, while a whole new listed surface
-still cannot slip in unpriced. The other **25 skills** carry
+still cannot slip in unpriced. The other **26 skills** carry
 `disable-model-invocation: true`, so they cost nothing until a flow resolves one
 or you call it by name. That discipline is the only reason a bundle this size is
 affordable, and `budget_check.sh` fails the build over the budget rather than
 moving it.
 
 Cost is only half of what the gate asserts. It also checks *which* skills are
-listed: exactly `init`, `plan` and `execute`. A fourth entry point with a short
-description used to pay its tokens and walk through unnoticed.
+listed: exactly the `init` and `execute` skills and the `plan`, `design`, `build`
+and `rules-install` commands. An extra entry point with a short description used
+to pay its tokens and walk through unnoticed.
 
 `claude plugin details crewforge5` reports a larger always-on number because its
 projection charges hidden skills too. Verified against a live session, hidden
@@ -136,7 +143,7 @@ without writing; `uninstall` removes only the keys it added.
 a single tool call, so an `export` reaches the end of its own command and no
 further. Call sites therefore never fall back to `.` (which resolves to the wrong
 tree once the plugin lives anywhere but the repo you are standing in): the flow
-driver locates the plugin from its own path, and `/crewforge5:plan` uses the
+driver locates the plugin from its own path, and the commands use the
 harness-expanded `${CLAUDE_PLUGIN_ROOT}`. A test fails if the fallback returns.
 
 ## The opinionated hooks are OFF by default
@@ -165,6 +172,9 @@ arm them. Re-run without `--hooks`, or `uninstall`, to turn them back off.
 A fourth hook, `sprint-watchdog-guard`, is always registered but inert: it does
 nothing until a sprint arms it with an activation file in the repo, and goes
 inert again at teardown.
+
+The workflow-env `SessionStart` hook is not opt-in either, but it does nothing
+outside a project that has `.crewforge5.toml`; see [The verdict CLI](#the-verdict-cli).
 
 ## Dependencies
 
@@ -202,11 +212,12 @@ byte sizes of one machine's files, so it is generated on first `record`.
 `skills/team-sprint/team-sprint.config.yaml.example` if you want to change a
 default.
 
-## The verdict CLI (preview)
+## The verdict CLI
 
 The gate layer is moving to a Python 3.11 standard-library CLI, following
-`docs/specs/cc-sdlc-alignment.md` in the repository. It runs alongside the three
-flows above and does not replace any of them yet:
+`docs/specs/cc-sdlc-alignment.md` in the repository. `/crewforge5:plan`,
+`/crewforge5:design` and `/crewforge5:build` run on it; `init` and `execute`
+are still bash flows:
 
 ```bash
 uv run --no-project "${CLAUDE_PLUGIN_ROOT}/scripts/crewforge5.py" <stage> <action> [arg] [--slug <slug>]
@@ -214,12 +225,15 @@ uv run --no-project "${CLAUDE_PLUGIN_ROOT}/scripts/crewforge5.py" <stage> <actio
 
 Each call prints one JSON verdict with `ok`, `next`, and `reason` when `ok` is
 false. Act on `ok`, quote `reason` word for word, follow `next`
-(`templates/command-preamble.md` is the preamble every command will open with).
+(`templates/command-preamble.md` is the preamble every command opens with).
 Stages: `plan` writes `intent.md`, `design` writes `spec.md`, `build` writes
 `plan.md`, each with `new | check | accept`, and `status` lists every feature.
 Artifacts live in `crewforge5/<slug>/`. `check` validates the required sections
 and the `Status:` and `Risk:` lines. Each `new` is refused until a human has
-accepted the previous artifact, and `accept` sets `Status: accepted`.
+accepted the previous artifact, and `accept` sets `Status: accepted`. Only a
+human accepts: the command asks through AskUserQuestion before it runs `accept`.
+`build check` also refuses an Order-of-work step that names no failing test, and
+a `Risk: high` plan without a `Tech lead: <name>` line under Risks.
 
 Config lives in `.crewforge5.toml` (the first `new` writes it from
 `templates/crewforge5.toml`). It is deep-merged over the defaults:
@@ -241,6 +255,23 @@ Every layer has one off switch in config and one environment variable:
 | Layer | Config | Environment |
 | --- | --- | --- |
 | Checkpoint commits | `[checkpoint] enabled = false` | `CREWFORGE5_CHECKPOINT=off` |
+| Stage workflows | `[workflows] enabled = false` (`auto_env = false` stops only the env merge) | `CREWFORGE5_WORKFLOWS=off` |
+
+**Workflows.** Each planning command runs one read-only Workflow script from
+`workflows/`, as `crewforge5:<name>`: `intent-scout` (plan), `design-panel`
+(design) and `plan-critic` (build). Every finding goes to a skeptic, and an
+optional `pack` argument is read as data, never instructions. They are advisory:
+the command writes the artifact and the CLI still decides. `crewforge5
+workflows list` reads the catalog from each script's `meta` and says whether the
+layer is on; when it is off, or the Workflow tool is missing, every step has an
+inline fallback. Plugin settings cannot set env, so a `SessionStart` hook
+(`scripts/hook.py`, through `uv run --no-project`) runs `crewforge5 workflows
+env` in projects that have `.crewforge5.toml`, and only there: it merges
+`[workflows.env]` (default `CLAUDE_CODE_WORKFLOWS=1`; any key outside
+`CLAUDE_CODE_WORKFLOW*` is refused) into `.claude/settings.local.json` without
+overwriting a value already set, and appends `export` lines to
+`CLAUDE_ENV_FILE`. The Workflow tool sees it from the next session.
+`disableWorkflows` in Claude Code settings still wins.
 
 ## Rules
 
@@ -257,7 +288,7 @@ bash "$CREWFORGE5_ROOT/scripts/sprint_init.sh" uninstall   # remove the links
 
 `/crewforge5:rules-install` is the same installer as a slash command — it runs
 `report` first and refuses to resolve a conflict by overwriting. It is a
-utility, not a fourth workflow: the three commands above remain the whole
+utility, not a workflow stage: the entry points above remain the whole
 planning-and-execution surface.
 
 `report` reads your existing `CLAUDE.md` and rules and names contradictions

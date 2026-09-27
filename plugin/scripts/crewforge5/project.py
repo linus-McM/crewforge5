@@ -7,6 +7,7 @@ through `fail()` (R-V2); only `cli.main` catches them.
 from __future__ import annotations
 
 import copy
+import json
 import os
 import subprocess
 import tomllib
@@ -19,7 +20,7 @@ CONFIG_NAME = ".crewforge5.toml"
 DEFAULT_CONFIG = (TEMPLATES / "crewforge5.toml").read_text()
 DEFAULTS = tomllib.loads(DEFAULT_CONFIG)
 # Layers with an off switch (R-C2): `[<layer>] enabled = false` or CREWFORGE5_<LAYER>=off.
-LAYERS = ("checkpoint",)
+LAYERS = ("checkpoint", "workflows")
 
 
 class Blocked(Exception):
@@ -89,7 +90,7 @@ def feature(root: Path, slug: str | None) -> Path:
         target = home(root) / slug
         if (target / "intent.md").exists():
             return target
-        return fail(f"no feature {slug!r} under {rel(root, home(root))}/", next="/crewforge5:status")
+        return fail(f"no feature {slug!r} under {rel(root, home(root))}/", next="/crewforge5:plan status")
     if dirs := features(root):
         return max(dirs, key=lambda d: d.stat().st_mtime)
     return fail("no feature found", next='/crewforge5:plan new "<title>"')
@@ -119,6 +120,22 @@ def changed_files(root: Path, *paths: str) -> list[str]:
     """Staged, unstaged and untracked paths in one git call, limited to `paths` when given."""
     lines = git(root, "status", "--porcelain", "--untracked-files=all", *(["--", *paths] if paths else [])).splitlines()
     return sorted(line[3:].split(" -> ")[-1] for line in lines)
+
+
+def read_json(path: Path, default=None):
+    if not path.exists():
+        return default
+    try:
+        return json.loads(path.read_text())
+    except json.JSONDecodeError as err:
+        return fail(f"{path.name} is not valid JSON ({err.msg} at line {err.lineno}); fix or delete it", path=str(path))
+
+
+def write_json(path: Path, data) -> None:
+    """Written to a sibling temp file, then renamed into place: a reader never sees half a file."""
+    tmp = path.with_name(f".{path.name}.tmp")
+    tmp.write_text(json.dumps(data, indent=2) + "\n")
+    tmp.replace(path)
 
 
 def today() -> str:

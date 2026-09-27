@@ -38,11 +38,20 @@ mkskill() {
   } > "$FX/skills/$1/SKILL.md"
 }
 
+# mkcmd <name> <description>
+mkcmd() {
+  printf -- '---\ndescription: %s\n---\n\nbody\n' "$2" > "$FX/commands/$1.md"
+}
+
 three_entry_points() {
   mkskill init "Start a crew."
-  mkskill plan "Plan a sprint."
   mkskill execute "Run a sprint."
+  mkskill plan-legacy "Old plan flow." hidden
   mkskill team-sprint "Hidden worker." hidden
+  mkcmd plan "Stage 1."
+  mkcmd design "Stage 2."
+  mkcmd build "Stage 3."
+  mkcmd rules-install "Install rules."
 }
 
 # --- AC: the real tree passes and lists exactly the three entry points -------
@@ -54,18 +63,42 @@ three_entry_points() {
   [[ "$output" == *"PASS:"* ]]
 }
 
-@test "init, plan and execute are the only non-hidden skills in the table" {
+@test "init and execute are the only non-hidden skills in the table" {
   run bash "$GATE" --verbose
   [ "$status" -eq 0 ]
   local listed
   listed="$(printf '%s\n' "$output" \
     | awk '$2 == "skill" && $0 !~ /\(hidden\)/ { print $3 }' | sort | tr '\n' ' ')"
-  [ "$listed" = "execute init plan " ]
+  [ "$listed" = "execute init " ]
 }
 
-# --- AC: a fourth listed skill fails even when it is cheap ------------------
+@test "the plan, design, build and rules-install commands are the listed commands" {
+  run bash "$GATE" --verbose
+  [ "$status" -eq 0 ]
+  local listed
+  listed="$(printf '%s\n' "$output" | awk '$2 == "cmd" { print $3 }' | sort | tr '\n' ' ')"
+  [ "$listed" = "build design plan rules-install " ]
+}
 
-@test "a fourth listed skill fails the gate under a budget it never approaches" {
+@test "a fifth command fails the gate under a budget it never approaches" {
+  three_entry_points
+  mkcmd extra "Tiny."
+  run bash "$FX/scripts/budget_check.sh" --budget 5000
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"extra"* ]]
+}
+
+@test "a missing stage command fails the gate" {
+  three_entry_points
+  rm "$FX/commands/design.md"
+  run bash "$FX/scripts/budget_check.sh" --budget 5000
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"design"* ]]
+}
+
+# --- AC: a third listed skill fails even when it is cheap ------------------
+
+@test "a third listed skill fails the gate under a budget it never approaches" {
   three_entry_points
   mkskill extra "Tiny."
   run bash "$FX/scripts/budget_check.sh" --budget 5000
@@ -73,7 +106,7 @@ three_entry_points() {
   [[ "$output" == *"extra"* ]]
 }
 
-@test "the same fixture without the fourth skill passes" {
+@test "the same fixture without the third skill passes" {
   three_entry_points
   run bash "$FX/scripts/budget_check.sh" --budget 5000
   [ "$status" -eq 0 ]
@@ -81,14 +114,14 @@ three_entry_points() {
 }
 
 @test "a missing entry point fails too — the shape is asserted both ways" {
-  mkskill init "Start a crew."
-  mkskill plan "Plan a sprint."
+  three_entry_points
+  rm -r "$FX/skills/execute"
   run bash "$FX/scripts/budget_check.sh" --budget 5000
   [ "$status" -eq 1 ]
   [[ "$output" == *"execute"* ]]
 }
 
-@test "hiding a would-be fourth entry point clears it" {
+@test "hiding a would-be third entry point clears it" {
   three_entry_points
   mkskill extra "Tiny." hidden
   run bash "$FX/scripts/budget_check.sh" --budget 5000

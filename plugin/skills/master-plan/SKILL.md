@@ -15,7 +15,7 @@ Use when the user invokes /master_plan, asks for a "master plan", or wants a ful
 
 The goal arrives as the skill's arguments. If no goal was passed, stop and ask what to plan before doing anything.
 
-**When `/crewforge5:plan` phase 5 loads this body, run Phase 2 only.** That flow
+**When `/crewforge5:plan-legacy` phase 5 loads this body, run Phase 2 only.** That flow
 already owns the audit (its phase 4), the plan draft (phase 6) and the coverage
 check (phase 8) — this skill's Phases 1, 3 and 4 are those phases under other
 names, and re-running them from inside phase 5 re-enters a flow that is already

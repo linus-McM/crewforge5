@@ -18,10 +18,11 @@
 # `disable-model-invocation: true` do not appear in the skills catalogue at all.
 # This gate measures what the session actually carries.
 #
-# Cost is only half the contract. The bundle is meant to show exactly three
-# entry points, and a fourth one with a short description used to pay its
-# tokens and walk through unnoticed — so the listed skills are asserted by name
-# as well as charged, independently of the budget.
+# Cost is only half the contract. The bundle is meant to show a fixed public
+# surface — the `init` and `execute` flow skills plus the slash commands in
+# commands/ (spec R-S1) — and an extra entry with a short description used to
+# pay its tokens and walk through unnoticed. So the listed skills and commands
+# are asserted by name as well as charged, independently of the budget.
 #
 # Exits 0 within budget and correctly shaped, 1 otherwise.
 set -uo pipefail
@@ -55,9 +56,12 @@ from pathlib import Path
 
 root, budget, verbose = Path(sys.argv[1]), int(sys.argv[2]), sys.argv[3] == "1"
 
-# The three condensed entry points. Everything else is reached through the
-# resolver, not through the catalogue.
-ENTRY_SKILLS = ["init", "plan", "execute"]
+# The listed flow skills. Everything else is reached through the resolver, not
+# through the catalogue. `plan` moved to commands/ (R-S2); its old bash flow is
+# the hidden `plan-legacy`.
+ENTRY_SKILLS = ["init", "execute"]
+# The public slash commands: the planning stages plus the rules installer.
+ENTRY_COMMANDS = ["build", "design", "plan", "rules-install"]
 
 def frontmatter(path):
     text = path.read_text(errors="replace")
@@ -126,6 +130,17 @@ if unexpected:
     failed = True
 if missing:
     print(f"FAIL: entry point missing from the catalogue: {', '.join(missing)}.")
+    failed = True
+
+commands = [r[1] for r in rows if r[0] == "cmd"]
+extra_cmds = [n for n in commands if n not in ENTRY_COMMANDS]
+missing_cmds = [n for n in ENTRY_COMMANDS if n not in commands]
+if extra_cmds:
+    print(f"FAIL: command not in the public surface: {', '.join(sorted(extra_cmds))}. "
+          f"A new command is a new entry point; add it to ENTRY_COMMANDS deliberately.")
+    failed = True
+if missing_cmds:
+    print(f"FAIL: command missing from commands/: {', '.join(missing_cmds)}.")
     failed = True
 
 if tokens > budget:

@@ -1,15 +1,15 @@
 #!/usr/bin/env bats
-# plan_flow.bats — contract for the `crewforge5:plan` flow.
+# plan_flow.bats — contract for the `crewforge5:plan-legacy` flow.
 #
 # `plan` turns a goal into an adversarial-clean, /team-sprint-ready plan file.
 # Everything it does that a human could fake — "the goal is recorded", "the
 # findings are folded", "every debt finding is covered" — is a gate in
-# skills/plan/phases.json, and this file is what proves those gates actually
+# skills/plan-legacy/phases.json, and this file is what proves those gates actually
 # bite. The three that matter most are the ones a flow would otherwise walk
 # straight past: an intake with no goal, a review stamped while a finding is
 # still open, and a plan whose debt-coverage table quietly drops a finding ID.
 #
-# The flow under test is this checkout's real skills/plan — not a fixture — so
+# The flow under test is this checkout's real skills/plan-legacy — not a fixture — so
 # a gate naming a script that has been moved or renamed fails here rather than
 # in someone's live sprint.
 
@@ -20,7 +20,7 @@ setup() {
   FLOW_STATE="$ROOT/scripts/flow/flow_state.sh"
   FLOW_NEXT="$ROOT/scripts/flow/flow_next.sh"
   FLOW_GATE="$ROOT/scripts/flow/flow_gate.sh"
-  PLAN_DIR="$ROOT/skills/plan"
+  PLAN_DIR="$ROOT/skills/plan-legacy"
   MANIFEST="$PLAN_DIR/phases.json"
   STRUCT="$ROOT/skills/skill-validator/scripts/validate_structure.sh"
 
@@ -47,7 +47,7 @@ setup() {
   git config user.name  "test"
   git commit -q --allow-empty -m "init"
 
-  STATE="$TMP/repo/.crewforge5/plan/default/state.json"
+  STATE="$TMP/repo/.crewforge5/plan-legacy/default/state.json"
 }
 
 teardown() {
@@ -67,7 +67,7 @@ _split_run() {
 _pass_through() { # $1 = highest phase id to mark passed
   local i
   for i in $(seq 0 "$1"); do
-    bash "$FLOW_STATE" plan set "phase.$i.status" pass
+    bash "$FLOW_STATE" plan-legacy set "phase.$i.status" pass
   done
 }
 
@@ -119,7 +119,7 @@ _write_plan() { # $1 = path (relative to the fixture repo), $2… = extra lines
 # --- phase 0 intake (AC: no goal → stop, no state beyond intake) -------------
 
 @test "phase 0 fails while no goal is recorded and writes no state beyond intake" {
-  _split_run bash "$FLOW_GATE" plan 0
+  _split_run bash "$FLOW_GATE" plan-legacy 0
   [ "$RC" -ne 0 ]
   [ "$STDOUT" = "STATUS=FAIL" ]
   [ -f "$STATE" ]
@@ -129,19 +129,19 @@ _write_plan() { # $1 = path (relative to the fixture repo), $2… = extra lines
 }
 
 @test "a goalless phase 0 leaves flow_next re-offering phase 0" {
-  bash "$FLOW_GATE" plan 0 || true
-  _split_run bash "$FLOW_NEXT" plan
+  bash "$FLOW_GATE" plan-legacy 0 || true
+  _split_run bash "$FLOW_NEXT" plan-legacy
   [ "$RC" -eq 0 ]
   [[ "$STDOUT" == *"PHASE=0"* ]]
   [[ "$STDOUT" == *"DOC=$PLAN_DIR/phases/phase-0.md"* ]]
 }
 
 @test "phase 0 passes once the goal is recorded" {
-  bash "$FLOW_STATE" plan set goal "condense the skills"
-  _split_run bash "$FLOW_GATE" plan 0
+  bash "$FLOW_STATE" plan-legacy set goal "condense the skills"
+  _split_run bash "$FLOW_GATE" plan-legacy 0
   [ "$RC" -eq 0 ]
   [ "$STDOUT" = "STATUS=PASS" ]
-  _split_run bash "$FLOW_NEXT" plan
+  _split_run bash "$FLOW_NEXT" plan-legacy
   [[ "$STDOUT" == *"PHASE=1"* ]]
 }
 
@@ -159,16 +159,16 @@ _needs_no_repomix() {
 
 @test "phase 1 fails when the pack cannot be built and nothing was recorded" {
   _needs_no_repomix
-  _split_run bash "$FLOW_GATE" plan 1
+  _split_run bash "$FLOW_GATE" plan-legacy 1
   [ "$RC" -ne 0 ]
   [ "$STDOUT" = "STATUS=FAIL" ]
 }
 
 @test "phase 1 passes on an explicitly recorded DEGRADED verdict naming Grep" {
   _needs_no_repomix
-  bash "$FLOW_STATE" plan set ground_degraded \
+  bash "$FLOW_STATE" plan-legacy set ground_degraded \
     "DEGRADED: no repomix on PATH; grounded with live Grep"
-  _split_run bash "$FLOW_GATE" plan 1
+  _split_run bash "$FLOW_GATE" plan-legacy 1
   [ "$RC" -eq 0 ]
   [ "$STDOUT" = "STATUS=PASS" ]
 }
@@ -179,16 +179,16 @@ _needs_no_repomix() {
 # exists to prevent — so the *shape* of the verdict is part of the contract.
 @test "phase 1 refuses a ground_degraded value that is not a DEGRADED verdict" {
   _needs_no_repomix
-  bash "$FLOW_STATE" plan set ground_degraded "whatever"
-  _split_run bash "$FLOW_GATE" plan 1
+  bash "$FLOW_STATE" plan-legacy set ground_degraded "whatever"
+  _split_run bash "$FLOW_GATE" plan-legacy 1
   [ "$RC" -ne 0 ]
   [ "$STDOUT" = "STATUS=FAIL" ]
 }
 
 @test "phase 1 refuses a DEGRADED verdict that names no fallback provider" {
   _needs_no_repomix
-  bash "$FLOW_STATE" plan set ground_degraded "DEGRADED: no repomix on PATH"
-  _split_run bash "$FLOW_GATE" plan 1
+  bash "$FLOW_STATE" plan-legacy set ground_degraded "DEGRADED: no repomix on PATH"
+  _split_run bash "$FLOW_GATE" plan-legacy 1
   [ "$RC" -ne 0 ]
   [ "$STDOUT" = "STATUS=FAIL" ]
 }
@@ -236,7 +236,7 @@ _config() { # $1 = repomix_max_age_minutes value
   _config 240
   _pack_aged 90
 
-  _split_run bash "$FLOW_GATE" plan 1
+  _split_run bash "$FLOW_GATE" plan-legacy 1
   [ "$RC" -eq 0 ]
   [ "$STDOUT" = "STATUS=PASS" ]
   # A gate hardcoding 60 would have called a 90-minute-old pack stale.
@@ -248,7 +248,7 @@ _config() { # $1 = repomix_max_age_minutes value
   _config 30
   _pack_aged 45
 
-  _split_run bash "$FLOW_GATE" plan 1
+  _split_run bash "$FLOW_GATE" plan-legacy 1
   [ "$RC" -ne 0 ]
   [ "$STDOUT" = "STATUS=FAIL" ]
   # A gate hardcoding 60 would have called a 45-minute-old pack fresh.
@@ -260,7 +260,7 @@ _config() { # $1 = repomix_max_age_minutes value
   [ ! -f "$TMP/repo/team-sprint.config.yaml" ]
   _pack_aged 200
 
-  _split_run bash "$FLOW_GATE" plan 1
+  _split_run bash "$FLOW_GATE" plan-legacy 1
   [ "$RC" -eq 0 ]
   [ "$STDOUT" = "STATUS=PASS" ]
   [ ! -f "$TMP/repomix-ran" ]
@@ -273,7 +273,7 @@ _config() { # $1 = repomix_max_age_minutes value
 
   # repomix_refresh.sh exits 1 on a non-integer --max-age-minutes, so an
   # unvalidated value would surface as a FAIL that blames the pack.
-  _split_run bash "$FLOW_GATE" plan 1
+  _split_run bash "$FLOW_GATE" plan-legacy 1
   [ "$RC" -eq 0 ]
   [ "$STDOUT" = "STATUS=PASS" ]
   [ ! -f "$TMP/repomix-ran" ]
@@ -321,8 +321,8 @@ _config() { # $1 = repomix_max_age_minutes value
 
 @test "phase 6 passes for a plan whose filename carries a story id" {
   _write_plan "docs/plans/epic-1-widget.md"
-  bash "$FLOW_STATE" plan set plan_path docs/plans/epic-1-widget.md
-  _split_run bash "$FLOW_GATE" plan 6
+  bash "$FLOW_STATE" plan-legacy set plan_path docs/plans/epic-1-widget.md
+  _split_run bash "$FLOW_GATE" plan-legacy 6
   [ "$RC" -eq 0 ]
   [ "$STDOUT" = "STATUS=PASS" ]
 
@@ -333,8 +333,8 @@ _config() { # $1 = repomix_max_age_minutes value
 
 @test "phase 6 fails for a plan filename carrying no story id" {
   _write_plan "docs/plans/plan.md"
-  bash "$FLOW_STATE" plan set plan_path docs/plans/plan.md
-  _split_run bash "$FLOW_GATE" plan 6
+  bash "$FLOW_STATE" plan-legacy set plan_path docs/plans/plan.md
+  _split_run bash "$FLOW_GATE" plan-legacy 6
   [ "$RC" -ne 0 ]
   [ "$STDOUT" = "STATUS=FAIL" ]
 }
@@ -344,14 +344,14 @@ _config() { # $1 = repomix_max_age_minutes value
 @test "phase 7 refuses a plan carrying an unresolved finding, and phase 8 is not reached" {
   _write_plan "docs/plans/epic-1-widget.md" \
     '<!-- FINDING F001 (high): the intake gate accepts an empty goal -->'
-  bash "$FLOW_STATE" plan set plan_path docs/plans/epic-1-widget.md
+  bash "$FLOW_STATE" plan-legacy set plan_path docs/plans/epic-1-widget.md
   _pass_through 6
 
-  _split_run bash "$FLOW_GATE" plan 7
+  _split_run bash "$FLOW_GATE" plan-legacy 7
   [ "$RC" -ne 0 ]
   [ "$STDOUT" = "STATUS=FAIL" ]
 
-  _split_run bash "$FLOW_NEXT" plan
+  _split_run bash "$FLOW_NEXT" plan-legacy
   [[ "$STDOUT" == *"PHASE=7"* ]]
   [[ "$STDOUT" != *"PHASE=8"* ]]
   [[ "$STDOUT" != *"STATUS=DONE"* ]]
@@ -359,22 +359,22 @@ _config() { # $1 = repomix_max_age_minutes value
 
 @test "phase 7 passes once the finding is folded and the stamp is present" {
   _write_plan "docs/plans/epic-1-widget.md"
-  bash "$FLOW_STATE" plan set plan_path docs/plans/epic-1-widget.md
+  bash "$FLOW_STATE" plan-legacy set plan_path docs/plans/epic-1-widget.md
   _pass_through 6
 
-  _split_run bash "$FLOW_GATE" plan 7
+  _split_run bash "$FLOW_GATE" plan-legacy 7
   [ "$RC" -eq 0 ]
   [ "$STDOUT" = "STATUS=PASS" ]
 
-  _split_run bash "$FLOW_NEXT" plan
+  _split_run bash "$FLOW_NEXT" plan-legacy
   [[ "$STDOUT" == *"PHASE=8"* ]]
 }
 
 @test "phase 7 refuses a fold-clean plan that carries no review stamp" {
   mkdir -p docs/plans
   printf '# Epic 1 — widget\n\n## Story 1: Do the thing\n' > docs/plans/epic-1-widget.md
-  bash "$FLOW_STATE" plan set plan_path docs/plans/epic-1-widget.md
-  _split_run bash "$FLOW_GATE" plan 7
+  bash "$FLOW_STATE" plan-legacy set plan_path docs/plans/epic-1-widget.md
+  _split_run bash "$FLOW_GATE" plan-legacy 7
   [ "$RC" -ne 0 ]
   [ "$STDOUT" = "STATUS=FAIL" ]
 }
@@ -397,10 +397,10 @@ MD
   _write_impact
   _write_plan "docs/plans/epic-1-widget.md" \
     '### Debt coverage' '' '| ID | Story |' '| --- | --- |' '| F001 | 1 |'
-  bash "$FLOW_STATE" plan set plan_path docs/plans/epic-1-widget.md
+  bash "$FLOW_STATE" plan-legacy set plan_path docs/plans/epic-1-widget.md
   _pass_through 7
 
-  _split_run bash "$FLOW_GATE" plan 8
+  _split_run bash "$FLOW_GATE" plan-legacy 8
   [ "$RC" -ne 0 ]
   [ "$STDOUT" = "STATUS=FAIL" ]
 
@@ -408,7 +408,7 @@ MD
   [[ "$recorded" == *"F002"* ]]
   [[ "$recorded" != *"F001"* ]]
 
-  _split_run bash "$FLOW_NEXT" plan
+  _split_run bash "$FLOW_NEXT" plan-legacy
   [[ "$STDOUT" == *"PHASE=8"* ]]
   [[ "$STDOUT" != *"STATUS=DONE"* ]]
 }
@@ -417,21 +417,21 @@ MD
   _write_impact
   _write_plan "docs/plans/epic-1-widget.md" \
     '### Debt coverage' '' '| ID | Story |' '| --- | --- |' '| F001 | 1 |' '| F002 | 1 |'
-  bash "$FLOW_STATE" plan set plan_path docs/plans/epic-1-widget.md
+  bash "$FLOW_STATE" plan-legacy set plan_path docs/plans/epic-1-widget.md
   _pass_through 7
 
-  _split_run bash "$FLOW_GATE" plan 8
+  _split_run bash "$FLOW_GATE" plan-legacy 8
   [ "$RC" -eq 0 ]
   [ "$STDOUT" = "STATUS=PASS" ]
   [[ "$(jq -r '.phase["8"].stdout' "$STATE")" == *"CLEAN"* ]]
 
-  _split_run bash "$FLOW_NEXT" plan
+  _split_run bash "$FLOW_NEXT" plan-legacy
   [ "$STDOUT" = "STATUS=DONE" ]
 }
 
 # --- scope (AC: ac-validate is wired nowhere) --------------------------------
 
-@test "ac-validate appears nowhere under skills/plan" {
+@test "ac-validate appears nowhere under skills/plan-legacy" {
   # Same trap as the fork check: an absent directory greps as cleanly as a
   # clean one. Assert there is something to search before believing the miss.
   [ -d "$PLAN_DIR" ]
@@ -467,7 +467,7 @@ MD
 
 # --- the skill itself (AC: skill-validator grades it A) ----------------------
 
-@test "skills/plan is structurally clean with no more than two warnings" {
+@test "skills/plan-legacy is structurally clean with no more than two warnings" {
   report="$(bash "$STRUCT" "$PLAN_DIR")"
   fails="$(printf '%s' "$report" | grep -c '"status":"FAIL"' || true)"
   warns="$(printf '%s' "$report" | grep -c '"status":"WARN"' || true)"
@@ -485,7 +485,7 @@ MD
 # skills/skill-validator/scripts/` — five files, none of them simulate), and its
 # own SKILL.md:189 records that a SKIPPED phase does not block grade A, so this
 # is the whole of the AC that is executable.
-@test "skill-validator's own grader grades skills/plan an A" {
+@test "skill-validator's own grader grades skills/plan-legacy an A" {
   local sv="$ROOT/skills/skill-validator/scripts"
   local ledger="$TMP/plan-findings.txt"
   : > "$ledger"
@@ -521,9 +521,9 @@ MD
 # is one of those escapes, closed.
 # ---------------------------------------------------------------------------
 
-PG="skills/plan/scripts/plan_gate.sh"
+PG="skills/plan-legacy/scripts/plan_gate.sh"
 
-_art() { dirname "$(bash "$FLOW_STATE" plan path)"; }
+_art() { dirname "$(bash "$FLOW_STATE" plan-legacy path)"; }
 
 _frames() { # write $1 as this run's frames.md
   local art; art="$(_art)"; mkdir -p "$art"
@@ -650,12 +650,12 @@ _audit_f001() {
 
 @test "the phase 2 and 3 gates run through the driver and record their verdicts" {
   _pass_through 1
-  run bash "$FLOW_GATE" plan 2
+  run bash "$FLOW_GATE" plan-legacy 2
   [ "$status" -ne 0 ]
   _frames "$(printf '## D1 — a?\n- Frame A: x\n- Frame B: y')"
-  run bash "$FLOW_GATE" plan 2
+  run bash "$FLOW_GATE" plan-legacy 2
   [ "$status" -eq 0 ]
-  run bash "$FLOW_NEXT" plan
+  run bash "$FLOW_NEXT" plan-legacy
   printf '%s\n' "$output" | grep -q '^PHASE=3$'
 }
 
@@ -663,7 +663,7 @@ _audit_f001() {
   _frames "$(printf '## D1 — a?\n- Frame A: x\n- Frame B: y')"
   run bash "$ROOT/$PG" frames
   assert_success
-  bash "$FLOW_STATE" plan use other-feature >/dev/null
+  bash "$FLOW_STATE" plan-legacy use other-feature >/dev/null
   run bash "$ROOT/$PG" frames
   [ "$status" -eq 1 ]
   case "$output" in *REASON=no-frames*) ;; *) return 1 ;; esac

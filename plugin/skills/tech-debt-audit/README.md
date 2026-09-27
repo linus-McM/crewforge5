@@ -5,7 +5,7 @@ Human-facing documentation for the `tech-debt-audit` Claude Code skill. The exec
 ## Installation
 
 This copy ships inside the **crewforge5** plugin and needs no separate install —
-`/crewforge5:plan` phase 4 (and `master-plan`) spawn it through
+`/crewforge5:plan-legacy` phase 4 (and `master-plan`) spawn it through
 `scripts/flow/subskill_resolve.sh`, which prefers the plugin tree. Do **not**
 copy it into `$HOME/.claude/skills/` or a project's `.claude/skills/`: this fork
 has diverged from the upstream (`ksimback/tech-debt-skill`) — plugin-relative

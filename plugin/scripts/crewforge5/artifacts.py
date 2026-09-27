@@ -19,6 +19,10 @@ REQUIRED = {
     "spec.md": ["Requirements", "Design", "Concerns", "Open questions", "Proof"],
     "plan.md": ["Files that change", "Order of work", "Risks", "Proof"],
 }
+# plan.md's Order of work: numbered steps, each naming the failing test written first (R-S2).
+STEP = re.compile(r"^\s*(\d+)[.)]\s+(.*)$", re.MULTILINE)
+# Risk: high plans name the tech lead who accepts them (R-A2).
+TECH_LEAD = re.compile(r"^\s*(?:[-*]\s*)?Tech lead:\s*(?!<)\S", re.MULTILINE | re.IGNORECASE)
 METADATA = ("Status", "Risk")
 STATUSES = ("draft", "accepted")
 RISKS = ("low", "medium", "high")
@@ -71,8 +75,27 @@ def validate(md: str, required: list[str]) -> list[str]:
     for heading in required:
         if heading not in found:
             problems.append(f"missing section: {heading}")
-        elif all(PLACEHOLDER.match(line) for line in found[heading].splitlines() or [""]):
+        elif not filled(found[heading]):
             problems.append(f"unfilled section: {heading}")
+    return problems
+
+
+def filled(body: str) -> bool:
+    return not all(PLACEHOLDER.match(line) for line in body.splitlines() or [""])
+
+
+def plan_problems(md: str) -> list[str]:
+    """plan.md rules beyond the sections: every step names its failing test; Risk: high names a tech lead."""
+    found, problems = sections(md), []
+    order = found.get("Order of work", "")
+    if filled(order):
+        steps = STEP.findall(order)
+        if not steps:
+            problems.append("Order of work has no numbered steps (`1. ...`)")
+        if untested := [n for n, body in steps if "test" not in body.lower()]:
+            problems.append(f"Order of work step {', '.join(untested)} names no failing test")
+    if meta(md, "Risk") == "high" and not TECH_LEAD.search(found.get("Risks", "")):
+        problems.append("Risk: high needs a `Tech lead: <name>` line under Risks; the tech lead accepts this plan")
     return problems
 
 

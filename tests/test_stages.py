@@ -146,3 +146,36 @@ def test_status_after_the_plan_is_accepted_points_at_execute(run, accepted_plan)
 def test_status_for_an_unknown_slug_is_a_refusal(run):
     out = run("status", "--slug", "ghost")
     assert out["ok"] is False and "ghost" in out["reason"]
+
+
+def draft_plan(run, repo, **overrides) -> Path:
+    run("build", "new")
+    path = repo / FEAT / "plan.md"
+    fill(path, **{**PLAN_BODY, **overrides})
+    return path
+
+
+def test_build_check_refuses_a_step_that_names_no_failing_test(run, repo, accepted_spec):
+    draft_plan(run, repo, **{"Order of work": "1. write test_feat, it fails first\n2. implement feat"})
+    out = run("build", "check")
+    assert out["ok"] is False and "step 2 names no failing test" in out["reason"]
+
+
+def test_build_check_refuses_an_order_of_work_without_numbered_steps(run, repo, accepted_spec):
+    draft_plan(run, repo, **{"Order of work": "just do it, test later"})
+    out = run("build", "check")
+    assert out["ok"] is False and "no numbered steps" in out["reason"]
+
+
+def test_high_risk_plan_needs_a_named_tech_lead(run, repo, accepted_spec):
+    path = draft_plan(run, repo)
+    path.write_text(artifacts.set_meta(path.read_text(), "Risk", "high"))
+    out = run("build", "check")
+    assert out["ok"] is False and "Tech lead: <name>" in out["reason"]
+    fill(path, Risks="- Tech lead: Dana\n- the migration is the riskiest step")
+    assert run("build", "check")["ok"]
+
+
+def test_unknown_feature_points_at_a_command_that_exists(run):
+    out = run("status", "--slug", "nope")
+    assert out["ok"] is False and out["next"] == "/crewforge5:plan status"

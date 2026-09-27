@@ -88,6 +88,8 @@ def check(stage: str, root: Path, slug: str | None) -> dict:
         fail(f"{artifact} missing", slug=feature.name, next=command(stage, "new", feature.name))
     text = path.read_text()
     problems = a.validate(text, a.REQUIRED[artifact])
+    if stage == "build":
+        problems += a.plan_problems(text)
     if stage == "build" and p.config(root)["build"]["require_adversarial_stamp"] and not a.stamped(text):
         problems.append("missing adversarial-review stamp (status=clean or status=user-override); [build] require_adversarial_stamp is on")
     if problems:

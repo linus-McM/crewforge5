@@ -58,7 +58,7 @@ INTENT_BODY = {"Problem": "p", "Proposed outcome": "o", "Affected users and syst
 SPEC_BODY = {"Requirements": "r", "Design": "d", "Concerns": "none", "Open questions": "none", "Proof": "tests/test_feat.py"}
 PLAN_BODY = {
     "Files that change": "- src/feat.py (new)\n- tests/test_feat.py (new)",
-    "Order of work": "1. failing test\n2. implement",
+    "Order of work": "1. write test_feat, it fails first\n2. implement feat — test: test_feat passes",
     "Risks": "none",
     "Proof": "tests/test_feat.py passes",
 }

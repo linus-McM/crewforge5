@@ -5,7 +5,7 @@ description: Drive a reviewed plan to a merged commit — TDD agent fleet in an 
 ---
 You are running `crewforge5:execute`: a stamped plan in, a merged commit out. The eight phases that do the work are `team-sprint`'s, unchanged and loaded from where they live; this skill is the state machine that offers them one at a time, records each gate's verdict, and adds the two phases team-sprint never had — an integration diagram of what actually merged, and a distillation pass over what the run taught.
 
-The plan must already be adversarial-clean. Reviewing it is `crewforge5:plan`'s job, and Phase 1 hard-STOPs a plan nobody reviewed.
+The plan must already be adversarial-clean. Reviewing it is `crewforge5:plan-legacy`'s job, and Phase 1 hard-STOPs a plan nobody reviewed.
 
 ## Path aliases
 
@@ -107,5 +107,5 @@ bash $FLOW/subskill_resolve.sh use-repo-code               # the absolute SKILL.
 - **Worktree isolation is absolute.** Sprint operations never touch the main working tree.
 - **A gate verdict is recorded, not remembered.** `flow_gate.sh` writes it to `state.json`; a verdict announced in prose and not gated did not happen.
 - **Spawners block-collect-close every child.** Never end a turn with a live child — it sleeps forever.
-- **Phase 1 has no override.** An unstamped plan goes back to `crewforge5:plan`.
+- **Phase 1 has no override.** An unstamped plan goes back to `crewforge5:plan-legacy`.
 - **No force-push and no main-branch writes** without explicit user confirmation.

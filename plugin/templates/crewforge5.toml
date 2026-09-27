@@ -10,3 +10,10 @@ require_adversarial_stamp = false   # `build check` needs an adversarial-review 
 [checkpoint]
 enabled = true              # commit the stage's output at each accept; CREWFORGE5_CHECKPOINT=off also disables
 paths = [".crewforge5.toml"]   # committed alongside the home directory; git-ignored entries are skipped
+
+[workflows]
+enabled = true              # commands run the read-only stage workflows (crewforge5:<name>); CREWFORGE5_WORKFLOWS=off also disables
+auto_env = true             # session start merges [workflows.env] into .claude/settings.local.json
+
+[workflows.env]
+CLAUDE_CODE_WORKFLOWS = "1" # only CLAUDE_CODE_WORKFLOW* keys are accepted; anything else is refused

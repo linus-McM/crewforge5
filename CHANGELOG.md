@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+Phase 4 of `docs/specs/cc-sdlc-alignment.md` (planning stages as slash commands).
+
+- `/crewforge5:plan`, `/crewforge5:design` and `/crewforge5:build` (`new | check | accept | status`) are commands in `plugin/commands/` over the verdict CLI: the R-V5 preamble, least-privilege `allowed-tools`, at most 40 lines each (R-S1, R-S2, R-V5). `plan new` folds in the adhd/grill-me interview, `design new` the tech-debt audit (Concerns) and GOAL_IMPACT trace (Requirements), `build new` the team-sprint-planner story contract. Only a human accepts, through AskUserQuestion.
+- **Breaking:** the old bash planning flow is now the hidden `/crewforge5:plan-legacy` (its state moves to `.crewforge5/plan-legacy/`).
+- `build check` refuses an Order-of-work step that names no failing test, and a `Risk: high` plan without `Tech lead: <name>` under Risks.
+- Read-only workflows in `plugin/workflows/`: `intent-scout`, `design-panel`, `plan-critic`, a skeptic per finding, optional `args.pack`; `meta` is JSON (R-W1, R-W2). Every workflow step has an inline fallback (R-W3).
+- `crewforge5 workflows list|env`; a Python `SessionStart` hook merges `[workflows.env]` (only `CLAUDE_CODE_WORKFLOW*`) into `.claude/settings.local.json` in projects with `.crewforge5.toml` (R-W4). Off: `[workflows] enabled|auto_env = false`, `CREWFORGE5_WORKFLOWS=off`.
+- Always-loaded: ~524 tok across 13 entries (was ~495 tok, 11); `budget_check.sh` now asserts the listed commands too. pytest lints the commands and checks workflow meta/phase drift.
+
 ## 0.4.5 — 2026-09-27
 
 Phase 3 of `docs/specs/cc-sdlc-alignment.md` (verdict CLI skeleton; the bash flows are unchanged and still drive `/crewforge5:plan`).

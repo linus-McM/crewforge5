@@ -17,11 +17,11 @@ guide for working on the repo; `docs/specs/cc-sdlc-alignment.md` is the roadmap.
 
 | Path | What it is |
 | --- | --- |
-| `plugin/` | The installable package: `.claude-plugin/plugin.json`, `agents/`, `commands/`, `hooks/`, `rules/`, `skills/`, and the runtime `scripts/` the skills call |
+| `plugin/` | The installable package: `.claude-plugin/plugin.json`, `agents/`, `commands/`, `hooks/`, `rules/`, `skills/`, `templates/`, `workflows/`, and the runtime `scripts/` (bash gates and the Python verdict CLI) |
 | `.claude-plugin/marketplace.json` | The marketplace entry (`source: git-subdir`, `path: plugin`) |
 | `scripts/tests/` | The repo-level bats suite (flow driver, gates, docs surface, repo hygiene) and the one shared `lib/bats-fallback.sh` |
 | `scripts/verify_*.sh` | Dev probes: degradation (CI), rule scoping and GNU portability (by hand) |
-| `scripts/bump_version.py`, `tests/` | The CI version bump (spec R-H6) and its pytest suite |
+| `scripts/bump_version.py`, `tests/` | The CI version bump (spec R-H6); pytest for it, the verdict CLI, the commands and the workflows |
 | `docs/` | Specs and ADRs |
 
 Dogfood output (the generated crew in `.claude/crews/` and `.claude/agents/`,

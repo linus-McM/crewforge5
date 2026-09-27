@@ -11,7 +11,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import checkpoint, stages
+from . import checkpoint, stages, workflows
 from .project import Blocked, fail
 
 
@@ -24,6 +24,8 @@ def lifecycle(stage: str, action: str):
 
 COMMANDS = {
     **{(s, act): lifecycle(s, act) for s in stages.ORDER for act in ("new", "check", "accept")},
+    ("workflows", "list"): lambda root, arg, ns: workflows.catalog(root),
+    ("workflows", "env"): lambda root, arg, ns: workflows.env(root),
     ("status", None): lambda root, arg, ns: stages.status(root, ns.slug),
 }
 # Stage boundaries: after a success, checkpoint commits the verdict's `path` with this action label (R-A3).
