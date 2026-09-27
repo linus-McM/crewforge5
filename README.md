@@ -22,12 +22,14 @@ guide for working on the repo; `docs/specs/cc-sdlc-alignment.md` is the roadmap.
 | `scripts/tests/` | The repo-level bats suite (flow driver, gates, docs surface, repo hygiene) and the one shared `lib/bats-fallback.sh` |
 | `scripts/verify_*.sh` | Dev probes: degradation (CI), rule scoping and GNU portability (by hand) |
 | `scripts/bump_version.py`, `tests/` | The CI version bump (spec R-H6) and its pytest suite |
-| `.claude/` | The dogfood crew that configures development of this repo |
 | `docs/` | Specs and ADRs |
+
+Dogfood output (the generated crew in `.claude/crews/` and `.claude/agents/`,
+`crewforge5/`, `.crewforge5/`) lives only on the `dogfood` branch (spec R-H8).
 
 ## Tests
 
-1,029 cases: 1,018 bats cases cover the shell toolchain and the plugin's own
+1,030 cases: 1,019 bats cases cover the shell toolchain and the plugin's own
 scripts, and 11 pytest cases cover the version bump. CI runs the bats suites on
 Ubuntu and macOS, plus the gates, a degradation job and, on pull requests, the
 automatic version bump. `just check` runs the lot (`just test`, `just lint`,

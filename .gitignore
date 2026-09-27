@@ -14,3 +14,8 @@ team-sprint.config.yaml
 .venv/
 .pytest_cache/
 .ruff_cache/
+# Dogfood output (spec R-H8): committed only on the `dogfood` branch.
+crewforge5/
+.crewforge5/
+.claude/crews/
+.claude/agents/

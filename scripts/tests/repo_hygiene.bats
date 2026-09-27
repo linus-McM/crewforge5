@@ -118,3 +118,19 @@ _frontmatter() {
   done
   [ ! -e "$ROOT/CLAUDE.md" ]
 }
+
+# --- R-H8: dogfood output lives on the `dogfood` branch, not here -------------
+
+@test "R-H8: no dogfood output is tracked on a package branch" {
+  local tracked
+  # The dogfood branch itself is the one place this output may be committed.
+  if [ "$(git -C "$REPO" rev-parse --abbrev-ref HEAD 2>/dev/null)" = "dogfood" ]; then
+    skip "on the dogfood branch, where this output belongs"
+  fi
+  tracked="$(git -C "$REPO" ls-files -- crewforge5 .crewforge5 .team-sprint \
+               .claude/crews .claude/agents)"
+  if [ -n "$tracked" ]; then
+    printf 'dogfood output tracked outside the dogfood branch:\n%s\n' "$tracked"
+    false
+  fi
+}

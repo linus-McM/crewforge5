@@ -185,7 +185,22 @@ _three_layers_hits() {
   # $CLAUDE_MD — rules/recon-ladder.md in this plugin tree), not a hard-coded
   # root CLAUDE.md: a repo's own dev CLAUDE.md is not the recon-section rewrite.
   rel="${CLAUDE_MD#"$REPO"/}"
-  numstat="$(git -C "$REPO" diff --numstat "$base"...HEAD -- "$rel")"
+  # Follow renames. A path-limited diff cannot pair a move (e.g. the package
+  # split's `rules/` -> `plugin/rules/`), so it would budget the whole file as
+  # added. Resolve the file's top-level path, find its rename source in the
+  # same range, and diff both paths with -M: a pure move is then 0/0.
+  local top src specs
+  top="$(git -C "$REPO" ls-files --full-name -- "$rel")"
+  [ -n "$top" ] || top="$rel"
+  specs=(":(top)$top")
+  src="$(git -C "$REPO" diff -M --name-status --diff-filter=R "$base"...HEAD \
+    | awk -F'\t' -v dst="$top" '$3 == dst { print $2; exit }')"
+  [ -z "$src" ] || specs+=(":(top)$src")
+  numstat="$(git -C "$REPO" diff -M --numstat "$base"...HEAD -- "${specs[@]}")"
+  # A pure rename carries no line change: treat it as no diff for this file.
+  if [ -n "$numstat" ] && [ -z "$(printf '%s\n' "$numstat" | awk '$1 != 0 || $2 != 0')" ]; then
+    numstat=""
+  fi
   if [ -z "$numstat" ]; then
     # Post-merge, `base` resolves to the merge commit and the story diff no
     # longer exists — the budget is a property of a change, and the change is
@@ -207,7 +222,7 @@ _three_layers_hits() {
     echo "CLAUDE.md budget blown: +$added -$deleted = net $net (max 8)"
     return 1
   fi
-  git -C "$REPO" diff "$base"...HEAD -- "$rel" \
+  git -C "$REPO" diff -M "$base"...HEAD -- "${specs[@]}" \
     | grep -qF 'never escalate a tier you can answer at a lower one' \
     || { echo "the committed CLAUDE.md diff never adds the escalation ladder"; return 1; }
 }
