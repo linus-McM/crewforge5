@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.5 — 2026-09-27
 
 Phase 3 of `docs/specs/cc-sdlc-alignment.md` (verdict CLI skeleton; the bash flows are unchanged and still drive `/crewforge5:plan`).
 
