@@ -10,17 +10,18 @@ Fenced code blocks are stripped before matching: instructions already inside a
 Usage:
   mech-candidates.py --skills-dir DIR [--min-hits N]   (default N=3)
 """
+
 import argparse
 import re
 from pathlib import Path
 
 SMELLS = {
-    "counting":   r"\b(count|tally|estimate|measure|sum up)\b",
+    "counting": r"\b(count|tally|estimate|measure|sum up)\b",
     "check-each": r"\b(verify|check|confirm|ensure) (that|each|every|all)\b",
-    "threshold":  r"(?:(?:>=?|<=?|more than|less than|fewer than|exceeds?|at least|at most|under|over) ?\d+|\b\d+ ?(?:lines|chars|characters|words|files|items|rows|warnings|failures|seconds)\b)",
-    "searching":  r"\b(search for|grep|scan for|look for every)\b",
-    "comparing":  r"\b(compare|diff) (the|each|against|with)\b",
-    "invariant":  r"\b(must match|byte-identical|must exist|must resolve|must survive)\b",
+    "threshold": r"(?:(?:>=?|<=?|more than|less than|fewer than|exceeds?|at least|at most|under|over) ?\d+|\b\d+ ?(?:lines|chars|characters|words|files|items|rows|warnings|failures|seconds)\b)",
+    "searching": r"\b(search for|grep|scan for|look for every)\b",
+    "comparing": r"\b(compare|diff) (the|each|against|with)\b",
+    "invariant": r"\b(must match|byte-identical|must exist|must resolve|must survive)\b",
 }
 
 

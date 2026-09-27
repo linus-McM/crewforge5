@@ -11,6 +11,7 @@ Usage:
   baseline.py --skills-dir DIR --out FILE   write the immutable baseline snapshot
   baseline.py --skills-dir DIR --report     print current measurements to stdout
 """
+
 import argparse
 import json
 import re
@@ -24,9 +25,7 @@ def parse_skill(path: Path):
     if not m:
         return None
     frontmatter, body = m.group(1), m.group(2)
-    dm = re.search(
-        r"^description:[ \t]*(.*(?:\n[ \t]+\S.*)*)", frontmatter, re.MULTILINE
-    )
+    dm = re.search(r"^description:[ \t]*(.*(?:\n[ \t]+\S.*)*)", frontmatter, re.MULTILINE)
     desc = dm.group(1) if dm else ""
     desc = re.sub(r"\s+", " ", desc).strip()
     if len(desc) >= 2 and desc[0] == desc[-1] and desc[0] in "\"'":
@@ -36,10 +35,7 @@ def parse_skill(path: Path):
         "desc_chars": len(normalized),
         "body_chars": len(body),
         "trigger_phrases": re.findall(r'"([^"]+)"', desc),
-        "headings": [
-            h.strip()
-            for h in re.findall(r"^#{2,3}\s+(.+)$", body, re.MULTILINE)
-        ],
+        "headings": [h.strip() for h in re.findall(r"^#{2,3}\s+(.+)$", body, re.MULTILINE)],
     }
 
 
