@@ -1,0 +1,25 @@
+# Install once with: just hooks   (runs: uvx pre-commit install)
+# Run everywhere with: uvx pre-commit run --all-files
+# CI runs the same thing (.github/workflows/ci.yml, gates job). ruff joins when
+# the Python gate layer lands (spec D1, phase 3).
+minimum_pre_commit_version: "3.0.0"
+# Test fixtures are byte-exact inputs (e.g. a .gitignore with no trailing
+# newline is the case under test) — no hook rewrites them.
+exclude: ^skills/[^/]+/scripts/fixtures/
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-json
+      - id: check-toml
+      - id: check-yaml
+      - id: detect-private-key
+      - id: end-of-file-fixer
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+        # Same scope as `just lint` and the CI shellcheck steps: shipped *.sh.
+        files: ^(scripts|skills)/.*\.sh$

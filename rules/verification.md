@@ -26,4 +26,3 @@ confident guess.
 Precedence: skill and agent instructions win inside their own scope; this file wins on
 process; `SOUL.md` wins on tone and judgment. Between two rules here, the specific beats
 the general.
-

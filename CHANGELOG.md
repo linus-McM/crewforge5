@@ -4,10 +4,13 @@
 
 Phase 1 of `docs/specs/cc-sdlc-alignment.md` (hygiene, no behaviour change).
 
-- Root `CLAUDE.md` (Commands / Architecture / Conventions / Things Claude gets wrong) and a `justfile` (`test lint gates check hooks opus fable`).
+- Root `CLAUDE.md` (Commands / Architecture / Conventions / Things Claude gets wrong) and a `justfile` (`test lint precommit gates check hooks opus fable`).
 - Removed the 8 historical sprint plans from `skills/team-sprint/references/docs/plans/`; ADRs moved to `docs/adr/`. Tests that read the recon plan now read `scripts/fixtures/recon/output-grammar.md`; `parse_stories.bats`'s real-plan test runs against a trimmed fixture instead of always skipping.
 - One `bats-fallback.sh` (`scripts/tests/lib/`) replaces three copies.
 - CI now runs the self-improve, sprint-watchdog, token-slim and team-sprint-planner suites.
+- `.pre-commit-config.yaml` (check-json/toml/yaml, detect-private-key, end-of-file-fixer, shellcheck), run in CI and installed by `just hooks`. Test fixtures are excluded; ruff joins with the Python layer (phase 3).
+- CI validates the marketplace with `claude plugin validate --strict .` and the plugin manifest without `--strict`. Strict plugin validation depends on R-H2 (phase 2): until the `plugin/` split, the root dev CLAUDE.md is inside the package and raises one warning.
+- `recon_distribution.bats` AC2 now budgets the file that holds the recon ladder (`rules/recon-ladder.md`), not the root `CLAUDE.md`.
 - Every agent declares `name`, `description`, `tools` and `model`.
 - The `.`-defaulting `CREWFORGE5_ROOT` fallback is gone from every `/crewforge5:plan` call site: its gates use the driver-derived root, its docs `${CLAUDE_PLUGIN_ROOT}`.
 - `scripts/tests/repo_hygiene.bats` pins all of the above.

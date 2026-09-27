@@ -107,6 +107,25 @@ jobs:
       - name: Names match paths
         run: bash scripts/name_check.sh
 
+      # R-H5: the same hooks a contributor runs locally (`just hooks`).
+      - uses: astral-sh/setup-uv@v5
+      - name: Pre-commit hooks
+        run: uvx pre-commit run --all-files --show-diff-on-failure
+
+      # R-H5: the marketplace validates strictly. The plugin manifest validates
+      # without --strict until R-H2 (phase 2) moves the package to plugin/: the
+      # repo root is still the plugin root, so the dev CLAUDE.md there raises a
+      # single "not loaded as project context" warning. Phase 2 switches this to
+      # `plugin validate --strict plugin`.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Plugin and marketplace manifests validate
+        run: |
+          set -euo pipefail
+          npx --yes @anthropic-ai/claude-code plugin validate --strict .
+          npx --yes @anthropic-ai/claude-code plugin validate .claude-plugin/plugin.json
+
       - name: Structural self-validation
         run: bash scripts/validate_all.sh
 

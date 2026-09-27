@@ -28,4 +28,3 @@ End each round with a summary block in the conversation (not in the doc):
 ```
 
 The user reads this summary to decide whether to continue.
-

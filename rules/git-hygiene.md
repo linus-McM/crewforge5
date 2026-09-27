@@ -11,4 +11,3 @@ description: Git and shell hygiene: stage explicit paths, check status before tr
   any git/build/test command — use absolute paths or an explicit `cd <repo>`.
 - Never run `find` from `/` or `~`. Scope it to the project tree.
 - For any UI change, screenshot before AND after. Do not assume the change landed.
-

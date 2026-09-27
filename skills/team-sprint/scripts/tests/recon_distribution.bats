@@ -179,9 +179,13 @@ _three_layers_hits() {
 }
 
 @test "AC2 the CLAUDE.md rewrite is anchored to the sprint base and adds at most 8 net lines" {
-  local base numstat added deleted net
+  local base numstat added deleted net rel
   base="$(_base_ref)" || skip "no sprint base ref in this tree — this is a story-time budget AC, inert outside the repo the story ran in"
-  numstat="$(git -C "$REPO" diff --numstat "$base"...HEAD -- CLAUDE.md)"
+  # Budget the file that actually carries the ladder (setup resolves it into
+  # $CLAUDE_MD — rules/recon-ladder.md in this plugin tree), not a hard-coded
+  # root CLAUDE.md: a repo's own dev CLAUDE.md is not the recon-section rewrite.
+  rel="${CLAUDE_MD#"$REPO"/}"
+  numstat="$(git -C "$REPO" diff --numstat "$base"...HEAD -- "$rel")"
   if [ -z "$numstat" ]; then
     # Post-merge, `base` resolves to the merge commit and the story diff no
     # longer exists — the budget is a property of a change, and the change is
@@ -203,7 +207,7 @@ _three_layers_hits() {
     echo "CLAUDE.md budget blown: +$added -$deleted = net $net (max 8)"
     return 1
   fi
-  git -C "$REPO" diff "$base"...HEAD -- CLAUDE.md \
+  git -C "$REPO" diff "$base"...HEAD -- "$rel" \
     | grep -qF 'never escalate a tier you can answer at a lower one' \
     || { echo "the committed CLAUDE.md diff never adds the escalation ladder"; return 1; }
 }

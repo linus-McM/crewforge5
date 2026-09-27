@@ -196,8 +196,8 @@ used by the story plans.
 
 Each phase is one or more PRs and leaves the plugin working.
 
-1. **Hygiene first (low risk).** R-H1, R-H3, R-H4, R-H5, R-H7, R-H9, R-P2, R-V4. No change to behaviour. (done)
-2. **Package split.** R-H2, R-H6, and strict validation in CI.
+1. **Hygiene first (low risk).** R-H1, R-H3, R-H4, R-H5, R-H7, R-H9, R-P2, R-V4. No change to behaviour. (done, except two R-H5 parts deferred: `--strict plugin` needs R-H2's `plugin/` directory and moves to phase 2, and the ruff hook arrives with the Python layer in phase 3. Until R-H2, CI validates `.claude-plugin/plugin.json` without `--strict`, because the root dev CLAUDE.md sits inside the package and raises one warning.)
+2. **Package split.** R-H2, R-H6, and strict plugin validation in CI (`claude plugin validate --strict plugin`, deferred from R-H5).
 3. **The verdict CLI skeleton** in Python (D1): `status`, `plan new/check/accept`, templates, checkpoint commits (R-V1–2, R-S3, R-S6, R-A2–3, R-C1). The existing `/crewforge5:plan` flow keeps working alongside it.
 4. **Planning stages** on the CLI: `plan`, `design` and `build new/accept` (R-S2), with the `intent-scout`, `design-panel` and `plan-critic` workflows (R-W1–3).
 5. **Build and TDD**: red/green/sync/fix, and the story-executor workflow in worktrees (R-T1–6, R-G2–3). Run execute's team-sprint alongside it until parity; then retire team-sprint and its recon (R-K2).

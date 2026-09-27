@@ -73,4 +73,3 @@ durable project knowledge only; not session-specific scratch.
 cite an observation to support "we decided / we knew / this was fixed," but verify "the code does X
 now" with grep/graphify against the live tree. When memory and the live tree disagree, the live tree
 wins (same rule as the repomix pack and the graphify graph).
-

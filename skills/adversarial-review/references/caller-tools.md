@@ -13,4 +13,3 @@ This skill assumes the invoking agent has these tools loaded:
 The `general-purpose` subagent type carries the core tools. The graphify and claude-mem integrations are optional and fail-soft — when their tools are absent, skip those verification sources silently (do not block the review). If a *required* tool is missing, surface it immediately rather than completing work that cannot be delivered.
 
 **Recommended model:** `opus`. Adversarial review is dense reasoning over real codebase evidence; defaulting to a smaller model produces shallow findings and higher fabrication rates.
-

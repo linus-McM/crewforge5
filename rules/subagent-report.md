@@ -41,4 +41,3 @@ without waiting to be prompted; never leave findings as inline prose instead.
   before citing it (`evidence-fresh.sh`). On disagreement, live wins.
 - If a claim cannot be verified, mark it `UNVERIFIED` and downgrade severity. A fabricated
   finding is worse than no finding.
-

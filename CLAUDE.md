@@ -5,7 +5,8 @@ Claude Code plugin. The repo root is the installable package for now (the move t
 ## Commands
 - Test: `just test` (every bats suite; all green, never skip or delete a failing test). While iterating, run `bats <file>` directly: `run-all.sh` re-runs the whole team-sprint suite inside `lint_skill.sh`.
 - Lint: `just lint` (`shellcheck` over every `.sh` under `scripts/` and `skills/`; must be clean under shellcheck 0.9, which Ubuntu CI installs).
-- Release gates: `just gates` (`budget_check.sh`, `name_check.sh`, `validate_all.sh`, `verify_degradation.sh`, `claude plugin validate --strict`).
+- Pre-commit: `just precommit` (the `.pre-commit-config.yaml` hooks CI runs); `just hooks` installs them.
+- Release gates: `just gates` (`budget_check.sh`, `name_check.sh`, `validate_all.sh`, `verify_degradation.sh`, `claude plugin validate`; the plugin manifest goes `--strict` after R-H2).
 - Everything: `just check`. Run it before reporting a task complete and paste the tail. If a test fails, fix the code, not the test.
 - Try locally: `just opus` (or `just fable`) loads this checkout as the plugin; then `/crewforge5:plan`.
 - No `just`? Each recipe is a plain command in `justfile`; CI runs the same ones.

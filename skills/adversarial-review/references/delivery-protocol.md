@@ -15,4 +15,3 @@ Workflow (final-return case — the normal one):
 SendMessage schema (cross-boundary case only): `SendMessage({ to: "team-lead", summary: "Spec review <id>: PASS|FAIL|NEEDS_FIXES", message: "<full structured report — include the task ID>" })` — `to` is the teammate name (not `recipient`), the body parameter is `message` (not `content`), `summary` is required when `message` is a string, and there is no `metadata` field (embed the task ID inside `message`). Inspect the returned tool result to confirm delivery before proceeding.
 
 A correctly final-returned chunk or graph review **is** delivered — it is not treated as incomplete. Only findings that reach neither the final return nor a persisted artifact are undelivered; that is what the watchdog reopens.
-
