@@ -1,5 +1,5 @@
 # Spec: Align CrewForge5 with the cc_sdlc process model
-From: review of `linus-McM/cc_sdlc` @ main (plugin 0.6.0) against CrewForge5 0.4.4 (2026-09-26). Status: draft. Risk: high.
+From: review of `linus-McM/cc_sdlc` @ main (plugin 0.6.0) against CrewForge5 0.4.4 (2026-09-26). Status: draft (decisions D1–D5 made). Risk: high.
 
 > Risk is high because this changes the plugin's public surface (command names, artifact
 > locations, state layout) and proposes moving the gate layer to a new runtime.
@@ -61,7 +61,7 @@ Three things in the cc_sdlc model are what make it suit current Claude models, a
 ```
 crewforge5/                         # repo root = dev tooling only
 ├── CLAUDE.md                       # R-H1
-├── justfile  .pre-commit-config.yaml  pyproject.toml (if D1=Python)
+├── justfile  .pre-commit-config.yaml  pyproject.toml   # D1: Python
 ├── .claude-plugin/marketplace.json # source: git-subdir → plugin/
 ├── tests/                          # pytest (or bats) for the CLI
 └── plugin/                         # the installable package
@@ -76,7 +76,7 @@ crewforge5/                         # repo root = dev tooling only
     ├── agents/                     # reviewer, verifier, crew-factory, stack-surveyor (lean)
     ├── workflows/                  # read-only fan-out scripts, run as crewforge5:<name>
     ├── hooks/hooks.json
-    ├── scripts/crewforge5.py       # launcher → scripts/crewforge5/ package (or crewforge5.sh, D1)
+    ├── scripts/crewforge5.py       # launcher → scripts/crewforge5/ package (D1: Python stdlib, uv run --no-project)
     ├── skills/                     # only skills a model must load for know-how
     └── templates/                  # intent.md spec.md plan.md REVIEW.md crewforge5.toml
 ```
@@ -114,6 +114,7 @@ used by the story plans.
 - **R-S4** `/crewforge5:init` keeps its eight phases of config hygiene. It is re-expressed as `init new` (measure → write `crewforge5/init-<date>/audit.md` with findings), `init check` and `init accept` (apply the approved slimming/rectify edits, re-measure, commit `init(<slug>): accept — audit.md`).
 - **R-S5** The crew factory becomes its own command, `/crewforge5:crew` (`survey | forge | validate | status`), instead of an implicit step inside execute preflight. `build accept` refuses when the plan's language has no crew with passing validation grades, and `next` names `/crewforge5:crew forge <lang>`.
 - **R-S6** `status` with no slug lists the features, which artifacts are accepted, present or missing, and the single next command. It replaces `flow_state.sh list`.
+- **R-S7** (D5) `/crewforge5:execute` stays as an alias that runs `build` then `review` on an accepted plan, printing the two underlying commands it ran. It is kept for at least one minor release after 1.0 and documented as the shortcut, not the primary surface.
 
 ### 4.3 Build and TDD evidence (R-T)
 - **R-T1** `build red <step>` runs the configured test command and succeeds only if the tests fail. `build green <step>` succeeds only if they pass. Both append `{step, phase, sha, ts, exit}` to `tdd.jsonl`.
@@ -134,7 +135,7 @@ used by the story plans.
   - `config-audit` (init)
 - **R-W3** Every command has an inline fallback when `crewforge5 workflows list` reports `enabled: false` or the Workflow tool is missing. The Python/bash gate gives the same verdict either way.
 - **R-W4** The session-start hook merges `[workflows.env]` (only `CLAUDE_CODE_WORKFLOW*` keys; anything else is refused) into `.claude/settings.local.json`, but only in projects that have `.crewforge5.toml`. `env_install.sh` and its `CREWFORGE5_ROOT` export are no longer needed.
-- **R-W5** TeamCreate/SendMessage are used only for graph-mode parallel stories that need live peer messages, and only if D3 keeps them. `sendmessage-protocol.md` shrinks to match.
+- **R-W5** (D3) Parallel story execution moves to Workflow fan-out plus git worktrees. TeamCreate/SendMessage stay in graph mode until one real sprint has been run both ways and the Workflow version is no slower (C4); only then are they removed and `sendmessage-protocol.md` deleted.
 
 ### 4.5 Hooks as guardrails (R-G)
 - **R-G1** Hooks are on by default in any project with `.crewforge5.toml` and off elsewhere. `CREWFORGE5_HOOKS` is removed. Off switch: `[hooks] enabled = false`.
@@ -156,12 +157,14 @@ used by the story plans.
 - **R-K1** Every command begins with `crewforge5 knowledge bootstrap` (idempotent, check-only by default), then reads a knowledge index before raw files. Call-graph questions go to `graphify query` / `graphify affected` before grep.
 - **R-K2** `recon.sh` and its providers are replaced by per-stage context packs, as in cc_sdlc's `packs.py`. The seeds come from the stage artifact, grown one graph hop out. The packs are pinned to HEAD, keep secrets out (frozen exclude list plus a secret scan that fails closed), and are passed to workflow agents as `args.pack`, marked as data, never instructions.
 - **R-K3** `build accept` and `review review` require a pack built at HEAD. Other stages' packs are advisory.
-- **R-K4** If D2 chooses to share, CrewForge5 reads and writes cc_sdlc's `sdlc/knowledge/` bundle when it is present, rather than creating a second one.
+- **R-K4** (D2) When cc_sdlc's `sdlc/knowledge/` bundle is present, CrewForge5 reads and writes it rather than creating a second one. Without it, CrewForge5 builds the same OKF layout under its own home.
+
+- **R-K5** (D4) Each stage ends with an Archify stage document under `crewforge5/<slug>/docs/`, as cc_sdlc does (`plan` architecture, `design` dataflow, `build` workflow, `review` sequence). `plan|design|build accept` and `review review` are refused while the document is stale against its sources. The draw.io integration diagram (execute phase 8) is retired. Off switches: `[docs] enabled = false`, `CREWFORGE5_DOCS=off`; without Node the step is skipped, not failed.
 
 ### 4.8 Agents and skills (R-P)
 - **R-P1** Plugin agents: `reviewer` (opus, read-only, three passes), `verifier` (sonnet, fresh context, runs the tests and exercises the change against plan.md's Proof), `crew-factory`, `stack-surveyor`. `architect-reviewer` and `boundary-reviewer` become lenses inside the `review` / `plan-critic` workflows. `code-reviewer` (both the agent and the duplicate skill) and `sprint-watchdog` are removed.
 - **R-P2** Every agent declares `name`, `description`, `tools` and `model`, and a lint test checks it.
-- **R-P3** The skills that remain are ones a model loads for know-how, not flow control: `graphify`, `drawio` (or Archify, D4), `playwright-cli`, `ac-validate`, `token-slim`, `context-hygiene`, `skill-validator`, `agent-validator`, `skill-rectifier`, `agent-rectifier`, `self-improve`, `plugin-forge`. `team-sprint`, `team-sprint-planner`, `team-feature`, `master-plan`, `adhd`, `grill-me`, `adversarial-review`, `tech-debt-audit`, `pre-commit-review-fleet`, `sprint-watchdog`, `use-repo-code`, `claude-config` and `code-reviewer` are folded into commands, workflows or the CLI. The target is at most 14 skills, down from 29.
+- **R-P3** The skills that remain are ones a model loads for know-how, not flow control: `graphify`, `archify` (D4, replacing `drawio`), `playwright-cli`, `ac-validate`, `token-slim`, `context-hygiene`, `skill-validator`, `agent-validator`, `skill-rectifier`, `agent-rectifier`, `self-improve`, `plugin-forge`. `team-sprint`, `team-sprint-planner`, `team-feature`, `master-plan`, `adhd`, `grill-me`, `adversarial-review`, `tech-debt-audit`, `pre-commit-review-fleet`, `sprint-watchdog`, `use-repo-code`, `claude-config` and `code-reviewer` are folded into commands, workflows or the CLI. The target is at most 14 skills, down from 29.
 - **R-P4** `subskill_resolve.sh` is removed. Commands name skills and workflows directly.
 
 ### 4.9 Interop with cc_sdlc (R-X)
@@ -172,7 +175,7 @@ used by the story plans.
 - **R-H1** Add a root `CLAUDE.md` with the cc_sdlc sections: Commands (test, lint, validate, try locally), Architecture, Conventions, *Things Claude gets wrong* (seeded from the CHANGELOG's hard-won lessons, e.g. shell state does not survive a tool call and hooks do not inherit session exports).
 - **R-H2** Move the package to `plugin/`. The marketplace uses `source: git-subdir`, `path: plugin`. Tests, CI, `docs/` and history stay at the root and no longer ship to users.
 - **R-H3** Delete `skills/team-sprint/references/docs/plans/` (8 files, 3.5k lines). The adr folder moves to root `docs/adr/`. Fix the four live references (`recon.sh:35`, `recon.bats:29`, `recon_guard.bats:33`, `state-schema.md:70`) and the dead path at `parse_stories.bats:469`, which always skips.
-- **R-H4** Keep one `bats-fallback.sh` (there are three copies today), or none if D1 = Python.
+- **R-H4** (D1) Remove all three copies of `bats-fallback.sh` once the gates they test are ported to Python; until then keep a single shared copy.
 - **R-H5** CI runs every test suite. Four suites run in no job today: self-improve, sprint-watchdog `repo_preflight`, token-slim `check`, team-sprint-planner `plan_readback`. CI also runs `claude plugin validate --strict plugin` and `--strict .`, and pre-commit (shellcheck/ruff, check-json/toml/yaml, detect-private-key, end-of-file). It keeps the degradation job.
 - **R-H6** A version-bump job bumps `plugin.json` and `marketplace.json` from the PR's `major|minor|patch` label, as in cc_sdlc's `bump_version.py`, so versions are not bumped by hand.
 - **R-H7** A `justfile` provides `test`, `lint`, `check`, `hooks` and `opus`/`fable` (`claude --plugin-dir plugin`).
@@ -184,7 +187,7 @@ used by the story plans.
 | # | Concern | Owner |
 |---|---|---|
 | C1 | **Breaking change for current users.** The flows move from skills to commands, the artifact paths move and the state format changes. Mitigation: a `migrate` action, a 0.5 → 1.0 major bump, and the old skill names kept for one minor release as stubs that point to the new command. | Maintainer |
-| C2 | **Runtime rewrite cost (D1).** 13k lines of bash is a lot to port. A strangler migration (§6) keeps each step shippable. | Maintainer |
+| C2 | **Runtime rewrite cost (D1 = Python).** 13k lines of bash is a lot to port. A strangler migration (§6) keeps each step shippable: each bash gate is replaced by a CLI action with its pytest, then deleted. | Maintainer |
 | C3 | **Workflow tool availability.** Workflows are behind an environment variable and `disableWorkflows`. Every step needs its inline fallback (R-W3) so that no gate depends on Workflow. | Maintainer |
 | C4 | **Loss of graph-mode parallelism** if Teams are dropped (D3). Must be measured on a real sprint before removal. | Maintainer |
 | C5 | **Security of context packs.** Anything sent to workflow agents must pass the secret exclusion and scan (R-K2). | Maintainer |
@@ -195,7 +198,7 @@ Each phase is one or more PRs and leaves the plugin working.
 
 1. **Hygiene first (low risk).** R-H1, R-H3, R-H4, R-H5, R-H7, R-H9, R-P2, R-V4. No change to behaviour.
 2. **Package split.** R-H2, R-H6, and strict validation in CI.
-3. **The verdict CLI skeleton**, in the language D1 chooses: `status`, `plan new/check/accept`, templates, checkpoint commits (R-V1–2, R-S3, R-S6, R-A2–3, R-C1). The existing `/crewforge5:plan` flow keeps working alongside it.
+3. **The verdict CLI skeleton** in Python (D1): `status`, `plan new/check/accept`, templates, checkpoint commits (R-V1–2, R-S3, R-S6, R-A2–3, R-C1). The existing `/crewforge5:plan` flow keeps working alongside it.
 4. **Planning stages** on the CLI: `plan`, `design` and `build new/accept` (R-S2), with the `intent-scout`, `design-panel` and `plan-critic` workflows (R-W1–3).
 5. **Build and TDD**: red/green/sync/fix, and the story-executor workflow in worktrees (R-T1–6, R-G2–3). Run execute's team-sprint alongside it until parity; then retire team-sprint and its recon (R-K2).
 6. **Review stage**: `review run/review/evals` with the `reviewer`/`verifier` agents and the `review` workflow (R-P1, R-W2).
@@ -203,15 +206,15 @@ Each phase is one or more PRs and leaves the plugin working.
 8. **Retire the flow driver and hidden skills** (R-V6, R-P3, R-P4, R-G5). Major version bump. Remove the compatibility stubs one minor release later.
 9. **Interop** with cc_sdlc (R-X1–2, R-K4).
 
-## 7. Open decisions (for the owner)
+## 7. Decisions (made by the owner, 2026-09-27)
 
-- **D1: runtime for the gate layer.**
-  - **(a) Recommended: port to Python 3.11 standard library under `uv run --no-project`**, the same as cc_sdlc. JSON is native, the two plugins can share code (artifacts, checkpoint, packs), testing uses pytest in-process, and about 4× less code is expected.
-  - (b) Keep bash + jq and adopt only the JSON-verdict contract. Less churn, but the bats burden stays.
-- **D2: knowledge bundle.** Share cc_sdlc's `sdlc/knowledge/` OKF bundle when it is present (recommended), or keep a CrewForge5-only index.
-- **D3: Teams/SendMessage.** Keep them for graph mode only, or drop them in favour of Workflow fan-out plus worktrees (recommended, once C4 has been measured).
-- **D4: stage documents.** Adopt Archify with a freshness gate, as cc_sdlc does, or keep draw.io as an optional output.
-- **D5: naming.** Keep `/crewforge5:execute` as an alias for `build` plus `review`, or rename outright.
+| # | Question | Decision | Where it lands |
+|---|---|---|---|
+| D1 | Runtime for the gate layer | **Python 3.11 standard library under `uv run --no-project`**, as in cc_sdlc. Bash is ported gate by gate (C2). | §3, R-V1–6, R-H4, §6 phase 3 |
+| D2 | Knowledge bundle | **Share** cc_sdlc's `sdlc/knowledge/` bundle when it is present. | R-K4 |
+| D3 | Teams/SendMessage vs Workflows | **Move to Workflow fan-out plus worktrees, but measure a real sprint before removing Teams.** | R-W5, C4 |
+| D4 | Stage documents | **Adopt Archify** with freshness gates, as in cc_sdlc; retire the draw.io phase. | R-K5, R-P3 |
+| D5 | `/crewforge5:execute` | **Keep as an alias** for `build` then `review`. | R-S7 |
 
 ## 8. Proof
 
