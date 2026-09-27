@@ -7,7 +7,7 @@
 # These tests are what makes the single implementation trustworthy enough for
 # those four prose copies to be replaced by a call.
 
-source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
+source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/../../../../scripts/tests/lib/bats-fallback.sh"
 
 setup() {
   SCRIPTS="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"

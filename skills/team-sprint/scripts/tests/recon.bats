@@ -19,14 +19,15 @@
 # initialised), graphify `explain`, and rtk 0.44.0 `grep` including its
 # "  +<n> more in <file>" trailer.
 
-source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
+source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/../../../../scripts/tests/lib/bats-fallback.sh"
 
 setup() {
   SCRIPTS="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
   RECON="$SCRIPTS/recon.sh"
   PROVIDERS="$SCRIPTS/recon_providers.sh"
   FIX="$SCRIPTS/fixtures/recon"
-  PLAN="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)/references/docs/plans/recon-harness-1.md"
+  # The output-grammar contract (STATUS=/REASON= vocabulary) the loops read.
+  GRAMMAR="$FIX/output-grammar.md"
 
   TMP="$(cd "$(mktemp -d)" && pwd -P)"
   export TMP
@@ -1299,13 +1300,13 @@ STUB
 }
 
 @test "contract coverage: every STATUS value RH1 produces is asserted as emitted and named by the router" {
-  # The list is READ from the plan's Output grammar block, never restated here,
+  # The list is READ from the Output grammar fixture (fixtures/recon/output-grammar.md), never restated here,
   # so a new status cannot be added in one place and go untested in the other.
-  [ -f "$PLAN" ]
+  [ -f "$GRAMMAR" ]
   [ -f "$RECON" ]
   local line vals s missing_test="" missing_router=""
-  line="$(grep -m1 '^STATUS=<' "$PLAN" || true)"
-  if [ -z "$line" ]; then echo "no STATUS= grammar line in $PLAN"; false; fi
+  line="$(grep -m1 '^STATUS=<' "$GRAMMAR" || true)"
+  if [ -z "$line" ]; then echo "no STATUS= grammar line in $GRAMMAR"; false; fi
   vals="${line#STATUS=<}"
   vals="${vals%%>*}"
   for s in $(printf '%s' "$vals" | tr '|' ' '); do
@@ -1340,10 +1341,10 @@ STUB
 }
 
 @test "contract coverage: the router header documents the full plan grammar status set" {
-  [ -f "$PLAN" ]
+  [ -f "$GRAMMAR" ]
   [ -f "$RECON" ]
   local line vals s hdr missing=""
-  line="$(grep -m1 '^STATUS=<' "$PLAN" || true)"
+  line="$(grep -m1 '^STATUS=<' "$GRAMMAR" || true)"
   vals="${line#STATUS=<}"
   vals="${vals%%>*}"
   hdr="$(sed -n '1,90p' "$RECON")"

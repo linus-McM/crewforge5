@@ -1,48 +1,8 @@
-# Sprint: team-sprint Mechanical Refactor v3 (`team-sprint-mech`)
-
-**Supersedes:** `sprint-team-sprint-mech-refactor.md` (v1, 2026-05-20) and `sprint-team-sprint-mech-refactor-v2.md` (v2, 2026-05-20). v3 is fully self-contained — every AC and DoD is expressed inline. No "see v1/v2" inheritance. Adversarial round 1 surfaced layering itself as a CRITICAL ambiguity (different engineers resolved conflicts differently); v3 eliminates the problem by being the single source of truth.
-
-**Goal:** Optimise `$HOME/.claude/skills/team-sprint` by:
-1. Extracting mechanical pseudocode into executable scripts (deterministic, fixture-testable).
-2. Splitting SKILL.md into per-phase reference docs (loaded on demand, cuts per-turn context).
-3. Tightening defaults and closing under-specified contract gaps.
-4. Reserving a stable extension surface (`subskill_hooks`) so future sub-skills (e.g. an `integration-diagram` skill) can plug in without further refactor.
-
-**Target directory:** `$HOME/.claude/skills/team-sprint/`
-**Target branch:** `develop`
-**Out of scope:** Per-repo `team-sprint` variants under `~/Development/*`; new sub-skills; rewriting `validate_plan_path.sh`'s stdout/exit-code interface (internals may change; external contract preserved).
-
-**Why v3 exists:** Adversarial round 1 of v2 found 7 CRITICAL + 15 HIGH findings (0 hallucinations). v3 folds every gating finding into the relevant story AC/DoD and resolves the five cross-cutting design calls inline. The integration-diagram skill (sometimes referenced as "IDS") remains a future consumer but **no forward references to a non-existent `sprint-integration-diagram-skill-v2.md` are made anywhere in v3** — the cross-sprint contract is informational, not gated.
-
-**Cross-cutting design decisions (locked in for v3):**
-
-| ID | Decision | Rationale |
-|---|---|---|
-| CC-1 | ART (artifact dir) is always `validate_plan_path.sh`-derived (`.team-sprint/sprints/sprint-<slug>/`). `worktree_name` config affects only the sibling worktree directory path, never ART. Path resolution is anchored at the main repo root via `git rev-parse --show-toplevel` (captured at Phase 0 init), so `art_dir` invocations from worktree CWD still return the main-repo absolute path. | Preserves `validate_plan_path.sh` stdout interface (required by `team-sprint --abort`). Decouples ART from worktree dir naming. Eliminates the dual-resolution conflict and the worktree-CWD drift. |
-| CC-2 | No forward references to `sprint-integration-diagram-skill-v2.md` or any non-existent plan. Cross-skill integration is documented as informational. Enforcement (if any) lives in the consuming sprint, never in this one. | Plan files must reference real artefacts. Future consumers self-enforce on the published surface (`$REF/subskill-hooks.md`, marker comments, config block). |
-| CC-3 | "Migration boundary" stays in SKILL.md as a one-line breadcrumb in the "Failure modes & resume" section, pointing to CHANGELOG for full text. **CHANGELOG.md is created by mech-11 alongside the breadcrumb** (not deferred to mech-14) so the breadcrumb resolves on its own commit. mech-14 appends v1.0-cut additions later. | Pre-v1.0 sprints exist on users' disks; removing the recovery hint sacrifices a real operational signal. Breadcrumb must resolve at commit time, not eventually. |
-| CC-4 | SKILL.md line-count gates are absolute, staged: ≤250 after mech-9 commit (intermediate), ≤180 after mech-11 commit (sprint-final). mech-10 is ungated on lines (its DoD covers structural correctness instead). | "≥15% drop" is unmeasurable when mech-9 has already reduced SKILL.md drastically. Absolute targets are reviewable on every commit. |
-| CC-5 | v1 ↔ v2 ↔ v3 layering precedence is resolved by v3 being self-contained. Future patches to this plan must be issued as numbered amendments WITHIN v3 (e.g. "Amendment 1 to v3"), with explicit precedence on conflict stated at the top of the amendment. No future "v4 amends v3" inheritance pattern. | Adversarial Round 1 found layering itself was a CRITICAL ambiguity (C1-3). Self-contained plans are auditable; layered amendments are not. |
-| CC-6 | **Story commit order:** mech-1 → mech-2 → … → mech-14a → mech-15 → mech-14b. mech-14 is split (per its own story section) into 14a (lint script body, no run-all wire-in, no check #10, no cut v1.0) and 14b (check #10 + run-all wire-in + skill-validator + cut v1.0). mech-9 captures a pre-split snapshot of SKILL.md to `$ART/skill-md-pre-split.md` at commit time so mech-10 can locate sections by stable heading anchors against the snapshot (not against the live, already-split SKILL.md). Phase docs created by mech-9 may reference `$REF/*.md` paths even before mech-10 authors those files; mech-14a's lint (without check #10) passes after both mech-9 and mech-10 have shipped; mech-14b's lint (with check #10) passes after mech-15 has shipped. | Lint check ordering issues surfaced in rounds 2–3. Locking commit order + snapshot policy + 14a/14b split makes mid-sprint state legitimate. |
-| CC-7 | **"Dry-run sprint" definition (referenced by mech-15 DoD + sprint-DoD):** a fixture-plan execution where every story's `commands.test` is the literal `true`, `coverage_threshold` is `0`, and every `subskill_hooks` entry's `command` is `true`. The dry-run exercises orchestration (Phase 0 → Phase 7, all 15 stories, all hooks fire, all artifacts produced) without writing real test/coverage/lint output. | The phrase "dry-run sprint" was previously undefined; reviewers flagged the contradiction with "Phase 0 → Phase 7 over 15 stories". This locks the definition. |
-| CC-8 | **External-tool preflight is mandatory at Phase 0.** Before any sprint story begins, the lead invokes a single Phase 0 entry step that asserts every required external binary (`jq`, `python3`, `bats`, `shellcheck`, `repomix`) is on PATH via `lib.sh require_all`. Failure aborts Phase 0 with install hints. | mech-2 + mech-6 hard-depend on `python3`; mech-7 on `repomix`; mech-8 on `bats` + `shellcheck`. Round 2 H-1 (chunk 1) found `require_python3` declared but never invoked. This CC consolidates preflight at one entry point. |
-
-**Conventions:**
-- `$SKILL_DIR` = `$HOME/.claude/skills/team-sprint`
-- `$SCRIPTS` = `$SKILL_DIR/scripts`
-- `$PHASES` = `$SKILL_DIR/phases`
-- `$REF` = `$SKILL_DIR/reference`
-- `$ART` = `.team-sprint/sprints/sprint-<slug>` where `<slug>` is the `validate_plan_path.sh` output for `$plan_path`. `worktree_name` does NOT affect `$ART`.
-- Every script: `#!/usr/bin/env bash`, `set -euo pipefail`, bash 3.2-safe (macOS default).
-- Every script produces JSON on stdout (except `validate_plan_path.sh` which retains its eval-safe KEY=VALUE format for back-compat).
-- Every script has at least one bats fixture under `$SCRIPTS/tests/`.
-
----
-
+<!-- Fixture: the real sprint plan that built team-sprint (mech-refactor v3), trimmed
+     to the story sections parse_stories.sh reads (### Context prose dropped).
+     Kept because its indented ```json/```yaml/```markdown fences inside AC bullets
+     are the fence-leak regression case. Do not hand-edit the stories. -->
 ## Story mech-1: Foundation library + state management
-
-### Context
-Every later script needs shared logging, JSON helpers, ART resolution, and atomic state.json read/write. Centralising once unblocks every later story. v2 amendment for optional `subskills` field is folded in; v3 also pre-declares `story_commits` (used by mech-6) so the schema is complete from day one and concurrency uses `flock`.
 
 ### Acceptance Criteria
 
@@ -87,9 +47,6 @@ Every later script needs shared logging, JSON helpers, ART resolution, and atomi
 
 ## Story mech-2: Adversarial lead validator script
 
-### Context
-SKILL.md Phase 1 carries ~25 lines of bash pseudocode for the lead-side validator that strips hallucinated findings. v3 makes the validator independent of any specific heading shape (so it works on plans of either `## Story` or `### <id> amendment` flavour), uses a Python-based substring check (handles multi-line `quoted_evidence`), and is reproducibility-locked via `jq --sort-keys`.
-
 ### Acceptance Criteria
 - `$SCRIPTS/lead_validator.sh <plan_path> [<findings_json>]` reads findings JSON from stdin OR a file arg; returns `{"accepted": [...], "rejected": [{...finding, "reject_reason": "..."}]}` on stdout.
 - Validation rules (all enforced):
@@ -112,9 +69,6 @@ SKILL.md Phase 1 carries ~25 lines of bash pseudocode for the lead-side validato
 
 ## Story mech-3: Plan revision script (apply_findings)
 
-### Context
-SKILL.md Phase 1 step `apply_findings_to_plan` is currently prose. The locating + marker insertion is mechanical; substantive rewrite stays LLM-driven. v3 adds an explicit idempotency rule (skip if marker for same finding id already present above the quote) so reruns produce byte-identical output.
-
 ### Acceptance Criteria
 - `$SCRIPTS/apply_findings.sh <current_plan> <accepted_findings_json> <out_plan>`:
   - For each accepted CRITICAL/HIGH finding, locate `quoted_evidence` in `current_plan` and insert a `<!-- FINDING <id> (<severity>): <recommendation> -->` marker on the line immediately above the quote.
@@ -136,9 +90,6 @@ SKILL.md Phase 1 step `apply_findings_to_plan` is currently prose. The locating 
 ---
 
 ## Story mech-4: Story parser + chunker
-
-### Context
-SKILL.md Phase 1 and Phase 2 both parse stories from the plan. v3 makes the parser **shape-agnostic**: it supports both `## Story <id>: <title>` (canonical) and `### <id> amendment` (v2-style) and `## NEW Story <id>: <title>` (mixed) — required because some future plans may mix or rely on inheritance. Returns structured JSON consumed by `lead_validator.sh` (mech-2) for story-id verification.
 
 ### Acceptance Criteria
 - `$SCRIPTS/parse_stories.sh <plan_path>` emits JSON array to stdout:
@@ -165,9 +116,6 @@ SKILL.md Phase 1 and Phase 2 both parse stories from the plan. v3 makes the pars
 ---
 
 ## Story mech-5: Multi-language coverage parser
-
-### Context
-SKILL.md Phase 3 says "Parse coverage report (Istanbul JSON, Go coverprofile, etc.)" with no implementation. v3 provides multi-language support **plus an explicit skip path for bash-only projects** (which this very sprint runs on). The `--diff-base` ambiguity is resolved by tying the default to the invocation context.
 
 ### Acceptance Criteria
 - `$SCRIPTS/coverage_check.sh --mode whole|new --threshold <pct> [--diff-base <ref>] [--story-id <id>]` emits JSON:
@@ -198,9 +146,6 @@ SKILL.md Phase 3 says "Parse coverage report (Istanbul JSON, Go coverprofile, et
 
 ## Story mech-6: Per-story diff + commit message builder
 
-### Context
-SKILL.md Phase 4 wants "per-story diff" — `git diff <last-story-commit-or-target-branch>...HEAD`. v3 grounds "last-story-commit" in the `story_commits[]` field declared in mech-1's schema. Commit subject truncation is made unicode-safe.
-
 ### Acceptance Criteria
 - `$SCRIPTS/per_story_diff.sh <story_id>` emits diff text to stdout. Resolution: read `state.json.story_commits[]` (declared in mech-1 schema) and diff `HEAD` against the SHA of the previous story; if `story_id` is the first in the sprint or no prior entry exists, diff against `git merge-base <sprint_branch> <target_branch>`.
 - After story commit, the lead invokes `state.sh update <plan_path> story_commits='[<merged-array-with-new-entry>]'` to record the new SHA. (Schema field declared in mech-1; no ad-hoc field addition.)
@@ -215,9 +160,6 @@ SKILL.md Phase 4 wants "per-story diff" — `git diff <last-story-commit-or-targ
 ---
 
 ## Story mech-7: Project autodetect + repomix refresh
-
-### Context
-SKILL.md Phase 0 commands-inference is prose. v3 specifies concrete confidence rules and adds the missing `require_repomix` preflight.
 
 ### Acceptance Criteria
 - `$SCRIPTS/detect_commands.sh` emits JSON:
@@ -248,9 +190,6 @@ SKILL.md Phase 0 commands-inference is prose. v3 specifies concrete confidence r
 
 ## Story mech-8: Test fixtures + shellcheck harness
 
-### Context
-Story renamed from v1's "Test fixtures + CI lint" — "CI" over-promised, no `.github/workflows/` exists in the skill repo. v3 makes the harness explicitly local; a future story (out of scope) may add a GitHub Actions workflow. Plus: every script in `$SCRIPTS` (including the pre-existing `validate_plan_path.sh`) gets a fixture.
-
 ### Acceptance Criteria
 - `$SCRIPTS/tests/` contains one `.bats` file per script. **Including `validate_plan_path.bats` for the pre-existing script** — this is the one backfill exception (adding tests doesn't violate the "interface stable" out-of-scope rule). Full list:
   - `validate_plan_path.bats` (backfill)
@@ -274,9 +213,6 @@ Story renamed from v1's "Test fixtures + CI lint" — "CI" over-promised, no `.g
 ---
 
 ## Story mech-9: SKILL.md split — phases/phase-{0..7}.md
-
-### Context
-SKILL.md is 491 lines. Lead only needs phase N's detail when entering phase N. Split. v3 keeps ALL eight phase docs mandatory (no v2-style "phase 1 and 5 optional") — uniform structure simplifies the lint rule and the reader's mental model. v3 also creates the "Architecture & decisions" section in SKILL.md so mech-15's ADR has a place to link from.
 
 ### Acceptance Criteria
 - `$PHASES/phase-0.md` … `$PHASES/phase-7.md` ALL exist; each is self-contained for that phase (entry condition, gate, steps, exit condition, artifacts produced, scripts referenced, references to relevant `$REF/*` docs).
@@ -321,9 +257,6 @@ SKILL.md is 491 lines. Lead only needs phase N's detail when entering phase N. S
 
 ## Story mech-10: Reference docs extraction
 
-### Context
-SKILL.md embeds several long stable references. Move them out so SKILL.md stays lean. v3 adds a **per-section move map** so reviewers can verify the extraction line-by-line, and explicitly mandates updating SKILL.md cross-refs to the new locations.
-
 ### Acceptance Criteria
 
 - **Source of extracted content is `$ART/skill-md-pre-split.md`** (the pre-split snapshot captured in mech-9's DoD per CC-6), NOT the live, post-split SKILL.md. Anchors below refer to the snapshot.
@@ -353,9 +286,6 @@ SKILL.md embeds several long stable references. Move them out so SKILL.md stays 
 
 ## Story mech-11: Prose compression + Migration boundary breadcrumb
 
-### Context
-SKILL.md repeats `.team-sprint/sprints/<worktree_name>/` ~20 times — `$ART` alias collapses these. The "Migration boundary" subsection (~10 lines) is reduced to a one-line breadcrumb pointing to CHANGELOG (per cross-cutting decision CC-3 — full removal sacrifices a real operational signal). Line-count target is absolute, not percentage.
-
 ### Acceptance Criteria
 - SKILL.md introduces `$ART` alias once: "Throughout this skill, `$ART` = the per-sprint artifact dir, resolved via `$SCRIPTS/state.sh art_dir <plan_path>`. Every later reference uses `$ART/<filename>`."
 - All `.team-sprint/sprints/<worktree_name>/<file>` references replaced with `$ART/<file>`.
@@ -372,9 +302,6 @@ SKILL.md repeats `.team-sprint/sprints/<worktree_name>/` ~20 times — `$ART` al
 ---
 
 ## Story mech-12: Config defaults + new parameters
-
-### Context
-Defaults need calibration. `adversarial_iterations` becomes 3. New fields support the extension surface (mech-15) and address ambiguity in `integration_diagram` auto-mode (graceful degrade is explicit, never aborts).
 
 ### Acceptance Criteria
 - Default `adversarial_iterations` changes from `6` to `3`.
@@ -408,9 +335,6 @@ Defaults need calibration. `adversarial_iterations` becomes 3. New fields suppor
 
 ## Story mech-13: Worktree repomix + preflight ordering
 
-### Context
-`use-repo-code` produces `.repomix-output.xml` in the main tree at Phase 0. Reviewers in Phase 4 run in the worktree. v3 makes the location explicit and locks the **preflight + auto-resolution ordering** so the resolved hook list in `state.json` is reproducible.
-
 ### Acceptance Criteria
 - Phase 2 step 1 (worktree creation) gains a sub-step: copy `.repomix-output.xml` from main tree to worktree (`cp <main>/.repomix-output.xml <worktree>/.repomix-output.xml`). Refresh-in-worktree only if sprint duration exceeds `repomix_max_age_minutes`.
 - Phase 4 reviewer prompts include: "Grep the worktree-local `.repomix-output.xml`. Paths in grep results are repo-relative; resolve them against the worktree root, not the main tree."
@@ -434,9 +358,6 @@ Defaults need calibration. `adversarial_iterations` becomes 3. New fields suppor
 ## Story mech-14: Phase doc lint + skill-validator + CHANGELOG
 
 **Commit count: 2** (14a + 14b — see Story split section below). Sprint-DoD reconciles by stating "all 15 stories shipped on 16 commits, with mech-14 split per CC-6".
-
-### Context
-After the refactor, the skill spans many files. Drift between SKILL.md's phase index and the actual phase docs causes silent breakage. v3 tightens the lint scope explicitly (excludes `$REF/`, `docs/adr/`, `docs/plans/` from marker checks) AND splits the story into two commits to resolve the mech-14 ↔ mech-15 ordering conflict found in round 3.
 
 ### Story split (resolves R3-2C1 ordering conflict)
 
@@ -473,9 +394,6 @@ Both ship within this single story (one feature, two commits — the split is pu
 ---
 
 ## Story mech-15: Stable extension surface for sub-skills
-
-### Context
-Hook contract + preflight script + ADR + reference doc. This is the user-visible extension surface that future sub-skills (e.g. a yet-to-be-authored `integration-diagram` skill) will consume. v3 drops every forward reference to a non-existent `sprint-integration-diagram-skill-v2.md` (per cross-cutting decision CC-2) and treats the integration-diagram skill as a generic future consumer documented only in informational terms.
 
 ### Acceptance Criteria
 - `$REF/subskill-hooks.md` exists and documents:

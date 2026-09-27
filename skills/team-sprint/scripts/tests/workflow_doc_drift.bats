@@ -20,7 +20,7 @@
 # Adding a step to either file without the other now fails here, loudly, at the
 # moment of the change rather than on a live sprint.
 
-source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
+source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/../../../../scripts/tests/lib/bats-fallback.sh"
 
 setup() {
   SKILL="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"

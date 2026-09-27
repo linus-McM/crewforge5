@@ -24,13 +24,14 @@
 # because without it the test cannot tell "the guard exempts this" from "there
 # is no guard at all", which is precisely what RH3 adds.
 
-source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
+source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/../../../../scripts/tests/lib/bats-fallback.sh"
 
 setup() {
   SCRIPTS="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
   RECON="$SCRIPTS/recon.sh"
   FIX="$SCRIPTS/fixtures/recon"
-  PLAN="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)/references/docs/plans/recon-harness-1.md"
+  # The output-grammar contract (STATUS=/REASON= vocabulary) the loops read.
+  GRAMMAR="$FIX/output-grammar.md"
   # The worktree's OWN graphify index — a genuine 3453-node graph, not the
   # 804-byte fixture. AC "graphify freshness is asserted against a real
   # graphify-out/graph.json and not by forced-mtime fixture alone".
@@ -870,12 +871,12 @@ _freshness()    { printf '%s\n' "$output" | grep -o 'FRESHNESS=[^ ]*' | head -1 
 # 6. Documentation contracts (DoD)
 # ---------------------------------------------------------------------------
 
-@test "DoD: the header comment documents the threshold, its inline rationale and this plan, not union.md" {
+@test "DoD: the header comment documents the threshold, its inline rationale and the grammar fixture, not union.md" {
   [ -f "$RECON" ]
   local hdr token
   hdr="$(sed -n '1,120p' "$RECON")"
   for token in 'recon_min_files' '20' 'small-repo' 'not-a-repo' 'FRESHNESS' \
-               'read everything' 'overhead' 'recon-harness-1'; do
+               'read everything' 'overhead' 'output-grammar.md'; do
     case "$hdr" in
       *"$token"*) : ;;
       *) echo "header comment omits: $token"; false ;;
@@ -887,16 +888,16 @@ _freshness()    { printf '%s\n' "$output" | grep -o 'FRESHNESS=[^ ]*' | head -1 
   [ "$output" = "0" ]
 }
 
-@test "DoD: the plan's REASON vocabulary and FILES rule gain not-a-repo in BOTH places" {
-  [ -f "$PLAN" ]
+@test "DoD: the output grammar's REASON vocabulary and FILES rule gain not-a-repo in BOTH places" {
+  [ -f "$GRAMMAR" ]
   # (1) The Output grammar block's closed REASON= vocabulary.
-  run bash -c "grep 'Closed vocabulary' '$PLAN' | grep -c 'not-a-repo' || true"
+  run bash -c "grep 'Closed vocabulary' '$GRAMMAR' | grep -c 'not-a-repo' || true"
   [ "$output" != "0" ]
   # (2) The FILES= rule widens beyond small-repo.
-  run bash -c "grep 'FILES=<n>' '$PLAN' | grep -c 'not-a-repo' || true"
+  run bash -c "grep 'FILES=<n>' '$GRAMMAR' | grep -c 'not-a-repo' || true"
   [ "$output" != "0" ]
   # (3) The coverage-gate section's REASON= list, so the two cannot drift.
-  run bash -c "grep 'Every .REASON=. value' '$PLAN' | grep -c 'not-a-repo' || true"
+  run bash -c "grep 'Every .REASON=. value' '$GRAMMAR' | grep -c 'not-a-repo' || true"
   [ "$output" != "0" ]
 }
 

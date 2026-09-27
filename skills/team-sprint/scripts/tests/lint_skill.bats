@@ -7,7 +7,7 @@
 # one trivial bats fixture) so checks #7 (shellcheck) and #8 (bats) are
 # fast and deterministic.
 
-source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
+source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/../../../../scripts/tests/lib/bats-fallback.sh"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -111,7 +111,7 @@ CFG
 setup() {
   SKILL_DIR="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   REAL_LINT_SH="$SKILL_DIR/scripts/lint_skill.sh"
-  REAL_BATS_FB="$SKILL_DIR/scripts/tests/lib/bats-fallback.sh"
+  REAL_BATS_FB="$(cd "$SKILL_DIR/../.." && pwd)/scripts/tests/lib/bats-fallback.sh"
   export REAL_LINT_SH REAL_BATS_FB
 
   TMP="$(cd "$(mktemp -d)" && pwd -P)"

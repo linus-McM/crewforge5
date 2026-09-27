@@ -199,7 +199,7 @@ if [[ -n "$ab_hits" ]]; then
 fi
 
 # --- check 12: every .bats under $SCRIPTS/tests/ uses only helpers ----------
-# --- exported by $SCRIPTS/tests/lib/bats-fallback.sh                ---------
+# --- exported by the shared scripts/tests/lib/bats-fallback.sh          ---------
 # Subtractive detection per plan v3 mech-14 AC:
 #   enumerate (assert|refute)_[a-z_]+ in *.bats; subtract the allow-list.
 shopt -s nullglob

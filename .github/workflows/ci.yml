@@ -50,6 +50,17 @@ jobs:
           find scripts -name '*.sh' -exec shellcheck {} +
           bats scripts/tests/
 
+      # Four suites ran in no job at all until this step (spec R-H5).
+      # scripts/tests/repo_hygiene.bats fails if a directory of .bats files
+      # appears that no step here names.
+      - name: Skill-local suites
+        run: |
+          set -euo pipefail
+          bash skills/team-sprint-planner/scripts/tests/run-all.sh
+          bats skills/self-improve/scripts/tests/ \
+               skills/sprint-watchdog/tests/ \
+               skills/token-slim/tests/
+
       # run-all.sh lints only skills/team-sprint/scripts, and the step above only
       # scripts/. That left 27 shipped scripts across nine other skills linted by
       # nothing — in a plugin whose pitch is that it stops generated artefacts

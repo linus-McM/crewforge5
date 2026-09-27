@@ -10,10 +10,10 @@
 # pastes, and neither can work that way:
 #
 #   - Shell state does not survive a Bash tool call. An `export` reaches the end
-#     of its own command and no further, so every later call needs it again —
-#     which is why 28 call sites across 11 files carry `${CREWFORGE5_ROOT:-.}`,
-#     and that `.` silently resolves to the user's own repo once the plugin is
-#     installed somewhere other than the tree it is running from.
+#     of its own command and no further, so every later call needs it again.
+#     Call sites once papered over that with a fallback to `.`, which silently
+#     resolved to the user's own repo once the plugin was installed elsewhere;
+#     they now self-locate or use the harness-expanded plugin root instead.
 #   - Hooks are spawned by the harness from hooks.json, not by the model. They
 #     never see anything a Bash call exported, in any session, so
 #     `export CREWFORGE5_HOOKS=1` in a session could not arm a hook even in

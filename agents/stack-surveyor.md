@@ -1,6 +1,7 @@
 ---
 name: stack-surveyor
 description: Detects a repo's language and test/build/security stack, emits a shared stack-profile file for downstream agent factories. Use when onboarding a repo or for a verified inventory of its tooling
+model: inherit
 tools: Read, Glob, Grep, Bash, Write, WebSearch, WebFetch
 color: cyan
 ---

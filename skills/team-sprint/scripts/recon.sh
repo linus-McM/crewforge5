@@ -31,8 +31,8 @@
 # FILES=<n> without touching a provider, because under about 20 files an agent
 # can read everything directly and the graph adds overhead with no payoff. That
 # rationale is quoted inline rather than cited because its source is untracked
-# and never reaches a worktree; the owning story is RH3 of
-# references/docs/plans/recon-harness-1.md. `text` is Tier 1 and stays cheap at any repo
+# and never reaches a worktree; the output grammar it reports under is pinned in
+# fixtures/recon/output-grammar.md. `text` is Tier 1 and stays cheap at any repo
 # size, so it is exempt, and recon_min_files: 0 disables the guard entirely.
 #
 # Root resolution precedes the count. Outside a git repository the guard answers

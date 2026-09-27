@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 # parse_stories.bats — fixtures for scripts/parse_stories.sh
 
-source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
+source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/../../../../scripts/tests/lib/bats-fallback.sh"
 
 setup() {
   SKILL_DIR="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
@@ -466,8 +466,10 @@ EOF
 # Real sprint plan smoke test — must yield 15 mech-* stories.
 # ---------------------------------------------------------------------------
 @test "real sprint plan parses to 15 stories named mech-1..mech-15" {
-  REAL="$SKILL_DIR/docs/plans/sprint-team-sprint-mech-refactor-v3.md"
-  [ -f "$REAL" ] || skip "real plan absent"
+  # A trimmed copy of the real plan (Context prose dropped) lives in fixtures/,
+  # so this runs everywhere instead of skipping when the dev-docs tree is absent.
+  REAL="$SKILL_DIR/scripts/fixtures/mech-refactor-v3.plan.md"
+  [ -f "$REAL" ]
   run "$PS_SH" "$REAL"
   [ "$status" -eq 0 ]
   [ "$(jq 'length' <<<"$output")" -eq 15 ]

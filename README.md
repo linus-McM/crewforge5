@@ -134,9 +134,10 @@ without writing; `uninstall` removes only the keys it added.
 
 **Exporting it by hand does not work, and cannot.** Shell state does not survive
 a single tool call, so an `export` reaches the end of its own command and no
-further — which is why call sites still carry a `${CREWFORGE5_ROOT:-.}` fallback
-for the un-installed case, and why that fallback resolves to the wrong tree once
-the plugin lives anywhere but the repo you are standing in.
+further. Call sites therefore never fall back to `.` (which resolves to the wrong
+tree once the plugin lives anywhere but the repo you are standing in): the flow
+driver locates the plugin from its own path, and `/crewforge5:plan` uses the
+harness-expanded `${CLAUDE_PLUGIN_ROOT}`. A test fails if the fallback returns.
 
 ## The opinionated hooks are OFF by default
 
@@ -240,8 +241,9 @@ it cannot edit anything, so applying stays your decision.
 
 ## Tests
 
-866 bats cases cover the shell toolchain and the plugin's own scripts. CI runs
-them on Ubuntu and macOS, plus four gates and a degradation job:
+1,015 bats cases cover the shell toolchain and the plugin's own scripts. CI runs
+them on Ubuntu and macOS, plus four gates and a degradation job. `just check`
+runs the lot (`just test`, `just lint`, `just gates`); see `CLAUDE.md`.
 
 **Check the exit code, not the tally.** `run-all.sh` runs shellcheck, then bats,
 then `lint_skill.sh` — and only the middle step prints `ok` / `not ok` lines. A
@@ -249,8 +251,10 @@ green-looking count with a red suite is exactly how a dangling `$REF` citation
 survived a full review here. `echo $?` is the signal.
 
 ```bash
-bash skills/team-sprint/scripts/tests/run-all.sh   # 656 — the toolchain
-bats scripts/tests/                                # 236 — flow driver, gates, docs surface, validator grading
+bash skills/team-sprint/scripts/tests/run-all.sh   # 649 — the toolchain
+bats scripts/tests/                                # 331 — flow driver, gates, docs surface, validator grading, repo hygiene
+bash skills/team-sprint-planner/scripts/tests/run-all.sh   # 5 — plan read-back
+bats skills/self-improve/scripts/tests/ skills/sprint-watchdog/tests/ skills/token-slim/tests/   # 30
 bash scripts/budget_check.sh       # always-loaded context budget
 bash scripts/name_check.sh         # frontmatter name matches path
 bash scripts/validate_all.sh       # every skill and agent passes its own validator

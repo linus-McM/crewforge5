@@ -3,7 +3,7 @@
 # Uses fake gate commands (true/false/echo) via the --typecheck/--lint/--test
 # flags so the suite is fast and deterministic (no real tsc/eslint/jest).
 
-source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
+source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/../../../../scripts/tests/lib/bats-fallback.sh"
 
 # run --separate-stderr (below) keeps $output = stdout-only JSON, unpolluted by
 # the script's [info] stderr lines. That flag needs bats >= 1.5.

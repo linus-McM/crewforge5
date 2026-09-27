@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 # plan_readback.bats — fixtures for scripts/plan_readback.sh
 
-source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
+source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/../../../../scripts/tests/lib/bats-fallback.sh"
 
 setup() {
   SKILL_DIR="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"

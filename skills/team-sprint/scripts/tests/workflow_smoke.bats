@@ -12,7 +12,7 @@
 # guard, loop bounds, which agents are spawned, and what the prompts instruct.
 # Every test here maps to a bug that reached a live run.
 
-source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
+source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/../../../../scripts/tests/lib/bats-fallback.sh"
 
 setup() {
   SKILL="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"

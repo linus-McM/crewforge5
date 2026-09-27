@@ -8,7 +8,7 @@
    acceptance-criteria discipline:
 
    ```bash
-   bash "${CREWFORGE5_ROOT:-.}/scripts/flow/subskill_resolve.sh" team-sprint-planner
+   bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/subskill_resolve.sh" team-sprint-planner
    ```
 
    **Take its drafting phases only** (plan contract, story decomposition,
@@ -27,7 +27,7 @@
 4. Record where it landed — the phase 7 and phase 8 gates both read this key:
 
    ```bash
-   bash "${CREWFORGE5_ROOT:-.}/scripts/flow/flow_state.sh" plan set \
+   bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_state.sh" plan set \
      plan_path docs/plans/<story-id>-<slug>.md
    ```
 

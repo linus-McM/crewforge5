@@ -33,7 +33,7 @@
 # absent-provider test carries the literal phrase "<provider> absent" in its
 # test name.
 
-source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
+source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/../../../../scripts/tests/lib/bats-fallback.sh"
 
 setup() {
   SDIR="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"

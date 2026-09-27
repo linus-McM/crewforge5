@@ -28,9 +28,9 @@ setup() {
   OUT="$TMP/out"
   ERR="$TMP/err"
 
-  # The gates name their scripts through ${CREWFORGE5_ROOT:-.} so that the flow
-  # works on a repo that is not the plugin. Pointing it at this checkout is
-  # therefore the realistic configuration, not a shortcut.
+  # The gates name their scripts through ${CREWFORGE5_ROOT}, which the flow
+  # driver derives from its own location, so the flow works on a repo that is
+  # not the plugin. Pointing it at this checkout is the realistic configuration.
   export CREWFORGE5_ROOT="$ROOT"
 
   # Sandbox HOME so the resolver's third root never reaches the developer's
@@ -107,8 +107,8 @@ _write_plan() { # $1 = path (relative to the fixture repo), $2… = extra lines
 @test "every script a gate names resolves under the plugin root" {
   local p n=0
   for p in $(jq -r '.[].gate' "$MANIFEST" \
-             | grep -oE '\$\{CREWFORGE5_ROOT:-\.\}/[A-Za-z0-9._/-]+' \
-             | sed 's|\${CREWFORGE5_ROOT:-\.}/||' | sort -u); do
+             | grep -oE '\$\{CREWFORGE5_ROOT\}/[A-Za-z0-9._/-]+' \
+             | sed 's|\${CREWFORGE5_ROOT}/||' | sort -u); do
     [ -f "$ROOT/$p" ] || { printf 'gate names a missing script: %s\n' "$p" >&2; return 1; }
     n=$((n + 1))
   done

@@ -3,7 +3,7 @@
 # team-sprint phase-0 step 10a.2): cached-vs-rebuild verdict, pure-jq schema
 # validation, verified-command re-runs, and generated-name collision checks.
 
-source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
+source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/../../../../scripts/tests/lib/bats-fallback.sh"
 
 setup() {
   SCRIPTS="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"

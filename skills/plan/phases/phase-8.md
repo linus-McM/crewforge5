@@ -8,8 +8,8 @@ made about existing debt. A disposition table nobody checks is a wish list.
 1. Run the coverage check over the impact map and the plan:
 
    ```bash
-   bash "${CREWFORGE5_ROOT:-.}/skills/master-plan/scripts/check_coverage.sh" \
-     docs/plans/GOAL_IMPACT.md "$(bash "${CREWFORGE5_ROOT:-.}/scripts/flow/flow_state.sh" plan get plan_path)"
+   bash "${CLAUDE_PLUGIN_ROOT}/skills/master-plan/scripts/check_coverage.sh" \
+     docs/plans/GOAL_IMPACT.md "$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_state.sh" plan get plan_path)"
    ```
 
 2. It compares finding IDs found in the impact map's table rows against the same

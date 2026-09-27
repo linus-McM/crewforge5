@@ -14,7 +14,7 @@
 # workflow's dotted name, so this file only ever spells it with a bracketed
 # dot — "phase-4-5[.]workflow" — which the gate's pattern does not match.
 
-source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
+source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/../../../../scripts/tests/lib/bats-fallback.sh"
 
 setup() {
   SKILL="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"

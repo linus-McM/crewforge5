@@ -13,7 +13,7 @@
 # resolve_key: exact -> bidirectional path-suffix -> None when zero OR >1
 # candidate survives. Ambiguity falls into the existing fail-closed branch.
 
-source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
+source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/../../../../scripts/tests/lib/bats-fallback.sh"
 
 setup() {
   SKILL_DIR="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"

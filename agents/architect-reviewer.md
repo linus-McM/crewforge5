@@ -1,6 +1,7 @@
 ---
 name: architect-reviewer
 description: Use this agent to review code for architectural consistency and patterns. Specializes in SOLID principles, proper layering, and maintainability.
+tools: Read, Grep, Glob, Bash, Agent
 color: gray
 model: opus
 ---

@@ -18,7 +18,7 @@ compute against.
    statuses and find them all passed:
 
    ```bash
-   bash "${CREWFORGE5_ROOT:-.}/scripts/flow/flow_state.sh" plan use --from "<confirmed goal>"
+   bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_state.sh" plan use --from "<confirmed goal>"
    ```
 
    `flow_state.sh plan list` shows the planning runs this repo already holds, and
@@ -27,7 +27,7 @@ compute against.
 4. Record the confirmed goal, and nothing else:
 
    ```bash
-   bash "${CREWFORGE5_ROOT:-.}/scripts/flow/flow_state.sh" plan set goal "<confirmed goal>"
+   bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_state.sh" plan set goal "<confirmed goal>"
    ```
 
 5. Optionally record `scope` and `plan_dir` alongside it if the user volunteered

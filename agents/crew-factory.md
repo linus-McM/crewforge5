@@ -1,6 +1,7 @@
 ---
 name: crew-factory
 description: Builds and validates a language-matched agent crew and the manifest team-sprint loads. Use when .claude/crews/<lang>.json is missing, or on onboard a language / build the agent crew / refresh the crew
+model: inherit
 tools: Read, Glob, Grep, Bash, Write, Edit, WebSearch, WebFetch, Skill, Agent
 color: orange
 ---

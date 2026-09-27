@@ -13,12 +13,12 @@ bash scripts/tests/run-all.sh
 The harness performs two steps and aborts on the first failure:
 
 1. **shellcheck** every `$SCRIPTS/*.sh` (top-level scripts only; the test
-   helper at `tests/lib/bats-fallback.sh` is intentionally excluded from this
-   pass).
+   helper — the repo's single shared copy at `scripts/tests/lib/bats-fallback.sh`,
+   linted by CI's plugin-scripts step — is not part of this pass).
 2. **bats** every `tests/*.bats` file. If `bats` is on PATH, the real
    `bats` binary runs the suite. Otherwise the harness invokes each
    `.bats` file as plain `bash <file>`; the fallback works because
-   every fixture sources `tests/lib/bats-fallback.sh` at the top of the
+   every fixture sources the shared `scripts/tests/lib/bats-fallback.sh` at the top of the
    file (see the bats-vs-fallback contract below).
 
 Exit code is `0` on full success, non-zero on any failure.
@@ -42,7 +42,7 @@ Template — copy into `scripts/tests/<script-name>.bats`:
 #!/usr/bin/env bats
 # <script-name>.bats — fixtures for scripts/<script-name>.sh
 
-source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
+source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/../../../../scripts/tests/lib/bats-fallback.sh"
 
 setup() {
   SKILL_DIR="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
@@ -66,7 +66,7 @@ teardown() {
 
 Rules:
 
-- The `source ".../lib/bats-fallback.sh"` line MUST be the first
+- The `source ".../scripts/tests/lib/bats-fallback.sh"` line MUST be the first
   executable line of the file (it is what makes plain-bash invocation
   work). The `BATS_TEST_FILENAME` env var is set by real bats; the
   `BASH_SOURCE[0]` fallback covers plain-bash invocation.
@@ -86,7 +86,7 @@ Rules:
 
 ## The bats-vs-fallback contract
 
-`tests/lib/bats-fallback.sh` has two modes:
+`scripts/tests/lib/bats-fallback.sh` (one copy for the whole repo) has two modes:
 
 - **Real bats mode** (when `BATS_VERSION` is set in the environment):
   the file just defines assert helpers (`assert_equal`, `assert_success`,

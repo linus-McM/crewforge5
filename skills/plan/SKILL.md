@@ -25,10 +25,15 @@ phase 0 rather than resuming into the first plan's verdicts. `flow_state.sh plan
 list` names the planning runs this repo holds; `use` returns to one.
 
 ```bash
-bash "${CREWFORGE5_ROOT:-.}/scripts/flow/flow_next.sh" plan     # STATUS=NEXT PHASE=<id> DOC=<path>
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_next.sh" plan     # STATUS=NEXT PHASE=<id> DOC=<path>
 # …read DOC, do the phase's work…
-bash "${CREWFORGE5_ROOT:-.}/scripts/flow/flow_gate.sh" plan <id>  # STATUS=PASS|FAIL, recorded
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_gate.sh" plan <id>  # STATUS=PASS|FAIL, recorded
 ```
+
+The harness expands the plugin root in this file only. Phase docs are read raw,
+so in any command a phase doc shows, replace its `{CLAUDE_PLUGIN_ROOT}`
+placeholder with this plugin root: `${CLAUDE_PLUGIN_ROOT}`. The gates in
+`phases.json` need nothing from you; the driver locates the plugin itself.
 
 A `FAIL` is not a suggestion. `flow_next.sh` re-offers the same phase until its
 gate passes, which is the whole reason the gates are scripts and not prose.
@@ -68,7 +73,7 @@ cannot reach them. Resolve a path and load it — and ask how, because a
 inline, or the isolation it exists for is destroyed:
 
 ```bash
-bash "${CREWFORGE5_ROOT:-.}/scripts/flow/subskill_resolve.sh" --load-mode use-repo-code
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/subskill_resolve.sh" --load-mode use-repo-code
 ```
 
 | Capability | Source skill | Reached in |

@@ -22,7 +22,7 @@ reads it**, which is the spawned agent.
 1. Resolve the reviewer's body — the path, not the content:
 
    ```bash
-   R="$(bash "${CREWFORGE5_ROOT:-.}/scripts/flow/subskill_resolve.sh" adversarial-review)"
+   R="$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/subskill_resolve.sh" adversarial-review)"
    ```
 
 2. Loop, one round per spawn:

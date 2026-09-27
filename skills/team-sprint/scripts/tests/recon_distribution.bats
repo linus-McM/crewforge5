@@ -37,7 +37,7 @@
 # STATUS=FAIL copy-pasted from the graphify step at phase-0.md:42 into the recon
 # step is a bug, and this is the test that catches it.
 
-source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
+source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/../../../../scripts/tests/lib/bats-fallback.sh"
 
 setup() {
   SKILL="$(cd "$BATS_TEST_DIRNAME/../.." && pwd -P)"

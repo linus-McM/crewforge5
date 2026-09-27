@@ -17,10 +17,10 @@
 # under plain bash. Single-quoted printf keeps $SENTINEL literal in the
 # inner file, matching the quoted-heredoc guarantee.
 
-source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
+source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/../../../../scripts/tests/lib/bats-fallback.sh"
 
 setup() {
-  LIB="$(cd "$BATS_TEST_DIRNAME/lib" && pwd)/bats-fallback.sh"
+  LIB="$(cd "$BATS_TEST_DIRNAME/../../../../scripts/tests/lib" && pwd)/bats-fallback.sh"
   TMP="$(cd "$(mktemp -d)" && pwd -P)"
   export TMP
 }

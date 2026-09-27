@@ -8,7 +8,7 @@ user decides; you stress-test.
 1. Load the `grill-me` skill body for the questioning mechanic:
 
    ```bash
-   bash "${CREWFORGE5_ROOT:-.}/scripts/flow/subskill_resolve.sh" grill-me
+   bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/subskill_resolve.sh" grill-me
    ```
 
 2. Work this run's `frames.md` top to bottom (it sits beside `state.json` —

@@ -11,10 +11,10 @@ makes about the codebase has to trace to a file and a line read in this session.
    a second, private number here:
 
    ```bash
-   m="$(. "${CREWFORGE5_ROOT:-.}/skills/team-sprint/scripts/lib.sh"
+   m="$(. "${CLAUDE_PLUGIN_ROOT}/skills/team-sprint/scripts/lib.sh"
         read_config_scalar "${TEAM_SPRINT_CONFIG:-team-sprint.config.yaml}" repomix_max_age_minutes)"
    case "$m" in ''|*[!0-9]*) m=240;; esac
-   bash "${CREWFORGE5_ROOT:-.}/skills/team-sprint/scripts/repomix_refresh.sh" --max-age-minutes "$m"
+   bash "${CLAUDE_PLUGIN_ROOT}/skills/team-sprint/scripts/repomix_refresh.sh" --max-age-minutes "$m"
    ```
 
 2. Survey with `use-repo-code`. It declares `context: fork`, so it is **spawned
@@ -23,7 +23,7 @@ makes about the codebase has to trace to a file and a line read in this session.
    it forks. Ask the resolver rather than assuming:
 
    ```bash
-   bash "${CREWFORGE5_ROOT:-.}/scripts/flow/subskill_resolve.sh" --load-mode use-repo-code
+   bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/subskill_resolve.sh" --load-mode use-repo-code
    ```
 
 3. Escalate only as far as the question needs: tier 1 (`recon.sh text`) for
@@ -37,7 +37,7 @@ case on a fresh machine. When it does, do **not** carry on quietly: fall back to
 live `Grep`, tell the user the provider changed, and record the verdict —
 
 ```bash
-bash "${CREWFORGE5_ROOT:-.}/scripts/flow/flow_state.sh" plan set \
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_state.sh" plan set \
   ground_degraded "DEGRADED: no repomix on PATH; grounded with live Grep"
 ```
 

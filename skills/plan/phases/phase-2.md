@@ -11,7 +11,7 @@ chosen it.
 2. Load the `adhd` skill body for the framing mechanic:
 
    ```bash
-   bash "${CREWFORGE5_ROOT:-.}/scripts/flow/subskill_resolve.sh" adhd
+   bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/subskill_resolve.sh" adhd
    ```
 
    It reports `MODE=inline` under `--load-mode`, so read it here.
@@ -22,7 +22,7 @@ chosen it.
    same reason state is: two concurrent plans must not share it.
 
    ```bash
-   ART="$(dirname "$(bash "${CREWFORGE5_ROOT:-.}/scripts/flow/flow_state.sh" plan path)")"
+   ART="$(dirname "$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_state.sh" plan path)")"
    # write $ART/frames.md
    ```
 
