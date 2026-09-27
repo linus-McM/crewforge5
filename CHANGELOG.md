@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.5 — 2026-09-27
 
 Phase 2 of `docs/specs/cc-sdlc-alignment.md` (package split; no behaviour change for users).
 
