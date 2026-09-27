@@ -27,7 +27,7 @@
 4. Record where it landed — the phase 7 and phase 8 gates both read this key:
 
    ```bash
-   bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_state.sh" plan set \
+   bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_state.sh" plan-legacy set \
      plan_path docs/plans/<story-id>-<slug>.md
    ```
 

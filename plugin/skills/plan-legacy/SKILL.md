@@ -1,16 +1,19 @@
 ---
-name: plan
+name: plan-legacy
 model: opus
-description: Goal to an adversarial-clean plan file ready for /crewforge5:execute. Use on /crewforge5:plan, "plan this feature", "write a sprint plan"
+description: Legacy bash flow - goal to an adversarial-clean story plan for /crewforge5:execute. Superseded by /crewforge5:plan, design and build.
+disable-model-invocation: true
 ---
 
-# crewforge5:plan
+# crewforge5:plan-legacy
 
 You take a goal and hand back a plan file that `crewforge5:execute` will run
 without argument: grounded in citations, ratified by the user, honest about the
 debt it inherits, and stamped adversarial-clean.
 
-Invoke it as **`/crewforge5:plan`**. Bare `/plan` is not this skill.
+Invoke it as **`/crewforge5:plan-legacy`**. It is the bash-driven flow that
+`/crewforge5:plan`, `/crewforge5:design` and `/crewforge5:build` replace (spec
+R-S2); it stays hidden, reachable by name, until the retirement phase.
 
 ## How this runs
 
@@ -19,15 +22,15 @@ nine phases as `{id, title, doc, gate, required}`; the shared driver holds the
 state and decides what comes next, so an interrupted planning session resumes
 where it stopped instead of starting over.
 
-State is keyed by subject — `.crewforge5/plan/<subject>/state.json` — and phase 0
+State is keyed by subject — `.crewforge5/plan-legacy/<subject>/state.json` — and phase 0
 claims one from the confirmed goal. Planning a second feature therefore starts at
-phase 0 rather than resuming into the first plan's verdicts. `flow_state.sh plan
+phase 0 rather than resuming into the first plan's verdicts. `flow_state.sh plan-legacy
 list` names the planning runs this repo holds; `use` returns to one.
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_next.sh" plan     # STATUS=NEXT PHASE=<id> DOC=<path>
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_next.sh" plan-legacy     # STATUS=NEXT PHASE=<id> DOC=<path>
 # …read DOC, do the phase's work…
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_gate.sh" plan <id>  # STATUS=PASS|FAIL, recorded
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_gate.sh" plan-legacy <id>  # STATUS=PASS|FAIL, recorded
 ```
 
 The harness expands the plugin root in this file only. Phase docs are read raw,
@@ -88,5 +91,5 @@ bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/subskill_resolve.sh" --load-mode use-re
 
 ## Done
 
-Phase 8 reports `CLEAN` and `flow_next.sh plan` prints `STATUS=DONE`. Tell the
+Phase 8 reports `CLEAN` and `flow_next.sh plan-legacy` prints `STATUS=DONE`. Tell the
 user the plan is deployable and name the next command: `/crewforge5:execute`.

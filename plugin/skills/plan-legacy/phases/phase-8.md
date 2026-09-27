@@ -9,7 +9,7 @@ made about existing debt. A disposition table nobody checks is a wish list.
 
    ```bash
    bash "${CLAUDE_PLUGIN_ROOT}/skills/master-plan/scripts/check_coverage.sh" \
-     docs/plans/GOAL_IMPACT.md "$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_state.sh" plan get plan_path)"
+     docs/plans/GOAL_IMPACT.md "$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_state.sh" plan-legacy get plan_path)"
    ```
 
 2. It compares finding IDs found in the impact map's table rows against the same

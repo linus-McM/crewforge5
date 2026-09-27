@@ -70,5 +70,5 @@ reads it**, which is the spawned agent.
 
 `findings_gate.sh <plan>` then a stamp grep. The findings gate fails while any
 `<!-- FINDING ` marker remains, so the stamp cannot be reached with a finding
-still open, and `flow_next.sh plan` re-offers phase 7 rather than advancing to
+still open, and `flow_next.sh plan-legacy` re-offers phase 7 rather than advancing to
 phase 8.

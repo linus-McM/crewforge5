@@ -12,7 +12,7 @@ user decides; you stress-test.
    ```
 
 2. Work this run's `frames.md` top to bottom (it sits beside `state.json` —
-   `dirname "$(flow_state.sh plan path)"`). For each decision:
+   `dirname "$(flow_state.sh plan-legacy path)"`). For each decision:
    **ask one question at a time**, in a single `AskUserQuestion` call, and
    wait for the answer before composing the next one.
    Batching questions is what makes a grilling feel like a form: the interesting
@@ -30,7 +30,7 @@ user decides; you stress-test.
    ```
 
 This is why the flow stays inline. A forked subagent has no user to ask, so
-`crewforge5:plan` declares no `context: fork` and no `agent:` frontmatter.
+`crewforge5:plan-legacy` declares no `context: fork` and no `agent:` frontmatter.
 
 ## Gate
 

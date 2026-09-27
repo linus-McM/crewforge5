@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# plan_gate.sh — shape gates for the `crewforge5:plan` artifacts.
+# plan_gate.sh — shape gates for the `crewforge5:plan-legacy` artifacts.
 #
 # Usage:
 #   plan_gate.sh <check>   run one gate: frames decisions audit triage
@@ -49,7 +49,7 @@ emit() { # $1 STATUS  $2 CHECK  [KEY=VALUE …]
 # The subject-keyed artifact dir: wherever this run's state.json lives.
 art_dir() {
   local state
-  state="$(bash "$FLOW_STATE" plan path)" || return 1
+  state="$(bash "$FLOW_STATE" plan-legacy path)" || return 1
   dirname "$state"
 }
 

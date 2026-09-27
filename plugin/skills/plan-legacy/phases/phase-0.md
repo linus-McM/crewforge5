@@ -18,16 +18,16 @@ compute against.
    statuses and find them all passed:
 
    ```bash
-   bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_state.sh" plan use --from "<confirmed goal>"
+   bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_state.sh" plan-legacy use --from "<confirmed goal>"
    ```
 
-   `flow_state.sh plan list` shows the planning runs this repo already holds, and
-   `flow_state.sh plan use <subject>` returns to one of them.
+   `flow_state.sh plan-legacy list` shows the planning runs this repo already holds, and
+   `flow_state.sh plan-legacy use <subject>` returns to one of them.
 
 4. Record the confirmed goal, and nothing else:
 
    ```bash
-   bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_state.sh" plan set goal "<confirmed goal>"
+   bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_state.sh" plan-legacy set goal "<confirmed goal>"
    ```
 
 5. Optionally record `scope` and `plan_dir` alongside it if the user volunteered
@@ -36,6 +36,6 @@ compute against.
 
 ## Gate
 
-`flow_state.sh plan get goal` — exits 1 while the key is unset, so an intake that
-was never answered records `FAIL` and `flow_next.sh plan` re-offers phase 0
+`flow_state.sh plan-legacy get goal` — exits 1 while the key is unset, so an intake that
+was never answered records `FAIL` and `flow_next.sh plan-legacy` re-offers phase 0
 rather than advancing into an empty plan.

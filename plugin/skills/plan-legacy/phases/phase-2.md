@@ -22,7 +22,7 @@ chosen it.
    same reason state is: two concurrent plans must not share it.
 
    ```bash
-   ART="$(dirname "$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_state.sh" plan path)")"
+   ART="$(dirname "$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_state.sh" plan-legacy path)")"
    # write $ART/frames.md
    ```
 

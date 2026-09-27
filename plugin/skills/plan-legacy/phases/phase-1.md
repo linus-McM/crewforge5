@@ -37,7 +37,7 @@ case on a fresh machine. When it does, do **not** carry on quietly: fall back to
 live `Grep`, tell the user the provider changed, and record the verdict —
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_state.sh" plan set \
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/flow/flow_state.sh" plan-legacy set \
   ground_degraded "DEGRADED: no repomix on PATH; grounded with live Grep"
 ```
 
@@ -49,4 +49,4 @@ ungrounded — which is the one thing it exists to stop.
 ## Gate
 
 `repomix_refresh.sh --max-age-minutes "$repomix_max_age_minutes" || flow_state.sh
-plan get ground_degraded | grep -E '^DEGRADED.*[Gg]rep'`.
+plan-legacy get ground_degraded | grep -E '^DEGRADED.*[Gg]rep'`.
