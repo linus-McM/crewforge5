@@ -86,6 +86,19 @@ verdict "recon"           bash "$PLUGIN/skills/team-sprint/scripts/recon.sh" tex
 verdict "budget_check"    bash "$PLUGIN/scripts/budget_check.sh"
 verdict "name_check"      bash "$PLUGIN/scripts/name_check.sh"
 
+# The verdict CLI (spec D1) is Python stdlib only, so python3 alone must reach a
+# JSON verdict; uv is how commands launch it, not something it needs.
+CLI_REPO="$(mktemp -d)"
+cli_out="$(cd "$CLI_REPO" && PATH="$BIN" HOME="$FAKE_HOME" python3 "$PLUGIN/scripts/crewforge5.py" status 2>&1)"
+rm -rf "$CLI_REPO"
+if printf '%s' "$cli_out" | PATH="$BIN" python3 -c 'import json,sys; v=json.load(sys.stdin); sys.exit(0 if v["ok"] is True and v["next"] else 1)' 2>/dev/null; then
+  echo "  ok       crewforge5.py — one JSON verdict (ok, next)"
+else
+  echo "  NO VERDICT crewforge5.py — died without printing one:"
+  printf '%s\n' "$cli_out" | head -3 | sed 's/^/             /'
+  fail=1
+fi
+
 echo
 echo "runtime state with no user config directory:"
 if PATH="$BIN" HOME="$FAKE_HOME" bash "$PLUGIN/skills/self-improve/scripts/ledger.sh" add demo hook "degradation smoke" >/dev/null 2>&1; then

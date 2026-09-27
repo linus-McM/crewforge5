@@ -106,8 +106,8 @@ jobs:
       - name: Every entry point reaches a verdict without the optional tools
         run: bash scripts/verify_degradation.sh
 
-  # The dev Python at the root: scripts/bump_version.py and its pytest suite
-  # (spec R-H6). The plugin's own Python gate layer joins in phase 3.
+  # All Python: the plugin's verdict CLI (plugin/scripts/crewforge5/, spec D1),
+  # scripts/bump_version.py (R-H6) and their pytest suite; ruff covers the repo.
   python:
     runs-on: ubuntu-latest
     steps:
@@ -118,8 +118,8 @@ jobs:
       - name: ruff
         run: |
           set -euo pipefail
-          uv run --group dev ruff check scripts tests
-          uv run --group dev ruff format --check scripts tests
+          uv run --group dev ruff check .
+          uv run --group dev ruff format --check .
 
   gates:
     runs-on: ubuntu-latest

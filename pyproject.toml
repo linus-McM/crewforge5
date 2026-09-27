@@ -14,14 +14,14 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-pythonpath = ["scripts"]
+pythonpath = ["plugin/scripts", "scripts"]
 testpaths = ["tests"]
 addopts = "-q"
 
 [tool.ruff]
 line-length = 240
 target-version = "py311"
-src = ["scripts", "tests"]
+src = ["plugin/scripts", "scripts", "tests"]
 
 [tool.ruff.lint]
 select = [
@@ -39,3 +39,6 @@ select = [
 ignore = [
     "E501", # line length is the formatter's job
 ]
+
+[tool.ruff.lint.isort]
+known-first-party = ["crewforge5"]

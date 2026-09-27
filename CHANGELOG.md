@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+Phase 3 of `docs/specs/cc-sdlc-alignment.md` (verdict CLI skeleton; the bash flows are unchanged and still drive `/crewforge5:plan`).
+
+- `plugin/scripts/crewforge5.py` plus the stdlib package `plugin/scripts/crewforge5/`: `<stage> <action> [arg] [--slug s]` prints one JSON verdict `{ok, reason, next, ...}`; refusals go through `project.fail()` and only `cli.main` catches them (R-V1, R-V2).
+- `plan|design|build new/check/accept` over `crewforge5/<slug>/{intent,spec,plan}.md`: each `new` is refused until a human has accepted the previous artifact, and `check` validates the required sections and the `Status:`/`Risk:` lines (R-S3, R-A1, R-A2). `status` lists every feature and one next command (R-S6).
+- `plugin/templates/`: `intent.md spec.md plan.md REVIEW.md` (the cc_sdlc sections), `crewforge5.toml` and the command preamble (R-V5).
+- `.crewforge5.toml`, written by the first `new` and read only by `project.config()` (R-C1). `[build] require_adversarial_stamp` makes `build check` need the planner's stamp.
+- Each accept makes one checkpoint commit of `crewforge5/` plus `[checkpoint] paths`, with a pathspec (R-A3). Off: `[checkpoint] enabled = false` or `CREWFORGE5_CHECKPOINT=off`, documented in the plugin README (R-C2).
+- pytest covers the CLI in-process. ruff, in pre-commit and CI, now covers the whole repo; the token-slim scripts were fixed and formatted. `verify_degradation.sh` checks that the CLI reaches a verdict with `python3` alone.
+- Dogfood ignore patterns are anchored to the root, and `.crewforge5.toml` joins them.
+
 Phase 2 of `docs/specs/cc-sdlc-alignment.md` (package split; no behaviour change for users).
 
 - The installable package moved to `plugin/` (R-H2): `agents/ commands/ hooks/ rules/ skills/`, the runtime scripts the skills call (`budget_check`, `name_check`, `validate_all`, `retention_gate`, `frontmatter_check`, `sprint_init`, `env_install`, `flow/`), `plugin.json`, the user README and a LICENSE copy. Tests, CI, `docs/`, `.claude/` and the `verify_*` probes stay at the root.

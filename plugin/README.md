@@ -202,6 +202,46 @@ byte sizes of one machine's files, so it is generated on first `record`.
 `skills/team-sprint/team-sprint.config.yaml.example` if you want to change a
 default.
 
+## The verdict CLI (preview)
+
+The gate layer is moving to a Python 3.11 standard-library CLI, following
+`docs/specs/cc-sdlc-alignment.md` in the repository. It runs alongside the three
+flows above and does not replace any of them yet:
+
+```bash
+uv run --no-project "${CLAUDE_PLUGIN_ROOT}/scripts/crewforge5.py" <stage> <action> [arg] [--slug <slug>]
+```
+
+Each call prints one JSON verdict with `ok`, `next`, and `reason` when `ok` is
+false. Act on `ok`, quote `reason` word for word, follow `next`
+(`templates/command-preamble.md` is the preamble every command will open with).
+Stages: `plan` writes `intent.md`, `design` writes `spec.md`, `build` writes
+`plan.md`, each with `new | check | accept`, and `status` lists every feature.
+Artifacts live in `crewforge5/<slug>/`. `check` validates the required sections
+and the `Status:` and `Risk:` lines. Each `new` is refused until a human has
+accepted the previous artifact, and `accept` sets `Status: accepted`.
+
+Config lives in `.crewforge5.toml` (the first `new` writes it from
+`templates/crewforge5.toml`). It is deep-merged over the defaults:
+`[project] home` (the feature folder, default `crewforge5`, or set
+`CREWFORGE5_HOME`) and `[build] require_adversarial_stamp` (when true,
+`build check` needs the planner's `adversarial-review: status=clean|user-override`
+stamp in `plan.md`).
+
+**Checkpoints.** Each `accept` commits only the plugin's output, which is the
+home directory plus `[checkpoint] paths`. The commit subject is
+`<stage>(<slug>): accept — <artifact>`, with `(+N files)` when other files are
+included. The commit uses a pathspec, so it never stages source or tests, and
+work you have already staged stays staged. It is skipped during a merge or
+rebase, or when nothing changed. A failed commit is reported under `checkpoint`
+and never blocks the stage.
+
+Every layer has one off switch in config and one environment variable:
+
+| Layer | Config | Environment |
+| --- | --- | --- |
+| Checkpoint commits | `[checkpoint] enabled = false` | `CREWFORGE5_CHECKPOINT=off` |
+
 ## Rules
 
 Several skills cite house rules — the recon escalation ladder, verification

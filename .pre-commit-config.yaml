@@ -1,8 +1,7 @@
 # Install once with: just hooks   (runs: uvx pre-commit install)
 # Run everywhere with: uvx pre-commit run --all-files
-# CI runs the same thing (.github/workflows/ci.yml, gates job). ruff covers the
-# root dev Python (scripts/, tests/); plugin/ joins when the Python gate layer
-# lands there (spec D1, phase 3).
+# CI runs the same thing (.github/workflows/ci.yml, gates job). ruff covers every
+# Python file in the repo, the plugin's verdict CLI included (spec D1).
 minimum_pre_commit_version: "3.0.0"
 # Test fixtures are byte-exact inputs (e.g. a .gitignore with no trailing
 # newline is the case under test) — no hook rewrites them.
@@ -31,6 +30,4 @@ repos:
     rev: v0.16.6
     hooks:
       - id: ruff-check
-        files: ^(scripts|tests)/.*\.py$
       - id: ruff-format
-        files: ^(scripts|tests)/.*\.py$

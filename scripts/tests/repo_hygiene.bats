@@ -127,7 +127,7 @@ _frontmatter() {
   if [ "$(git -C "$REPO" rev-parse --abbrev-ref HEAD 2>/dev/null)" = "dogfood" ]; then
     skip "on the dogfood branch, where this output belongs"
   fi
-  tracked="$(git -C "$REPO" ls-files -- crewforge5 .crewforge5 .team-sprint \
+  tracked="$(git -C "$REPO" ls-files -- crewforge5 .crewforge5 .crewforge5.toml .team-sprint \
                .claude/crews .claude/agents)"
   if [ -n "$tracked" ]; then
     printf 'dogfood output tracked outside the dogfood branch:\n%s\n' "$tracked"

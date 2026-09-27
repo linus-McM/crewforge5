@@ -1,0 +1,12 @@
+# CrewForge5 project configuration: the only config file (read by every stage; commit it).
+# Every layer has one off switch here and one environment variable (CREWFORGE5_<LAYER>=off).
+
+[project]
+home = "crewforge5"         # feature folders live in <home>/<slug>/; CREWFORGE5_HOME overrides
+
+[build]
+require_adversarial_stamp = false   # `build check` needs an adversarial-review stamp in plan.md when true
+
+[checkpoint]
+enabled = true              # commit the stage's output at each accept; CREWFORGE5_CHECKPOINT=off also disables
+paths = [".crewforge5.toml"]   # committed alongside the home directory; git-ignored entries are skipped

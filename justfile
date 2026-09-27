@@ -17,11 +17,11 @@ test:
     @bats plugin/skills/self-improve/scripts/tests/ plugin/skills/sprint-watchdog/tests/ plugin/skills/token-slim/tests/
     @uv run --group dev pytest
 
-# shellcheck the dev and shipped scripts (the pre-commit and CI scope); ruff over the dev Python
+# shellcheck the dev and shipped scripts (the pre-commit and CI scope); ruff over all the Python
 lint:
     @find scripts plugin/scripts plugin/skills -name '*.sh' -exec shellcheck {} +
-    @uv run --group dev ruff check scripts tests
-    @uv run --group dev ruff format --check scripts tests
+    @uv run --group dev ruff check .
+    @uv run --group dev ruff format --check .
 
 # Install the pre-commit hooks (.pre-commit-config.yaml — the same set CI runs)
 hooks:
