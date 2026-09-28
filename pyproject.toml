@@ -2,7 +2,7 @@
 # runtime dependencies (spec D1: stdlib under `uv run --no-project`).
 [project]
 name = "crewforge5-plugin"
-version = "0.4.5"
+version = "1.0.0"
 description = "Claude Code plugin CrewForge5: dev tooling (pytest, ruff) for the repo, not the shipped package"
 requires-python = ">=3.11"
 dependencies = []

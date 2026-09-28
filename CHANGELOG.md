@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.0 — 2026-09-28
 
 Phase 9 of `docs/specs/cc-sdlc-alignment.md` (interop with cc_sdlc, then a completeness pass: R-X1, R-X2, R-C1, R-S1, §8).
 
