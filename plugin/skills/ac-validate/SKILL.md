@@ -99,13 +99,8 @@ If the server was already running, don't kill it at the end. If the skill starte
 ### Phase 4: Validate UI-Testable ACs
 
 For each story with UI-testable ACs, drive the browser with `playwright-cli`. It is hidden
-from the catalogue, so the `Skill` tool cannot reach it — resolve it once, up front:
-
-```bash
-bash "${CREWFORGE5_ROOT}/scripts/flow/subskill_resolve.sh" --load-mode playwright-cli
-```
-
-It answers `MODE=inline`, so read the body at the path it names and drive it from here.
+from the catalogue, so the `Skill` tool cannot reach it: read its body once, up front, at
+`${CREWFORGE5_ROOT}/skills/playwright-cli/SKILL.md`, and drive it from here.
 
 The validation loop for each AC:
 

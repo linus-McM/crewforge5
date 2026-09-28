@@ -38,7 +38,7 @@ export const meta = {
 //                  user waivers are the lead's job after return, never asked
 //                  in-workflow.
 //
-// The four lanes REPLACE pre-commit-review-fleet rather than wrap it: that
+// The four lanes REPLACED the retired pre-commit-review-fleet skill rather than wrapping it: that
 // skill cannot run inside a workflow (AskUserQuestion intake gate at its
 // SKILL.md:51; staged-diff-only input at :62). Lane agent types arrive as
 // OPTIONAL args resolved lead-side (config-key > crew-key > static default

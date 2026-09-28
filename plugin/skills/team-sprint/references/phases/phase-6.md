@@ -1,6 +1,6 @@
 # Phase 6 — Story commit (per story)
 
-**Goal.** Commit the story to the sprint branch with a structured commit message that downstream tooling (`git log --grep`) can parse. Entry is gated on the Phase 5 fix loop having converged — no additional review runs here. The `pre-commit-review-fleet` runs once per sprint at the start of Phase 7, not per story.
+**Goal.** Commit the story to the sprint branch with a structured commit message that downstream tooling (`git log --grep`) can parse. Entry is gated on the Phase 5 fix loop having converged — no additional review runs here. The review fleet runs once per sprint at the start of Phase 7, not per story.
 
 ## Entry condition
 
@@ -79,8 +79,8 @@ Under `scheduling: graph` this phase runs inside a **node executor** against the
    decrement, and `advance-phase` enforces target == current+1. Without it Phase
    3's own entry condition (`current_phase == 3`) is unsatisfiable for every
    story after the first, and any reader that resumes from `state.json` — a
-   human, or `crewforge5:execute`'s status source — parks on Phase 6 while the
-   sprint is really back at Phase 3.
+   human, or a lead resuming `/crewforge5:execute --teams` — parks on Phase 6
+   while the sprint is really back at Phase 3.
 
 ## Exit condition
 

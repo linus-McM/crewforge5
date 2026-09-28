@@ -12,8 +12,8 @@ Arguments: $ARGUMENTS
 ## new "<title>"
 1. `crewforge5 plan new "<title>"` creates `crewforge5/<slug>/intent.md` from the template (and `.crewforge5.toml` if missing).
 2. Scout: run `crewforge5:intent-scout` with `{slug, title}`: systems, users, risk triggers, prior art and divergent framings, a skeptic per finding, then section drafts and an `interview` list. Inline fallback: read CLAUDE.md and grep for the same five things yourself, citing path:line. Drafts are hypotheses, not answers.
-3. Diverge: before asking anything, frame the goal at least three ways (the literal ask, the smallest version that helps, the version that removes the underlying problem) and note what each leaves out.
-4. Grill: interview the originator one question at a time (AskUserQuestion), each with your recommended answer, walking the decision tree branch by branch until it is concrete: what cannot be done today, who is affected, what better looks like, what is out of scope, constraints, the success measure. Answer from the code instead of asking whenever the code can answer.
+3. Diverge, as `${CLAUDE_PLUGIN_ROOT}/templates/interview.md` says: before asking anything, frame the goal at least three ways (the literal ask, the smallest version that helps, the version that removes the underlying problem), run its vantage frames over it and note what each leaves out.
+4. Grill (same file): interview the originator one question at a time (AskUserQuestion), each with your recommended answer, walking the decision tree branch by branch until it is concrete: what cannot be done today, who is affected, what better looks like, what is out of scope, constraints, the success measure. Answer from the code instead of asking whenever the code can answer.
 5. Write every section of intent.md in plain words. Set `Risk: high` when the change touches auth, PII, payments, migrations or infra.
 6. `crewforge5 plan check`; fix every listed problem and re-run until `ok`. Show the originator the file and ask them to correct anything misunderstood.
 

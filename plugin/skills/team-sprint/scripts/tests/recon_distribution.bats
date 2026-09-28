@@ -4,7 +4,7 @@
 #
 # RH6 ships NO new script. Its whole deliverable is four documents:
 #   CLAUDE.md                                       — the inheritance surface
-#   skills/team-sprint-planner/references/recon-instruments.md
+#   skills/team-sprint/references/recon-instruments.md (moved from the retired planner)
 #   skills/team-sprint/SKILL.md
 #   skills/team-sprint/references/phases/phase-0.md
 # and one deliberate NON-edit: nothing under `agents/`. That non-edit is the
@@ -50,7 +50,7 @@ setup() {
   else
     CLAUDE_MD="$REPO/CLAUDE.md"
   fi
-  INSTR="$REPO/skills/team-sprint-planner/references/recon-instruments.md"
+  INSTR="$SKILL/references/recon-instruments.md"
   PHASE0="$SKILL/references/phases/phase-0.md"
   SKILL_MD="$SKILL/SKILL.md"
   TMP="$(cd "$(mktemp -d)" && pwd -P)"
@@ -235,16 +235,17 @@ _three_layers_hits() {
   # The wording is pinned, not the phrasing of any one era: the rtk caveat
   # became "the hook is best-effort" (matching RTK.md, which is where that
   # rule now lives), and "delete the pack first" became `pack.sh 0`, the
-  # scripted form of the same instruction. What the AC protects is that Tier 1
+  # scripted form of the same instruction, then went back to the words when
+  # pack.sh retired with use-repo-code (spec phase 8). What the AC protects is that Tier 1
   # still says grep the pack through rtk, and still says how to force a fresh
   # one — not which sentence said it.
   local s
-  for s in 'explicit `rtk grep`' 'the hook is best-effort' 'pack.sh 0'; do
+  for s in 'explicit `rtk grep`' 'the hook is best-effort' 'delete the pack first'; do
     grep -qF "$s" "$CLAUDE_MD" || { echo "CLAUDE.md dropped the verbatim rule: $s"; return 1; }
   done
   _near "$CLAUDE_MD" 'recon.sh text' 'the hook is best-effort' 600 \
     || { echo "the rtk-hook rule is not folded into the Tier 1 row"; return 1; }
-  _near "$CLAUDE_MD" 'recon.sh text' 'pack.sh 0' 600 \
+  _near "$CLAUDE_MD" 'recon.sh text' 'delete the pack first' 600 \
     || { echo "the force-fresh-pack instruction is not folded into the Tier 1 row"; return 1; }
 }
 

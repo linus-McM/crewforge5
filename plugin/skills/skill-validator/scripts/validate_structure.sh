@@ -105,7 +105,7 @@ else
       # into the always-loaded catalogue every session whether or not the skill is
       # ever invoked, and budget_check.sh charges this exact string against the
       # release gate — so a rule that rewards padding fights the gate it ships
-      # beside. claude-config sets the house limit at ~200 chars; trigger phrases
+      # beside. templates/house-rules.md sets the house limit at ~200 chars; trigger phrases
       # plus one line of purpose is the shape that fits.
       DESC_CHARS=$(printf '%s' "$DESC" | wc -c | tr -d ' ')
       if [ "$WORD_COUNT" -lt 5 ]; then

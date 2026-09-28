@@ -13,7 +13,7 @@
 > "$plan_path" phase-3 <run_id>` → `workflow_runs.phase-3`. Under `scheduling: graph` the node executors are the callers, so the lead skips
 > this write: the D7 clobber rule forbids lead-side `state.json` writes while executors run. Known pre-existing exception, unchanged here:
 > the workflow itself persists `iterations.review_fix` from inside its review loop.
-> **Lead before/after the call.** Before: nothing. After: the sprint-watchdog mid-audit and sub-skill hooks (steps 6–7) and the state advance — the workflow runs none of them.
+> **Lead before/after the call.** Before: nothing. After: the mid-story audit and sub-skill hooks (steps 6–7) and the state advance — the workflow runs none of them.
 >
 > The prose below is the fallback contract — entry/exit conditions, gates, bounds, outcome vocabulary, artifacts, and a minimal
 > executable step list for a `Workflow`-less environment. The workflow owns sequencing; on ordering disagreements the workflow wins.
@@ -28,7 +28,7 @@ Under `scheduling: graph` this phase runs inside a **node executor** against the
 - This story's tests pass (scoped run — the RED test files plus tests the diff modified, not the whole suite; SKILL.md → **Per-story test scoping**; the full regression suite runs at Phase 7) and typecheck + lint are clean.
 - Provisional commit landed: `wip(<story-id>): phase-3 green` (step 4) — the coverage gate and Phase 4 diff read `BASE...HEAD` and see nothing without it.
 - Coverage gate: `bash $SCRIPTS/coverage_check.sh --mode <coverage_mode> --threshold $coverage_threshold --story-id <id>` returns `pass: true`, OR `gate_status: "disabled"` (`coverage_threshold:0` or `commands.coverage="true"`).
-- Sprint-watchdog mid-audit clean.
+- Mid-story audit clean.
 
 ## Steps
 > **Communication (both modes).** The spawner (node executor under graph mode; the lead sequentially) owns block–collect–close for every child task — children deliver by **final agent return**, no `SendMessage` (`$REF/sendmessage-protocol.md`). Never end a turn with a live child.
@@ -46,11 +46,11 @@ Under `scheduling: graph` this phase runs inside a **node executor** against the
    - `gate_status: "disabled"` → append `{coverage_gate: "disabled", reason, story_id}` to `state.json.gates` via `state.sh update`; proceed.
    - `pass: true` → proceed to Phase 4. `pass: false` → dispatch uncovered files back to test-writer + engineer, land another step-4 wip commit so the re-run measures it, increment `state.json.iterations.coverage`, loop.
    - After 3 coverage iterations still below threshold the loop's outcome is the cap: STOP and surface the uncovered code; don't ship below threshold without explicit user override.
-6. **Sprint-watchdog mid-audit.** Story-keyed review artifacts (`$ART/reviews-<story-id>-round-<N>.md`) delivered with per-AC checklists (empty/placeholder = undelivered), every "complete" impl task has its claimed source files, branch still `sprint_branch`. Failures route back as audit-fix tasks before Phase 4.
+6. **Mid-story audit (the lead).** Story-keyed review artifacts (`$ART/reviews-<story-id>-round-<N>.md`) delivered with per-AC checklists (empty/placeholder = undelivered), every "complete" impl task has its claimed source files, branch still `sprint_branch`. Failures route back as audit-fix tasks before Phase 4.
 7. **Sub-skill hooks, fail-soft** — final step before advancing: `bash "$SCRIPTS/run_subskill_hooks.sh" 3 "$plan_path"`.
 
 ## Exit condition
-Coverage gate green (or disabled); tests + typecheck + lint clean; watchdog mid-audit clean. HEAD carries the story's work as provisional `wip(<story-id>)` commit(s) — Phase 4's diff depends on it. Advance `state.json.current_phase` to 4 via `state.sh advance-phase`.
+Coverage gate green (or disabled); tests + typecheck + lint clean; mid-story audit clean. HEAD carries the story's work as provisional `wip(<story-id>)` commit(s) — Phase 4's diff depends on it. Advance `state.json.current_phase` to 4 via `state.sh advance-phase`.
 
 ## Artifacts produced
 - `state.json.gates[]` may carry `{coverage_gate: "disabled", reason, story_id}`; `state.json.iterations.coverage` incremented per failed iteration.

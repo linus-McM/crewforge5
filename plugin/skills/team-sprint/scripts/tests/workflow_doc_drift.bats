@@ -60,9 +60,9 @@ check_drift() { # $1..$(n-1) = phase docs (doc side is their UNION), $n = workfl
   [ -z "$missing" ] && [ -z "$orphan" ]
 }
 
-# The phase-1 (adversarial review) drift checks moved planner-side with the
-# workflow: team-sprint-planner/scripts/tests/workflow_doc_drift.bats pairs
-# adversarial-review-loop.md with plan-review.workflow.js.
+# Phase 1 has no workflow: the plan review runs before acceptance, in
+# /crewforge5:build new's crewforge5:plan-critic (the retired planner's
+# plan-review workflow and its drift checks went with it in spec phase 8).
 
 # --- phases 3/4/5: story-executor -------------------------------------------
 # WA1: the old phase-4/5 workflow becomes story-executor.workflow.js and absorbs the

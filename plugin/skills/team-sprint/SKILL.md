@@ -1,17 +1,18 @@
 ---
 name: team-sprint
 model: opus
-description: 'Multi-agent sprint runner — adversarially-reviewed plan to merged commit via TDD agent fleet in an isolated worktree. Use on "run a team sprint", "kick off a sprint", or "/team-sprint <plan>".'
+description: 'Graph-mode Teams sprint runner — a human-accepted plan.md to a merged commit via a TDD agent fleet in isolated worktrees. Reached by /crewforge5:execute --teams.'
 disable-model-invocation: true
 ---
-You are running a team sprint: a structured, multi-agent pipeline that takes a markdown plan **already reviewed to adversarial-clean by `team-sprint-planner`** and drives it to a merged commit on the target branch. All pre-deployment work (recon, grilling, decomposition, adversarial plan review) happens planner-side; this skill is the deployment side. Every phase has a quality gate. Every reviewer must deliver structured findings to its spawner, persisted to a review artifact. Failures route back to engineers as fix tasks and the gates re-run. Nothing ships unless every gate is green.
+You are running a team sprint: a structured, multi-agent pipeline that takes the story plan `/crewforge5:execute --teams` builds from a **human-accepted** `<home>/<slug>/plan.md` (`$SCRIPTS/plan_stories.sh`: one story per Order-of-work step) and drives it to a merged commit on the target branch. All pre-deployment work (interview, design, the test-first plan and its `crewforge5:plan-critic` review) happens in `/crewforge5:plan`, `design` and `build`; this skill is the deployment side. Every phase has a quality gate. Every reviewer must deliver structured findings to its spawner, persisted to a review artifact. Failures route back to engineers as fix tasks and the gates re-run. Nothing ships unless every gate is green.
 
 ## When to use
 
 This skill is hidden from the catalogue (`disable-model-invocation: true`), so it never
-triggers on its own. It runs two ways: explicitly, as `/team-sprint <plan>`, or wrapped —
-`/crewforge5:execute` drives phases 0–7 from these very phase docs and is the productised
-entry point for "run a sprint" / "execute this plan".
+triggers on its own. It is the graph-mode Teams execution path, reached by
+`/crewforge5:execute --teams`, and is kept only until one real sprint has been measured both
+ways against the primary path (`/crewforge5:build implement`, Workflow fan-out plus worktrees;
+spec decision D3, concern C4). The lead reads this file and runs phases 0–7 from the phase docs.
 
 ## Intake gate — ask before running
 
@@ -25,12 +26,13 @@ If the user picks "Other", honour the free text over the mapped default.
 
 ## Why this skill exists
 
-Consolidates the per-repo team-sprint skeleton (TDD → AC/DoD review → commit), parameterises stack-specific bits, and adds three gates: plan-review provenance before code (the adversarial review itself runs in `team-sprint-planner`; Phase 1 hard-STOPs an unstamped plan), a hard coverage gate, `pre-commit-review-fleet` over the full sprint diff at Phase 7 — all in an isolated git worktree, so a sprint can never poison the main tree and failed sprints stay inspectable + restartable.
+Consolidates the per-repo team-sprint skeleton (TDD → AC/DoD review → commit), parameterises stack-specific bits, and adds three gates: plan provenance before code (a human accepted `plan.md`; Phase 1 hard-STOPs a story plan whose source is no longer accepted or has changed), a hard coverage gate, a four-lane review fleet over the full sprint diff at Phase 7 — all in an isolated git worktree, so a sprint can never poison the main tree and failed sprints stay inspectable + restartable.
 
 Review economics: per-story review is one AC/DoD reviewer (plus conditional UI validation) with mechanical test validation; security and performance are reviewed once per sprint by the Phase 7 fleet. Test economics match: per-story phases run only the current story's tests, the full suite once at Phase 7 — see **Per-story test scoping** under Cross-phase invariants.
 
 ## Path aliases
 
+- `$PLUGIN` — `<skill-install-dir>/../..`, the plugin root (other skills live at `$PLUGIN/skills/<name>/SKILL.md`; every one is hidden, so read it by path, never through the `Skill` tool)
 - `$SCRIPTS` — `<skill-install-dir>/scripts/`
 - `$PHASES` — `<skill-install-dir>/references/phases/`
 - `$REF` — `<skill-install-dir>/references/`
@@ -54,7 +56,7 @@ max_parallel_agents: 4                           # cap on concurrent node worktr
 adversarial_iterations: 3                       # hard cap on Phase 2 graph-review rounds — at the cap, phase-2 prompts the user and stops looping
 adversarial_model: inherit                      # model for the Phase 2 graph-review spawn; inherit → session default
 review_fix_iterations: 3                        # max review→fix→re-review rounds (Phase 5 per story; Phase 7 fleet)
-max_wall_clock_minutes: 240                     # soft budget; sprint-watchdog WARNs, user decides
+max_wall_clock_minutes: 240                     # soft budget; the lead WARNs, user decides
 repomix_max_age_minutes: 240                    # max age of .repomix-output.xml before refresh
 graphify: off                                   # off | auto (fail-soft) | on (hard Phase 0 gate) — see Phase 0 step 9a
 graphify_max_age_minutes: 240                   # max age of graphify-out/graph.json before Phase 0 rebuilds
@@ -131,19 +133,16 @@ spot produced the gap, so treat it as a floor, never a ceiling.
 
 ## Resources / required sub-skills
 
-Required sub-skills:
+Required sub-skill:
 
-- **`use-repo-code`** — repomix-backed grep of the codebase. Refresh once per sprint at Phase 0.
-- **`sprint-watchdog`** — pre/mid/post-phase audits.
 - **`ac-validate`** — Playwright-driven UI verification in Phase 4 (UI-facing diffs only).
-- **`pre-commit-review-fleet`** — sprint-level review fleet (security, performance, codebase-consistency, simplifier) over the full sprint diff at Phase 7.
 
-Missing any → STOP at Phase 0.
+Missing it → STOP at Phase 0. The rest of what used to be sub-skills lives in this tree or the plugin (spec phase 8): the repomix pack (`$SCRIPTS/repomix_refresh.sh`, refreshed once per sprint at Phase 0; recon instruments in `$REF/recon-instruments.md`), the pre-sprint audit (`$SCRIPTS/repo_preflight.sh`, Phase 0 step 8), the Phase 7 four-lane review fleet (`$SKILL/references/workflows/phase-7.workflow.js`, or read-only `crewforge5:reviewer` agents lane by lane), and the Phase 2 graph review (a read-only `crewforge5:reviewer` agent under `$REF/reviewer-contract.md`).
 
 Optional sub-skills:
 
-- **`adversarial-review`** (required under `scheduling: graph`, unused under `sequential`) — applied to the work-graph in Phase 2, **always** in graph mode: the graph-hardening review is hard-wired, not a config toggle. Plan-level adversarial review moved to `team-sprint-planner`; Phase 1 just verifies its provenance stamp and freezes `plan-final.md` — the plan is frozen thereafter; Phase 4's AC reviewer checks impl-vs-plan drift directly.
-- **`graphify`** (`graphify != off`) — knowledge-graph codebase intel that **augments**, never replaces, `use-repo-code`/repomix: repomix is fast text grep, graphify answers relationship/coupling questions (`graphify query "what calls X"`, `graphify path A B`). Phase 0 installs/verifies via `$SCRIPTS/graphify_ensure.sh` and builds `graphify-out/graph.json` through the resolved `graphify` sub-skill (`subskill_resolve.sh --load-mode graphify`, `MODE=inline`); Phase 2 keeps the graph fresh in the integration worktree; Phase 2/4 reviewers may query it to confirm coupling claims. Absent under `graphify: auto` → fail-soft; under `graphify: on` → Phase 0 gate.
+- **Graph review** (required under `scheduling: graph`, unused under `sequential`) — applied to the work-graph in Phase 2, **always** in graph mode: the graph-hardening review is hard-wired, not a config toggle. Plan-level review ran in `/crewforge5:build new` (`crewforge5:plan-critic`) before a human accepted the plan; Phase 1 just verifies that provenance and freezes `plan-final.md` — the plan is frozen thereafter; Phase 4's AC reviewer checks impl-vs-plan drift directly.
+- **`graphify`** (`graphify != off`) — knowledge-graph codebase intel that **augments**, never replaces, the repomix pack: repomix is fast text grep, graphify answers relationship/coupling questions (`graphify query "what calls X"`, `graphify path A B`). Phase 0 installs/verifies via `$SCRIPTS/graphify_ensure.sh` and builds `graphify-out/graph.json` by following `$PLUGIN/skills/graphify/SKILL.md` inline; Phase 2 keeps the graph fresh in the integration worktree; Phase 2/4 reviewers may query it to confirm coupling claims. Absent under `graphify: auto` → fail-soft; under `graphify: on` → Phase 0 gate.
 - **`recon`** (`recon != off`) — tiers 1–2 of the escalation ladder, routed through `$SCRIPTS/recon.sh`: it normalises the structural intents (`callers`, `callees`, `impact`, `docs`) across codegraph/graphify/repomix/tokensave and names the provider and freshness behind every answer, so a provider that cannot parse the language degrades visibly instead of returning an empty "no callers" that reads as safe. Phase 0 step 9b probes provider health with `--probe`; under `recon: auto` a partial or empty provider set is a WARN + `state.json.recon_degraded=true`, under `recon: on` it is a Phase 0 gate, and under `recon: off` callers go straight to the instruments themselves.
 
 ### Required runtime capability — multi-agent (implicit team)
@@ -160,15 +159,15 @@ Eight phases in order. Phases 3–6 run once per story; everything else runs onc
 
 **Goal.** Verify environment, plan path, and resume state. Fail loud, surface offending check, do not advance.
 
-**Gate.** All pre-flight checks pass: tooling, git repo, clean tree, target branch, sub-skills, commands, plan file + path validator, watchdog audit, repomix freshness, crew resolution, and — when `graphify != off` — graphify install + build + verify. Config defaults (per `team-sprint.config.yaml.example`) load here.
+**Gate.** All pre-flight checks pass: tooling, git repo, clean tree, target branch, sub-skills, commands, plan file + path validator, pre-sprint audit, repomix freshness, crew resolution, and — when `graphify != off` — graphify install + build + verify. Config defaults (per `team-sprint.config.yaml.example`) load here.
 
 **Load `$PHASES/phase-0.md` on entry.**
 
 ### Phase 1 — Plan-review provenance gate (thin)
 
-**Goal.** Verify the plan was already driven to adversarial-clean by `team-sprint-planner` (its final phase runs the review loop and stamps the plan), then freeze it as `$ART/plan-final.md`. The review loop itself no longer runs in team-sprint.
+**Goal.** Verify the story plan still traces to a human-accepted, unchanged `plan.md`, then freeze it as `$ART/plan-final.md`. The plan review itself ran in `/crewforge5:build new`.
 
-**Gate.** Plan carries the `<!-- adversarial-review: status=clean|user-override ... -->` provenance stamp. No stamp → hard STOP: "run `/team-sprint-planner` first".
+**Gate.** `bash $SCRIPTS/plan_stories.sh --check "$plan_path"` prints `STATUS=OK`. Otherwise hard STOP: "accept the plan with `/crewforge5:build accept`, then rebuild the story plan with `/crewforge5:execute --teams`".
 
 **Load `$PHASES/phase-1.md` on entry.**
 
@@ -188,7 +187,7 @@ JSON-tail contract for the graph reviewer (mandatory under `scheduling: graph`):
 
 **Workflow.** `$SKILL/references/workflows/story-executor.workflow.js` owns Phases 3–5 sequencing when the `Workflow` tool is present; the lead stays at the gates (record the run, score the gate) — see the phase doc's guard block.
 
-**Gate.** Tests + typecheck + lint all green; `coverage_check.sh` returns `pass: true` or `gate_status: "disabled"`; sprint-watchdog mid-audit clean.
+**Gate.** Tests + typecheck + lint all green; `coverage_check.sh` returns `pass: true` or `gate_status: "disabled"`; every source file a teammate claims exists on disk.
 
 **Load `$PHASES/phase-3.md` on entry.**
 
@@ -222,7 +221,7 @@ JSON-tail contract for the graph reviewer (mandatory under `scheduling: graph`):
 
 ### Phase 7 — Sprint-level review fleet, final merge & cleanup
 
-**Goal.** Run `pre-commit-review-fleet` once over the full sprint diff (the sprint's only security/perf review). HIGH findings and **all simplifier findings (any severity — mandatory-fix, per-finding user waiver only)** feed a sprint-level fix loop (TDD micro-cycles; `fix:` commits for HIGH, behaviour-preserving `refactor:` for simplifier; capped at `review_fix_iterations`); then sprint pre-flight, merge into target branch, tear down worktree + team, finalise sprint report.
+**Goal.** Run the four-lane review fleet (security, performance, codebase-consistency, simplifier) once over the full sprint diff (the sprint's only security/perf review). HIGH findings and **all simplifier findings (any severity — mandatory-fix, per-finding user waiver only)** feed a sprint-level fix loop (TDD micro-cycles; `fix:` commits for HIGH, behaviour-preserving `refactor:` for simplifier; capped at `review_fix_iterations`); then sprint pre-flight, merge into target branch, tear down worktree + team, finalise sprint report.
 
 **Workflow.** `$SKILL/references/workflows/phase-7.workflow.js` owns steps 1–3 when the `Workflow` tool is present; the lead stays at the gates and runs steps 4–10 — see the phase doc's guard block.
 
@@ -253,7 +252,7 @@ Results travel one of two channels, chosen by **who spawned the sender**:
 - **Final agent return (default)** — every direct child (Phase 3 test-writer + engineer, Phase 4/5 AC reviewer + `ui-validator`, Phase 2 graph reviewer, Phase 7 fleet) delivers to its direct spawner as its final response, in **both** scheduling modes. No `SendMessage`.
 - **SendMessage to `team-lead` (exception)** — only when the recipient is not the sender's direct spawner: the graph-mode node executor's single `done`/`failed`. The only mandatory SendMessage in the skill. `team-lead` is canonical but verified at spawn time; a lead registered under another name injects its actual addressable name via the `<LEAD_RECIPIENT>` placeholder — see `$REF/sendmessage-protocol.md` "Recipient resolution".
 
-The **spawner** owns "block, collect, close": after any `Agent` spawn it blocks until the child is terminal (`TaskOutput`/`Monitor`), collects the return, verifies claimed source files exist, and closes the child's task itself — never the child. Never end a turn with a live child (it sleeps forever — D1). Phase 4/5 reviewer findings persist to the story-keyed `$ART/reviews-<story-id>-round-<N>.md`, the audit record sprint-watchdog verifies at Phase 5 step 1. Findings that reach neither the message log nor the artifact break resume. Full contract: `$REF/sendmessage-protocol.md`.
+The **spawner** owns "block, collect, close": after any `Agent` spawn it blocks until the child is terminal (`TaskOutput`/`Monitor`), collects the return, verifies claimed source files exist, and closes the child's task itself — never the child. Never end a turn with a live child (it sleeps forever — D1). Phase 4/5 reviewer findings persist to the story-keyed `$ART/reviews-<story-id>-round-<N>.md`, the audit record the lead verifies at Phase 5 step 1. Findings that reach neither the message log nor the artifact break resume. Full contract: `$REF/sendmessage-protocol.md`.
 
 If a sprint dies mid-flight, needs `--abort`, hits a stuck reviewer/coverage loop, or you find a stale/corrupted worktree or pre-v1.0 layout: load `$REF/failure-modes-resume.md`.
 
@@ -273,9 +272,9 @@ also verified.
 ## Guardrails
 
 - **Worktree isolation is absolute.** Never run sprint operations against the main working tree.
-- **Quality gates are not optional.** Plan-review provenance (adversarially reviewed by `team-sprint-planner`), 80% coverage, per-story AC/DoD review, sprint-level pre-commit fleet — all must pass to reach merge. User can override on a per-finding basis but not skip a gate wholesale.
+- **Quality gates are not optional.** Plan provenance (a human-accepted `plan.md`), 80% coverage, per-story AC/DoD review, the sprint-level review fleet — all must pass to reach merge. User can override on a per-finding basis but not skip a gate wholesale.
 - **Two communication channels.** Final agent return is the default; `SendMessage` to `team-lead` is reserved for the node-executor `done`/`failed` only. Spawners block-collect-close every child; never end a turn with a live child.
-- **Source-file existence is verified.** Sprint-watchdog enforces between phases.
+- **Source-file existence is verified.** The spawner checks every file a child claims before it closes the child's task (block-collect-close).
 - **Conventional Commits on merge.** Subject ≤72 chars, type prefix (`feat:`, `fix:`, `refactor:`, etc.), structured body emitted by `build_commit_msg.sh` (the `Story: <id> — <title>` line is grep-anchored for resume).
 - **No force-push, no main-branch writes without explicit user confirmation.** Even on a successful sprint.
 
@@ -285,9 +284,9 @@ If you need the ADR index or design rationale behind this skill: load `$REF/arch
 
 Support files not cited above, so the bundle is self-describing. None of these load at runtime unless a phase doc says so.
 
-- **Scripts** (`scripts/`, called from the phase docs): `build_graph.sh`, `detect_language.sh`, `detect_commands.sh`, `recon_providers.sh` (provider adapters behind `recon.sh`), `findings_gate.sh`, `per_story_diff.sh`, `preflight_subskills.sh`, `run_subskill_hooks.sh`, `repomix_refresh.sh`, `validate_plan_path.sh`, `crew_check.sh`, `rule_emit.sh` (crew-factory's rule-file emitter), `lint_skill.sh` (structural lint over this skill itself). Machine schemas live under `scripts/schemas/` — `crews.schema.json` (crew-manifest shape) beside `state.schema.json` (see Resume contract).
-- **Test suite** (`scripts/tests/`; entry point `run-all.sh` — shellcheck, then bats, then the lint; harness `lib/workflow-harness.mjs` + the bats-fallback shim, one repo-wide copy kept outside this skill + `schedule_scenario.sh`; `README.md`): `art_dir.bats`, `bats_fallback_skip.bats`, `build_commit_msg.bats`, `build_graph.bats`, `coverage_check.bats`, `coverage_key_resolution.bats`, `crew_check.bats`, `detect_commands.bats`, `detect_language.bats`, `findings_gate.bats`, `graphify_ensure.bats`, `lib.bats`, `lint_skill.bats`, `parse_stories.bats`, `per_story_diff.bats`, `plan_contract.bats`, `preflight_subskills.bats`, `recon.bats`, `recon_config.bats`, `recon_distribution.bats`, `recon_guard.bats`, `recon_log.bats`, `recon_providers.bats`, `repomix_refresh.bats`, `resolve_agent_type.bats`, `run_gate.bats`, `run_subskill_hooks.bats`, `schedule.bats`, `schedule_contract.bats`, `state.bats`, `state_tmp_leak.bats`, `validate_plan_path.bats`, `wa3_demotion.bats`, `workflow_doc_drift.bats`, `workflow_smoke.bats`.
+- **Scripts** (`scripts/`, called from the phase docs): `plan_stories.sh` (the accepted plan.md → story plan converter `/crewforge5:execute --teams` runs; `--check` is the Phase 1 gate), `repo_preflight.sh` (Phase 0's pre-sprint audit), `build_graph.sh`, `detect_language.sh`, `detect_commands.sh`, `recon_providers.sh` (provider adapters behind `recon.sh`), `findings_gate.sh`, `per_story_diff.sh`, `preflight_subskills.sh`, `run_subskill_hooks.sh`, `repomix_refresh.sh`, `validate_plan_path.sh`, `crew_check.sh`, `rule_emit.sh` (crew-factory's rule-file emitter), `lint_skill.sh` (structural lint over this skill itself). Machine schemas live under `scripts/schemas/` — `crews.schema.json` (crew-manifest shape) beside `state.schema.json` (see Resume contract).
+- **Test suite** (`scripts/tests/`; entry point `run-all.sh` — shellcheck, then bats, then the lint; harness `lib/workflow-harness.mjs` + the bats-fallback shim, one repo-wide copy kept outside this skill + `schedule_scenario.sh`; `README.md`): `art_dir.bats`, `bats_fallback_skip.bats`, `build_commit_msg.bats`, `build_graph.bats`, `coverage_check.bats`, `coverage_key_resolution.bats`, `crew_check.bats`, `detect_commands.bats`, `detect_language.bats`, `findings_gate.bats`, `graphify_ensure.bats`, `lib.bats`, `lint_skill.bats`, `parse_stories.bats`, `per_story_diff.bats`, `plan_contract.bats`, `plan_stories.bats`, `preflight_subskills.bats`, `recon.bats`, `recon_config.bats`, `recon_distribution.bats`, `recon_guard.bats`, `recon_log.bats`, `recon_providers.bats`, `repo_preflight.bats`, `repomix_refresh.bats`, `resolve_agent_type.bats`, `run_gate.bats`, `run_subskill_hooks.bats`, `schedule.bats`, `schedule_contract.bats`, `state.bats`, `state_tmp_leak.bats`, `validate_plan_path.bats`, `wa3_demotion.bats`, `workflow_doc_drift.bats`, `workflow_smoke.bats`.
 - **Test fixtures** (`scripts/fixtures/`): `golden-template-1.md`, `happy.plan-final.md`, `happy.stories.json`, `mech-refactor-v3.plan.md` (trimmed real plan), `single.plan-final.md`, `wide.stories.json`; recon fixtures under `scripts/fixtures/recon/`: `codegraph-affected.json`, `codegraph-affected-empty.json`, `codegraph-callees.json`, `codegraph-callers.json`, `codegraph-callers-empty.json`, `codegraph-explore.txt`, `codegraph-impact.json`, `codegraph-node.txt`, `codegraph-not-found.txt`, `codegraph-status-initialized.txt`, `codegraph-status-not-initialized.txt`, `codegraph-unknown-shape.json`, `gitignore-conventional`, `gitignore-no-trailing-newline`, `gitignore-whitelist`, `graphify-explain.txt`, `graphify-explain-defines-only.txt`, `graphify-explain-require-jq.txt`, `graphify-graph.json`, `graphify-python-stale`, `graphify-query.txt`, `output-grammar.md` (recon's STATUS/REASON contract), `pack-no-anchored-tags.xml`, `pack-phantom-tag.xml`, `pack-truncated.xml`, `pack-two-files.xml`, `rtk-grep-hits.txt`, `rtk-grep-hits-no-trailer.txt`, `rtk-grep-hits-phantom.txt`.
-- **Data**: `assets/data/vocab.json` — single source of truth for the severity/role/violation vocabularies (sprint-watchdog's hook-enforcement doc reads it too; never restate its lists inline).
+- **Data**: `assets/data/vocab.json` — single source of truth for the severity/role/violation vocabularies (never restate its lists inline).
 - **Phase doc**: `phase-execute.md` under `$PHASES/` — the graph-mode node-executor brief.
 - **Housekeeping**: `.gitignore` — runtime noise (`.team-sprint/`, repomix + graphify output) stays out of the skill repo.

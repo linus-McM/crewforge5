@@ -1,7 +1,7 @@
-**WHO READS THIS / WHEN:** The Phase 2 graph reviewer (mandatory under `scheduling: graph`) reads this before composing findings. The plan-review chunk reviewers that used to run in Phase 1 now run in `team-sprint-planner`'s adversarial review loop, whose reviewer contract lives in that skill's `references/dynamic-review-workflow.md` and `references/adversarial-review-loop.md`.
+**WHO READS THIS / WHEN:** The Phase 2 graph reviewer (mandatory under `scheduling: graph`) reads this before composing findings. Plan-level review runs before acceptance, in `/crewforge5:build new`'s `crewforge5:plan-critic` workflow.
 
-> **Canonical shape lives in team-sprint-planner's `references/dynamic-review-workflow.md`** (the
-> `FINDING` schema — the plan-review loop and its workflow moved planner-side). On the Workflow
+> **This file is the canonical shape for team-sprint** (the `FINDING` schema; the retired
+> planner's plan-review copy went with it in spec phase 8). On the Workflow
 > path the schema is machine-enforced at the tool layer; the fenced block below is the
 > hand-rolled equivalent for the prose fallback and for this skill's Phase 2 graph reviewer. If
 > you change one, change both — or retire the fallback. The grounding rules underneath apply

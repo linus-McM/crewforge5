@@ -106,7 +106,7 @@ else
       # for every session whether or not the agent is ever spawned, and unlike a
       # skill it has no `disable-model-invocation` escape. So the bar is a
       # ceiling, not a floor — trigger phrases plus one line of purpose, at the
-      # ~200 char house limit claude-config sets. See budget_check.sh, which
+      # ~200 char house limit templates/house-rules.md sets. See budget_check.sh, which
       # charges this same string against the release gate.
       DESC_CHARS=$(printf '%s' "$DESC_BLOCK" | sed 's/^description:[[:space:]]*//' | wc -c | tr -d ' ')
       if [ "$WORD_COUNT" -lt 5 ]; then

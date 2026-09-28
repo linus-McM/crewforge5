@@ -1,6 +1,6 @@
 # Phase 7 — Sprint-level review fleet, final merge & cleanup
 
-**Goal.** Run the `pre-commit-review-fleet` once over the full sprint diff (security, performance, codebase-consistency, simplifier — this is the sprint's only security/perf review), drive any HIGH findings **and every simplifier finding** through a sprint-level fix loop, then run the sprint-level pre-flight, merge into the target branch, tear down the worktree and team, and finalise the sprint report. Only reached when every story has committed cleanly in Phase 6. Retiring in spec phase 8: this serves stamped `docs/plans/` sprints only; an accepted `crewforge5/<slug>/plan.md` is reviewed by `/crewforge5:review` (the `crewforge5:review` workflow), which replaces this phase and `pre-commit-review-fleet`.
+**Goal.** Run the four-lane review fleet once over the full sprint diff (security, performance, codebase-consistency, simplifier — this is the sprint's only security/perf review), drive any HIGH findings **and every simplifier finding** through a sprint-level fix loop, then run the sprint-level pre-flight, merge into the target branch, tear down the worktree and team, and finalise the sprint report. Only reached when every story has committed cleanly in Phase 6. This is the Teams path's own review (`/crewforge5:execute --teams`); the primary path reviews with `/crewforge5:review`.
 
 > **Workflow path.** If the `Workflow` tool is present in your tool list, use it. If it is not, use the prose below. This is
 > a fact to check, not a preference to weigh — do not choose between the two paths on judgment. `$SKILL/references/workflows/phase-7.workflow.js`
@@ -23,7 +23,7 @@
 Every story in `$ART/stories.json` has a corresponding entry in `state.json.story_commits[]`. `state.json.current_phase == 7`. Worktree still exists on `sprint_branch`.
 
 ## Gate
-- `pre-commit-review-fleet` returns zero unresolved HIGH findings **and zero unresolved simplifier findings** over the sprint diff (or user override per finding), **and every spawned fleet reviewer is accounted for** — the delivery-completeness check (step 1b) confirms a final return or a persisted artifact for each of the reviewers launched. A missing reviewer (no return AND no artifact) blocks the merge: an undelivered HIGH must be distinguishable from "no findings", never silently passed green. Simplifier findings are mandatory-fix regardless of severity: by nature they file as MEDIUM/LOW on the fleet's scale and would otherwise slip through as "surfaced, non-blocking" — the simplifier lane's whole output is the cleanup, so it ships or is explicitly waived per finding, never silently dropped.
+- The fleet returns zero unresolved HIGH findings **and zero unresolved simplifier findings** over the sprint diff (or user override per finding), **and every spawned fleet reviewer is accounted for** — the delivery-completeness check (step 1b) confirms a final return or a persisted artifact for each of the reviewers launched. A missing reviewer (no return AND no artifact) blocks the merge: an undelivered HIGH must be distinguishable from "no findings", never silently passed green. Simplifier findings are mandatory-fix regardless of severity: by nature they file as MEDIUM/LOW on the fleet's scale and would otherwise slip through as "surfaced, non-blocking" — the simplifier lane's whole output is the cleanup, so it ships or is explicitly waived per finding, never silently dropped.
 - Final typecheck + lint + test + coverage pass across the worktree. Exception: when no coverage command is resolved (`detect_commands.sh` emitted `""`), the coverage leg is neither run nor scored — it is recorded as `unavailable — no coverage command resolved`, a non-blocking note, and the merge is not blocked on that account.
 - `git pull --ff-only` on the target branch succeeds (no divergent upstream).
 - `git merge --no-ff` succeeds.
@@ -35,7 +35,7 @@ Every story in `$ART/stories.json` has a corresponding entry in `state.json.stor
    ```bash
    git diff "$TARGET_BRANCH...HEAD" > "$ART/diff-sprint.patch"
    ```
-   Run `pre-commit-review-fleet` once over `$ART/diff-sprint.patch`. It is hidden from the catalogue, so the `Skill` tool cannot reach it — `bash "${CREWFORGE5_ROOT}/scripts/flow/subskill_resolve.sh" --load-mode pre-commit-review-fleet` answers `MODE=inline`, so read the body it names and drive the fleet from here. If the diff exceeds ~2000 lines, chunk it by story-commit boundaries (`git log --grep='^Story: '` marks each story's SHA) so no reviewer drowns in context. Fleet reviewers are lead-spawned direct children: each delivers its findings JSON by **final agent return** to `team-lead` (`$REF/sendmessage-protocol.md`), and the lead persists each to `$ART/reviews-sprint-round-<N>-<reviewer>.md` as the durable delivery record (`SendMessage` optional belt-and-braces, never required).
+   Run the four lanes once over `$ART/diff-sprint.patch`: one read-only `crewforge5:reviewer` agent per lane (security, performance, codebase-consistency, simplifier), each briefed with its lane charter from `$SKILL/references/workflows/phase-7.workflow.js` (the crew's `security`/`profiler` agents may take their lanes). If the diff exceeds ~2000 lines, chunk it by story-commit boundaries (`git log --grep='^Story: '` marks each story's SHA) so no reviewer drowns in context. Fleet reviewers are lead-spawned direct children: each delivers its findings JSON by **final agent return** to `team-lead` (`$REF/sendmessage-protocol.md`), and the lead persists each to `$ART/reviews-sprint-round-<N>-<reviewer>.md` as the durable delivery record (`SendMessage` optional belt-and-braces, never required).
    <!-- wf:fleet-completeness -->
    1b. **Delivery-completeness check (before scoring the gate).** The fleet launches four reviewers (security, performance, codebase-consistency, simplifier); every one must be accounted for by a final return **or** its persisted artifact before the aggregate is trusted. A reviewer missing both is re-spawned (once; then STOP and surface to the user) — the gate is never scored green on an incomplete fleet. A reviewer that genuinely found nothing writes a zero-findings artifact, so "delivered, zero findings" and "never delivered" stay distinguishable.
 2. **Sprint-level fix loop** (when the fleet reports HIGH findings **or any simplifier findings**). The per-story Phase 5 machinery is retired — stories are already committed — so fixes land as follow-up commits on the sprint branch:
@@ -76,7 +76,7 @@ Every story in `$ART/stories.json` has a corresponding entry in `state.json.stor
    - Adversarial plan review: PASS (<N> iterations)
    - Per-story TDD coverage: all ≥ <threshold>%
    - Per-story AC/DoD review (+ UI where applicable): PASS
-   - Sprint-level pre-commit fleet (security/perf/consistency/simplifier): PASS (<N> fix rounds; <N> simplifier findings resolved, <N> waived by user)
+   - Sprint-level review fleet (security/perf/consistency/simplifier): PASS (<N> fix rounds; <N> simplifier findings resolved, <N> waived by user)
    - Final sprint-level pre-flight: PASS
 
    ## Per-story results
@@ -101,7 +101,7 @@ Every story in `$ART/stories.json` has a corresponding entry in `state.json.stor
     Do NOT delete `$ART/` — it's the post-mortem record and proves the plan-path slug is claimed (so a future plan with the same filename is correctly rejected by Phase 0 step 7).
 
 ## Exit condition
-`state.json.done == true`; sprint branch merged into `$TARGET_BRANCH`; worktree removed; team released; sprint report finalised. **Disarm the watchdog guard** as the last teardown step: `bash ${CREWFORGE5_ROOT}/hooks/sprint-watchdog-guard.sh --deactivate` (from the repo root) — removes `.claude/scripts/sprint-watchdog/.sprint-active.json` so the `PostToolUse(TaskUpdate)` guard goes inert until the next sprint arms it. Leaving it armed makes every later `TaskUpdate` in the repo verify against a finished sprint's artifacts and record spurious violations.
+`state.json.done == true`; sprint branch merged into `$TARGET_BRANCH`; worktree removed; team released; sprint report finalised.
 
 ## Artifacts produced
 - `$ART/diff-sprint.patch` (+ fleet report and any fix commits on the sprint branch) · `$ART/reviews-sprint-round-<N>-<reviewer>.md` (one per fleet reviewer — the delivery-completeness audit record) · merge commit on `$TARGET_BRANCH` · finalised `$ART/sprint-report.md` · `state.json.done == true` + `state.json.finalised_at`.

@@ -19,8 +19,7 @@
 # This gate measures what the session actually carries.
 #
 # Cost is only half the contract. The bundle is meant to show a fixed public
-# surface — the `execute` flow skill plus the slash commands in
-# commands/ (spec R-S1) — and an extra entry with a short description used to
+# surface — the slash commands in commands/ (spec R-S1) and no listed skill — and an extra entry with a short description used to
 # pay its tokens and walk through unnoticed. So the listed skills and commands
 # are asserted by name as well as charged, independently of the budget.
 #
@@ -29,17 +28,18 @@ set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
-# The tree measures ~480 tok. The budget sits one description's worth above
-# that: enough that an honest rewording does not turn CI red, too little to
-# absorb a whole new listed surface without somebody noticing. Shrinking the
-# tree means lowering this too — slack nobody bounds is just a bigger number,
-# and budget_check.bats asserts it from both sides.
+# The tree measures ~381 tok since spec phase 8 retired the execute skill, the
+# sprint-watchdog agent and the hidden flow skills. The budget sits one
+# description's worth above that: enough that an honest rewording does not turn
+# CI red, too little to absorb a whole new listed surface without somebody
+# noticing. Shrinking the tree means lowering this too — slack nobody bounds is
+# just a bigger number, and budget_check.bats asserts it from both sides.
 #
-# It was briefly pinned at the measured 541 with no slack at all. That reads
+# It was briefly pinned at the measured total with no slack at all. That reads
 # well and behaves badly — every edit to any description became a build break,
 # so the pressure was to raise the number rather than think about the cost,
 # which is the opposite of what the gate is for.
-BUDGET=550
+BUDGET=450
 VERBOSE=0
 
 while [ $# -gt 0 ]; do
@@ -56,13 +56,13 @@ from pathlib import Path
 
 root, budget, verbose = Path(sys.argv[1]), int(sys.argv[2]), sys.argv[3] == "1"
 
-# The listed flow skills. Everything else is reached through the resolver, not
-# through the catalogue. `plan` and `init` moved to commands/ (R-S2, R-S4);
-# their old bash flows are the hidden `plan-legacy` and `init-legacy`.
-ENTRY_SKILLS = ["execute"]
-# The public slash commands: the stages, config hygiene, the crew factory and
-# the rules installer.
-ENTRY_COMMANDS = ["build", "crew", "design", "init", "plan", "review", "rules-install"]
+# The listed skills: none. Since spec phase 8 every flow is a command and every
+# skill is hidden know-how a command names by path (R-P3, R-P4), so any listed
+# skill is an entry point nobody chose.
+ENTRY_SKILLS = []
+# The public slash commands: the stages, the execute shortcut, config hygiene,
+# the crew factory and the rules installer.
+ENTRY_COMMANDS = ["build", "crew", "design", "execute", "init", "plan", "review", "rules-install"]
 
 def frontmatter(path):
     text = path.read_text(errors="replace")
@@ -126,7 +126,7 @@ unexpected = [n for n in listed if n not in ENTRY_SKILLS]
 missing = [n for n in ENTRY_SKILLS if n not in listed]
 if unexpected:
     print(f"FAIL: not an entry point but listed: {', '.join(sorted(unexpected))}. "
-          f"Add `disable-model-invocation: true` and reach it through the resolver. "
+          f"Add `disable-model-invocation: true` and have a command name it by path. "
           f"Cheap is not the same as free.")
     failed = True
 if missing:

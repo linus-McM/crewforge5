@@ -33,11 +33,11 @@ without waiting to be prompted; never leave findings as inline prose instead.
   session** (Read/Grep/Glob). Nothing from memory, training data, or prior conversations.
 - Quote the verifying evidence inline: the exact command and its literal output, truncated
   if huge but never paraphrased.
-- Negative claims ("X doesn't exist") are the easiest thing to get wrong — run
-  `${CREWFORGE5_ROOT}/skills/adversarial-review/scripts/verify-negative.sh`, which does the exact-name,
-  case-insensitive and filename passes and requires all three to return zero.
+- Negative claims ("X doesn't exist") are the easiest thing to get wrong — run three passes
+  (exact name, case-insensitive, and a filename search with `git ls-files`) and require all
+  three to return zero before claiming absence.
 - Line-number citations require a Read of the cited range, not just a Grep hit.
 - Snapshots are recon; the live tree is evidence. Freshness-check any derived artifact
-  before citing it (`evidence-fresh.sh`). On disagreement, live wins.
+  before citing it (compare its mtime or recorded commit with the files it covers). On disagreement, live wins.
 - If a claim cannot be verified, mark it `UNVERIFIED` and downgrade severity. A fabricated
   finding is worse than no finding.

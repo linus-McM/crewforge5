@@ -55,15 +55,11 @@ round number, fixes applied, and the report's FAIL and WARN counts.
    the original validation ran.
 
    Both validators set `disable-model-invocation: true`, so the `Skill` tool cannot
-   reach them. Resolve the one this rectifier pairs with — `agent-validator` or
-   `skill-validator`, named in the invoking SKILL.md:
-
-   ```bash
-   bash "${CREWFORGE5_ROOT}/scripts/flow/subskill_resolve.sh" --load-mode <validator>
-   ```
-
-   It answers `MODE=agent`, so spawn the validator through the `Agent` tool with the
-   type it names. Never read its body inline: it forks so a whole validation run
+   reach them. The one this rectifier pairs with — `agent-validator` or
+   `skill-validator`, named in the invoking SKILL.md — lives at
+   `${CREWFORGE5_ROOT}/skills/<validator>/SKILL.md` and declares `context: fork` with
+   `agent: general-purpose`, so spawn a `general-purpose` agent through the `Agent` tool
+   with that file as its brief. Never read its body inline: it forks so a whole validation run
    stays out of this window, and this loop runs up to five rounds.
 2. Read the new report's Overall Grade and FAIL/WARN counts; add them to the tally.
 3. **Grade A** (0 failures, 0-2 warnings): loop complete — go to Step 9.

@@ -8,7 +8,7 @@
 # to plan-final.md). Without it the loop cannot converge —
 # sprint-recon-harness-1 ended with 64 markers embedded in a 58.4KB plan.
 #
-# (The workflow-integration tests moved to team-sprint-planner with the loop.)
+# (The workflow-integration tests went with the retired planner's loop.)
 # the gate's integration: any remaining_markers other than exactly 0 (including
 # a missing field — fail closed) stops the loop as fold_failed,
 # and both the revise and finalise prompts instruct running the gate.

@@ -54,7 +54,7 @@ Ceilings are fractions of the **baseline** body chars, recorded in `ceilings.jso
 ## Known caveats (all hit in the first run)
 
 - **Symlinked skill dirs**: a skill dir may be a symlink to another repo
-  (e.g. `skills/adhd → ~/.agents/skills/adhd`). Edit through the symlink path, but
+  (e.g. `skills/foo → ~/.agents/skills/foo`). Edit through the symlink path, but
   note the changes are not tracked by the host repo's git — record this in the report.
 - **Singular `reference/` dirs**: some skills already have their own convention
   (e.g. team-sprint's `reference/`). Follow the skill's existing convention; do not

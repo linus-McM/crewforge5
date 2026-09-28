@@ -1,4 +1,4 @@
-**WHO READS THIS / WHEN:** Phase 0 pre-flight reads this before running `scripts/validate_plan_path.sh` against `$plan_path`; `team-sprint-planner` follows the same convention when naming the plan file (its step 5), so its review loop and this skill's Phase 0 agree on the slug.
+**WHO READS THIS / WHEN:** Phase 0 pre-flight reads this before running `scripts/validate_plan_path.sh` against `$plan_path`; `$SCRIPTS/plan_stories.sh` names the story plan `sprint-<slug>.md` beside the feature's plan.md, which satisfies it by construction.
 
 ### Plan path naming convention (REQUIRED — uniqueness contract)
 

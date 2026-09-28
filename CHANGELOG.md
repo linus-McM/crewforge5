@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+Phase 8 of `docs/specs/cc-sdlc-alignment.md` (retire the flow driver and hidden skills: R-V3, R-V6, R-P1, R-P3, R-P4, R-G5, R-S7, R-A1, C1).
+
+- **Breaking:** `scripts/flow/` (`flow_state|flow_next|flow_gate.sh`, `subskill_resolve.sh`), every `phases.json`, and the skills `execute`, `plan-legacy`, `init-legacy`, `team-feature`, `team-sprint-planner`, `master-plan`, `adhd`, `grill-me`, `adversarial-review`, `tech-debt-audit`, `pre-commit-review-fleet`, `sprint-watchdog`, `use-repo-code` and `claude-config` are removed with their tests. 13 skills remain, all hidden; commands name them by path.
+- Content still used moved to `templates/`: `interview.md` (diverge frames, grilling), `concerns.md` (tech-debt dimensions), `adversarial-stamp.md`, `house-rules.md`, `repomix-flags.md`.
+- `/crewforge5:execute` is a command (`commands/execute.md`): `build implement`, `review run`, `review review`, then the self-improve distillation, printing what it ran. `--teams` runs `team-sprint` in graph mode on a story plan `plan_stories.sh` builds from the accepted plan.md; that path stays until one real sprint is measured both ways (D3, the one open item).
+- **Breaking:** the `sprint-watchdog` agent and the `PostToolUse(TaskUpdate)` guard hook are removed; fake completion is refused by `tdd.require()` (R-G5, R-T5). Team-sprint keeps `repo_preflight.sh` as its Phase 0 audit.
+- `crewforge5 migrate [<source>] [--slug s]` moves a `.crewforge5/<flow>/<subject>/` run or a `docs/plans/*.md` plan into `<home>/<slug>/migrated/` once, refusing to overwrite (R-A1, C1).
+- Tests: no `phases.json` or resolver remains and every command's CLI call is a CLI action (R-V3). CI drops the retired suites.
+- Always-loaded: ~381 tok across 13 entries (was ~464 tok, 14); budget 450 (was 550).
+
 Phase 7b of `docs/specs/cc-sdlc-alignment.md` (shared codebase context: R-K1–R-K5, C5).
 
 - `crewforge5 knowledge bootstrap [check] | status | refresh | check` (`knowledge.py`): Graphify graph plus an OKF bundle (`index.md`, `features/`, `modules/`). Bootstrap is check-only unless `[knowledge] auto_install = true`; every command's preamble runs it, reads the index before raw files and asks `graphify query|affected` before grep (R-K1). cc_sdlc's `sdlc/knowledge/` is shared when present, else `crewforge5/knowledge/` (R-K4, D2).

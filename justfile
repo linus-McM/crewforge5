@@ -13,8 +13,7 @@ fable:
 test:
     @bash plugin/skills/team-sprint/scripts/tests/run-all.sh
     @bats scripts/tests/
-    @bash plugin/skills/team-sprint-planner/scripts/tests/run-all.sh
-    @bats plugin/skills/self-improve/scripts/tests/ plugin/skills/sprint-watchdog/tests/ plugin/skills/token-slim/tests/
+    @bats plugin/skills/self-improve/scripts/tests/ plugin/skills/token-slim/tests/
     @uv run --group dev pytest
 
 # shellcheck the dev and shipped scripts (the pre-commit and CI scope); ruff over all the Python

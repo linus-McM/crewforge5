@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "crewforge5",
-      "description": "Seven commands over one repo: /crewforge5:init audits and slims your Claude config, /crewforge5:crew forges a validated agent crew for your stack, /crewforge5:plan, /crewforge5:design and /crewforge5:build turn a goal into human-accepted intent, spec and test-first plan, /crewforge5:review checks and reviews the implementation, and /crewforge5:execute drives a reviewed plan to a merged commit with a generated agent crew and its quality gates.",
+      "description": "Seven commands over one repo: /crewforge5:init audits and slims your Claude config, /crewforge5:crew forges a validated agent crew for your stack, /crewforge5:plan, /crewforge5:design and /crewforge5:build turn a goal into human-accepted intent, spec and test-first plan, /crewforge5:review checks and reviews the implementation, and /crewforge5:execute is the shortcut that runs build then review on an accepted plan (with --teams, the graph-mode agent-team sprint).",
       "source": {
         "source": "git-subdir",
         "url": "https://github.com/linus-McM/crewforge5.git",

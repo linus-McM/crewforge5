@@ -63,16 +63,6 @@
             "timeout": 10
           }
         ]
-      },
-      {
-        "matcher": "TaskUpdate",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/sprint-watchdog-guard.sh\"",
-            "timeout": 10
-          }
-        ]
       }
     ]
   }

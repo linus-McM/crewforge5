@@ -11,7 +11,7 @@ from pathlib import Path
 
 PLACEHOLDER = re.compile(r"^\s*<[^>]*>\s*$")
 HEADING = re.compile(r"^## (.+?)\s*$", re.MULTILINE)
-# The planner's stamp (skills/team-sprint-planner/references/plan-contract.md), checked by `build check`.
+# The adversarial-review stamp (templates/adversarial-stamp.md), checked by `build check` under [build] require_adversarial_stamp.
 STAMP = re.compile(r"^<!-- adversarial-review: status=(clean|user-override)\b", re.MULTILINE)
 
 REQUIRED = {

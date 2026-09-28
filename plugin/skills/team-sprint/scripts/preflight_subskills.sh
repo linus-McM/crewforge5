@@ -15,11 +15,12 @@
 #   --cache <path-to-json>      override the default lead-side cache file
 #                               ($ART/preflight-cache.json) location.
 #
-# Default probe (no --probe-fn) delegates to the sub-skill resolver:
-#   scripts/flow/subskill_resolve.sh --probe <skill-name>
-# which searches the plugin tree, the project catalogue and the user catalogue
-# in that order. Probing $HOME alone — as this did — declared every
-# plugin-installed sub-skill missing, since plugin skills never live there.
+# Default probe (no --probe-fn) looks for <skill-name>/SKILL.md (with `-` and
+# `_` interchangeable) under the plugin's skills/, the project's .claude/skills/
+# and the user's $HOME/.claude/skills/, in that order. Probing $HOME alone
+# declared every plugin-installed sub-skill missing, since plugin skills never
+# live there. (The shared resolver this used to call retired with the flow
+# driver in spec phase 8; this is its probe, kept inside team-sprint's tree.)
 #
 # Lead-side cache (optional enrichment): when $ART/preflight-cache.json
 # exists, a present/absent verdict for a given skill name wins over the
@@ -71,8 +72,14 @@ done
 
 # Default filesystem probe — pure shell, no Agent tool involved.
 _fs_probe() {
-  local skill="$1"
-  bash "$_HERE/../../../scripts/flow/subskill_resolve.sh" --probe "$skill"
+  local skill="$1" root cand repo
+  repo="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+  for root in "$_HERE/../.." "$repo/.claude/skills" "${HOME:-}/.claude/skills"; do
+    for cand in "$skill" "${skill//-/_}" "${skill//_/-}"; do
+      [[ -f "$root/$cand/SKILL.md" ]] && return 0
+    done
+  done
+  return 1
 }
 
 # Cache lookup. Returns 0=present, 1=absent (with explicit "false"), 2=unknown.

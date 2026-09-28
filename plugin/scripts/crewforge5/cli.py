@@ -11,7 +11,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import build, checkpoint, crew, docs, evals, init, knowledge, packs, review, stages, tdd, workflows
+from . import build, checkpoint, crew, docs, evals, init, knowledge, migrate, packs, review, stages, tdd, workflows
 from .project import Blocked, fail
 
 
@@ -50,7 +50,10 @@ COMMANDS = {
     ("workflows", "list"): lambda root, arg, ns: workflows.catalog(root),
     ("workflows", "env"): lambda root, arg, ns: workflows.env(root),
     ("status", None): lambda root, arg, ns: stages.status(root, ns.slug),
+    ("migrate", None): lambda root, arg, ns: migrate.run(root, arg, ns.slug),
 }
+# Stages without actions that still take the positional argument.
+ARG_STAGES = {"migrate"}
 # Stage boundaries: after a success, checkpoint commits the verdict's `path` with this action label (R-A3).
 BOUNDARIES = {**{(s, "accept"): "accept" for s in stages.ORDER}, ("init", "accept"): "accept", ("review", "review"): "review"}
 
@@ -74,6 +77,8 @@ def parser() -> argparse.ArgumentParser:
         if actions:
             st.add_argument("action", choices=actions)
             st.add_argument("arg", nargs="?", help="title (plan new), step (build red|green), on|off (build fix), config root (init new), language (crew), stage (knowledge pack, docs), check (knowledge bootstrap)")
+        elif stage in ARG_STAGES:
+            st.add_argument("arg", nargs="?", help="the old run to migrate: .crewforge5/<flow>/<subject>/ or docs/plans/<name>.md")
     return ap
 
 

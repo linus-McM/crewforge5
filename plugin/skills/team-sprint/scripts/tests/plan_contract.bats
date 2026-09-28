@@ -1,9 +1,9 @@
 #!/usr/bin/env bats
 # plan_contract.bats — golden-template contract test.
 #
-# The team-sprint-planner skill documents a plan template
-# (team-sprint-planner/references/plan-contract.md). This file locks that
-# documented template to the real scripts by driving one canonical fixture
+# The story-plan template (the retired team-sprint-planner's plan contract,
+# which plan_stories.sh now emits from an accepted plan.md). This file locks that
+# template to the real scripts by driving one canonical fixture
 # (scripts/fixtures/golden-template-1.md) end-to-end through
 # parse_stories.sh -> validate_plan_path.sh -> build_graph.sh. If a parser or
 # graph change breaks the documented template, this suite fails at commit time.
@@ -56,20 +56,6 @@ PY
 @test "golden template: validate_plan_path accepts the fixture filename" {
   cd "$TMP"
   run bash "$SCRIPTS/validate_plan_path.sh" "$GOLDEN"
-  assert_success
-  [[ "$output" == *"STATUS=OK"* ]]
-}
-
-@test "cross-skill: team-feature documented default plan filename passes validate_plan_path" {
-  TF="$SKILL_DIR/../team-feature/SKILL.md"
-  [ -f "$TF" ] || skip "team-feature not installed"
-  # Extract the documented default plan pattern from the peer skill — do not
-  # hardcode the filename, so this case locks whatever the doc actually says.
-  pattern="$(grep -oE 'docs/plans/<feature-slug>[a-z0-9<>-]*\.md' "$TF" | head -1)"
-  [ -n "$pattern" ]
-  example="${pattern//<feature-slug>/example-feature}"
-  cd "$TMP"
-  run bash "$SCRIPTS/validate_plan_path.sh" "$example"
   assert_success
   [[ "$output" == *"STATUS=OK"* ]]
 }

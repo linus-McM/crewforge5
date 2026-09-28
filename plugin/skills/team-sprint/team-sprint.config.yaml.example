@@ -101,8 +101,8 @@ max_parallel_agents: 4
 # Soft cap on Phase 2 graph-review rounds (the graph-hardening review is
 # hard-wired under scheduling: graph). The loop continues until zero
 # findings of any severity remain OR this cap is reached (per-finding user
-# override). Plan-level adversarial review runs in team-sprint-planner, not
-# here — Phase 1 only verifies its provenance stamp.
+# override). Plan-level review runs in /crewforge5:build new, not
+# here — Phase 1 only verifies the accepted plan's provenance.
 # Override when: a large or high-risk graph warrants more rounds.
 adversarial_iterations: 3
 
@@ -126,7 +126,7 @@ review_fix_iterations: 3
 # ----------------------------------------------------------------------------
 
 # max_wall_clock_minutes                     type: int (minutes)   default: 240
-# Soft sprint-duration budget. When exceeded, sprint-watchdog raises a WARN
+# Soft sprint-duration budget. When exceeded, the lead raises a WARN
 # with the current phase + remaining work; the user decides extend or abort.
 # NOT a hard kill — state persists either way.
 # Override when: large multi-story plans (raise) or short single-story (lower).
@@ -146,7 +146,7 @@ repomix_max_age_minutes: 240
 # graphify                                   type: enum   default: off
 # Alternatives: off | auto | on
 # Knowledge-graph codebase intelligence (graphify-out/graph.json). AUGMENTS,
-# never replaces, repomix/use-repo-code: repomix is fast text grep; graphify
+# never replaces, the repomix pack: repomix is fast text grep; graphify
 # answers relationship/coupling questions (`graphify query "what calls X"`,
 # `graphify path A B`, `graphify explain N`). Used by Phase 1 plan reviewers,
 # the Phase 2 false-independence graph check, and the Phase 4 AC reviewer.

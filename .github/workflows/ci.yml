@@ -56,21 +56,21 @@ jobs:
         run: |
           set -euo pipefail
           # `find -exec … +`, not a glob: `scripts/*.sh` is not recursive and the
-          # `find skills` step below never reaches scripts/, which left the
-          # shared flow driver — the thing init, plan and execute all run on —
-          # linted by nothing. find covers the next subdirectory on day one.
+          # `find skills` step below never reaches scripts/, which once left
+          # the shared flow driver linted by nothing. find covers the next
+          # subdirectory on day one.
           find scripts plugin/scripts -name '*.sh' -exec shellcheck {} +
           bats scripts/tests/
 
-      # Four suites ran in no job at all until this step (spec R-H5).
+      # These suites ran in no job at all until this step (spec R-H5).
       # scripts/tests/repo_hygiene.bats fails if a directory of .bats files
-      # appears that no step here names.
+      # appears that no step here names. The planner and sprint-watchdog suites
+      # went with their skills in spec phase 8 (repo_preflight.bats moved into
+      # team-sprint's suite).
       - name: Skill-local suites
         run: |
           set -euo pipefail
-          bash plugin/skills/team-sprint-planner/scripts/tests/run-all.sh
           bats plugin/skills/self-improve/scripts/tests/ \
-               plugin/skills/sprint-watchdog/tests/ \
                plugin/skills/token-slim/tests/
 
       # run-all.sh lints only skills/team-sprint/scripts, and the step above only

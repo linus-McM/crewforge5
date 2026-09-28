@@ -10,12 +10,12 @@ they belong, executes work with them, and stops them rotting.
 /crewforge5:design  → the accepted intent becomes spec.md, accepted by a human
 /crewforge5:build   → the accepted spec becomes a test-first plan.md, accepted by a human
 /crewforge5:review  → the implemented plan is checked, reviewed against REVIEW.md and checkpointed
-/crewforge5:execute → the shortcut: build implement then review; or a stamped plan becomes a merged commit
+/crewforge5:execute → the shortcut: build implement then review on an accepted plan.md
 ```
 
-That is the whole surface. Everything underneath — the crew agents, the
-review fleet, the recon tooling, the distillation pass — is a sub-skill one of
-them loads when its phase needs it.
+That is the whole surface. Everything underneath — the crew agents, the review
+workflow, the recon tooling, the distillation pass — is a hidden skill, a
+workflow or a template one of them names when its step needs it.
 
 ## Install
 
@@ -40,64 +40,63 @@ forms of the others are ambiguous in the same way.
 | `/crewforge5:design` | Stage 2: the accepted intent becomes `spec.md` with Concerns and a Requirements trace | "design this feature" |
 | `/crewforge5:build` | Stage 3: plan mode against the accepted spec writes `plan.md`, every step naming its failing test | "write the build plan" |
 | `/crewforge5:review` | Stage 4: `run` (test/lint/build into `test-report.json`, refused without red→green evidence), `review` (`review.md` from the review workflow, committed), `evals` | "review this feature" |
-| `/crewforge5:execute` | On an accepted `plan.md`, the shortcut for `build implement` then `review run` and `review review`. On a stamped `docs/plans/` plan, a reviewed plan becomes a merged commit — TDD agent fleet in an isolated worktree, coverage, AC/DoD and review-fleet gates, then distilled learnings | "run a sprint", "execute this plan" |
+| `/crewforge5:execute` | On an accepted `plan.md`, the shortcut for `build implement` then `review run` and `review review`, then distilled learnings; prints the commands it ran. `--teams` runs the hidden graph-mode agent-team sprint instead | "run a sprint", "execute this plan" |
 
-`init`, `crew`, `plan`, `design`, `build` and `review` are slash commands over the verdict CLI (below).
-`execute` is still a flow skill, and the hidden `init-legacy` and `plan-legacy` are the
-old bash flows the commands replace; each is a state machine over a `phases.json` manifest: a phase is offered,
-its gate is run, and the verdict is written to state before the next phase is
-offered. A gate announced in prose and never run did not happen.
+All eight are slash commands over the verdict CLI (below); there is no flow
+skill and no flow driver any more (spec phase 8). A feature's progress is read
+from its artifacts on disk: `crewforge5 status` lists every feature under
+`crewforge5/<slug>/`, which of `intent.md`, `spec.md` and `plan.md` are accepted,
+present or missing, and the one command to run next. Execution state that is not
+an artifact (the acceptance commit, fix mode) lives in
+`crewforge5/<slug>/build-state.json`, owned by the CLI.
 
-State lives at `<repo>/.crewforge5/<flow>/<subject>/state.json` — **keyed by the
-thing the run is about**, not by the flow alone, so a second plan or a second
-sprint in one repo starts at phase 0 instead of resuming into the first one's
-verdicts. Each flow claims its own subject in phase 0 —
-`flow_state.sh <flow> use --from "<goal | config root | plan path>"` derives a
-slug from what the run is about — so this is not something you have to do by
-hand. `flow_state.sh <flow> list` names the runs a repo holds, `use <subject>`
-switches between them, and `reset` discards one to start it over.
+**Coming from 0.x?** `crewforge5 migrate` moves each old run into the feature
+home once: a `.crewforge5/<flow>/<subject>/` flow run lands in
+`crewforge5/<subject>/migrated/<flow>/`, a `docs/plans/<name>.md` plan (with its
+`<name>-review/` directory) in `crewforge5/<name>/migrated/`. It refuses to
+overwrite anything, records what it moved in `migrated/MIGRATED.json`, and a
+second call is a no-op. Nothing writes `.crewforge5/` or `docs/plans/` any more.
 
-A manifest may also name a `status_source` — a command that answers how far the
-run has got — and give a phase a `when` that decides whether it is in this run at
-all. `crewforge5:execute` uses both: team-sprint owns phases 0–7 and their
-per-story loop, so the driver asks it rather than keeping a second, coarser copy,
-and the per-story phases swap for the graph-mode wave loop under
-`scheduling: graph`.
+### The Teams path (the one open D3 item)
 
-### What drives which sub-skill
+`/crewforge5:execute --teams` runs the hidden `team-sprint` skill: the accepted
+`plan.md` becomes a story plan (`sprint-<slug>.md` beside it, one story per
+Order-of-work step, the human acceptance as its provenance line), and an agent
+team drives the stories in parallel graph-mode waves, each in its own git
+worktree, to a merged commit with its own coverage, AC/DoD and review-fleet
+gates. Its sprint state lives in `.team-sprint/sprints/`, the one run directory
+outside the feature home. It writes no `tdd.jsonl`, so `review run` refuses a
+feature it built. It stays only until one real sprint has been measured both
+ways against `build implement`'s Workflow fan-out (spec decision D3); then it is
+removed.
 
-The sub-skills stay on disk and stay callable by name; they are just no longer
-in the catalogue, so a flow reaches one through
-`scripts/flow/subskill_resolve.sh` rather than through the `Skill` tool.
+### Which command uses which skill
 
-| Sub-skill | Driven by | Reached in |
+Every skill is hidden (`disable-model-invocation: true`): a command or agent
+names it by path, and it costs nothing until then.
+
+| Skill | Used by | For |
 | --- | --- | --- |
-| `init-legacy` | `/crewforge5:init-legacy` | the old eight-phase bash config-hygiene flow, hidden; the `init` command replaces it |
-| `claude-config` | `/crewforge5:init`, `/crewforge5:init-legacy` | `init new`'s house rules; legacy phase 0 |
-| `token-slim` | `/crewforge5:init`, `/crewforge5:init-legacy` | `init new` and `accept` measure with its `baseline.py`; legacy phases 1, 3 and 7 |
-| `context-hygiene` | `/crewforge5:init`, `/crewforge5:init-legacy` | `init new`'s audit passes (the `config-audit` fallback); legacy phase 2 |
-| `skill-validator` | `/crewforge5:init`, `/crewforge5:init-legacy` | `init new`, `init accept` and `crew validate` grade through its scripts; legacy phase 4 |
-| `agent-validator` | `/crewforge5:init`, `/crewforge5:init-legacy` | same; legacy phase 4 |
-| `skill-rectifier` | `/crewforge5:init`, `/crewforge5:init-legacy` | the Proposed edits `init accept` applies; legacy phase 5 |
-| `agent-rectifier` | `/crewforge5:init`, `/crewforge5:init-legacy` | same; legacy phase 5 |
-| `plan-legacy` | `/crewforge5:plan-legacy` | the old nine-phase bash planning flow, hidden; `plan`, `design` and `build` replace it |
-| `use-repo-code` | `/crewforge5:plan-legacy`, `/crewforge5:execute` | plan-legacy phase 1; execute's preflight and recon |
-| `adhd` | `/crewforge5:plan-legacy` | phase 2, parallel divergent frames (the Diverge step of `plan new`) |
-| `grill-me` | `/crewforge5:plan-legacy` | phase 3, the questioning loop (the Grill step of `plan new`) |
-| `team-feature` | `/crewforge5:plan-legacy` | phases 0–3, the interactive ratification half |
-| `tech-debt-audit` | `/crewforge5:plan-legacy` | phase 4 (the Concerns audit of `design new`) |
-| `master-plan` | `/crewforge5:plan-legacy` | phases 5 and 8 — impact map, coverage check |
-| `team-sprint-planner` | `/crewforge5:plan-legacy` | phase 6, plan contract and story shape (the Order of work of `build new`) |
-| `adversarial-review` | `/crewforge5:plan-legacy`, `/crewforge5:execute` | plan-legacy phase 7; execute phase 2 under `scheduling: graph` |
-| `team-sprint` | `/crewforge5:execute` | phases 0–7 are its phase docs, wrapped unchanged |
-| `sprint-watchdog` | `/crewforge5:execute` | phase 0, the pre-sprint audit |
-| `pre-commit-review-fleet` | `/crewforge5:execute` | phase 7, over the sprint diff (a stamped plan; `/crewforge5:review` replaces it in spec phase 8) |
-| `archify` | `/crewforge5:plan`, `design`, `build`, `review` | the `## docs` step's pointer to the Archify skill (stage documents); replaced `drawio` and execute's phase-8 integration diagram |
-| `self-improve` | `/crewforge5:execute` | phase 9, distilling the ledger |
-| `ac-validate` | — | assigned to a generated crew member by `crew-factory`; no phase drives it |
-| `playwright-cli` | — | same, for frontend AC verification |
-| `plugin-forge` | — | nothing drives it; reachable by name only |
-| `graphify` | `/crewforge5:plan-legacy`, `/crewforge5:execute` | plan-legacy phase 1 and execute phase 0 — the knowledge-graph half of recon |
+| `token-slim` | `/crewforge5:init` | `init new` and `accept` measure with its `baseline.py`; the Proposed edits' trims |
+| `context-hygiene` | `/crewforge5:init` | `init new`'s audit passes (the `config-audit` fallback) |
+| `skill-validator` | `/crewforge5:init`, `/crewforge5:crew` | `init new`, `init accept` and `crew validate` grade through its scripts |
+| `agent-validator` | `/crewforge5:init`, `/crewforge5:crew` | same; `crew-factory` grades every generated agent to A |
+| `skill-rectifier` | `/crewforge5:init` | the skill fixes `init accept` applies |
+| `agent-rectifier` | `/crewforge5:init`, `/crewforge5:crew` | the agent fixes; the validator↔rectifier loop |
+| `archify` | `/crewforge5:plan`, `design`, `build`, `review` | the stage documents' `## docs` step |
+| `graphify` | every command | the knowledge graph behind `crewforge5 knowledge` and `graphify query` |
+| `self-improve` | `/crewforge5:execute` | distilling the ledger after a run |
+| `team-sprint` | `/crewforge5:execute --teams` | the graph-mode agent-team sprint (D3) |
+| `ac-validate` | `team-sprint`, generated crews | UI acceptance checks, assigned by `crew-factory` |
+| `playwright-cli` | `ac-validate` | frontend AC verification |
+| `plugin-forge` | — | reachable by name only |
+
+What used to be flow skills is now a template the commands read:
+`templates/interview.md` (the diverge frames and the grilling rules of
+`plan new`), `templates/concerns.md` (the tech-debt dimensions of `design new`),
+`templates/adversarial-stamp.md` (the optional plan stamp), `templates/house-rules.md`
+(the config house rules of `init new`) and `templates/repomix-flags.md` (the
+pack flags of the recon ladder).
 
 ## What it costs you
 
@@ -108,18 +107,18 @@ them. That is the plugin's rent, and it is measured rather than asserted:
 bash "$CREWFORGE5_ROOT/scripts/budget_check.sh" --verbose
 ```
 
-The bundle is **~464 tokens** always-loaded across 14 catalogue entries, against
-a budget of **550** — one description's worth of headroom, so rewording a
+The bundle is **~381 tokens** always-loaded across 13 catalogue entries, against
+a budget of **450** — one description's worth of headroom, so rewording a
 trigger phrase does not turn the build red, while a whole new listed surface
-still cannot slip in unpriced. The other **26 skills** carry
-`disable-model-invocation: true`, so they cost nothing until a flow resolves one
+still cannot slip in unpriced. All **13 skills** carry
+`disable-model-invocation: true`, so they cost nothing until a command names one
 or you call it by name. That discipline is the only reason a bundle this size is
 affordable, and `budget_check.sh` fails the build over the budget rather than
 moving it.
 
-Cost is only half of what the gate asserts. It also checks *which* skills are
-listed: exactly the `execute` skill and the `init`, `crew`, `plan`, `design`, `build`,
-`review` and `rules-install` commands. An extra entry point with a short description used
+Cost is only half of what the gate asserts. It also checks *which* entries are
+listed: no skill, and exactly the `init`, `crew`, `plan`, `design`, `build`,
+`review`, `execute` and `rules-install` commands. An extra entry point with a short description used
 to pay its tokens and walk through unnoticed.
 
 `claude plugin details crewforge5` reports a larger always-on number because its
@@ -147,8 +146,8 @@ without writing; `uninstall` removes only the keys it added.
 **Exporting it by hand does not work, and cannot.** Shell state does not survive
 a single tool call, so an `export` reaches the end of its own command and no
 further. Call sites therefore never fall back to `.` (which resolves to the wrong
-tree once the plugin lives anywhere but the repo you are standing in): the flow
-driver locates the plugin from its own path, and the commands use the
+tree once the plugin lives anywhere but the repo you are standing in): scripts
+locate the plugin from their own path, and the commands use the
 harness-expanded `${CLAUDE_PLUGIN_ROOT}`. A test fails if the fallback returns.
 
 ## The hooks act only in CrewForge5 projects
@@ -175,10 +174,6 @@ spawned by the harness, so a session `export` never reaches them; to switch
 them off by environment, put `CREWFORGE5_HOOKS=off` in `settings.json`'s `env`
 block.
 
-`sprint-watchdog-guard` is always registered but inert: it does nothing until a
-sprint arms it with an activation file in the repo, and goes inert again at
-teardown.
-
 ## Dependencies
 
 **Required:** `bash`, `git`, `python3`, `jq`. Four scripts hard-require `jq`
@@ -191,19 +186,8 @@ name; nothing fails silently. `graphify` is not shipped as a skill — it needs 
 `uv`-installed binary, and a plugin that hard-fails on a missing external tool
 is a bad first impression.
 
-The legacy config-hygiene flow (`/crewforge5:init-legacy`) checks this list before it does anything else, and it is the
-one check that answers on a machine without `jq` — every other gate, and the
-flow driver itself, exits early there, so reaching them first would report one
-missing tool and hide the rest:
-
-```bash
-bash "$CREWFORGE5_ROOT/skills/init-legacy/scripts/init_gate.sh" deps
-```
-
-A missing required tool stops the run: it offers to install what needs no
-`sudo`, hands you a copy-paste block for anything else, and waits — re-checking
-and re-listing until every required tool is there. Optional tools missing are
-named and carried.
+`crewforge5 knowledge bootstrap`, which every command runs first, names each
+missing tool once; nothing is installed unless `[knowledge] auto_install = true`.
 
 ## State
 
@@ -220,7 +204,7 @@ default.
 The gate layer is moving to a Python 3.11 standard-library CLI, following
 `docs/specs/cc-sdlc-alignment.md` in the repository. `/crewforge5:plan`,
 `/crewforge5:design`, `/crewforge5:build`, `/crewforge5:review`, `/crewforge5:init`
-and `/crewforge5:crew` run on it; `execute` is still a bash flow:
+`/crewforge5:crew` and `/crewforge5:execute` run on it:
 
 ```bash
 uv run --no-project "${CLAUDE_PLUGIN_ROOT}/scripts/crewforge5.py" <stage> <action> [arg] [--slug <slug>]
@@ -248,10 +232,11 @@ in the same commit, or revert it. `build fix on|off` is bug-fix mode, in which
 the `pre-edit` hook denies edits to test files. `crewforge5/<slug>/build-state.json`
 holds the acceptance commit and fix mode. `/crewforge5:execute` on an accepted
 plan.md is the shortcut for `/crewforge5:build implement` then `/crewforge5:review
-run` and `review`, and prints the commands it ran.
+run` and `review`, and prints the commands it ran. `crewforge5 migrate [<source>]
+[--slug s]` moves a 0.x run into the feature home (above).
 
 **Init.** `init new [<config root>]` (default `[init] target`, else `.claude/`,
-else the project) measures the root through the scripts the legacy flow ships —
+else the project) measures the root through the scripts the skills ship —
 token-slim's `baseline.py`, the skill and agent validators graded by `grade.sh` —
 plus CLAUDE.md, rules, hooks and MCP servers, writes the before-picture to
 `crewforge5/init-<date>/measure.json` and renders `audit.md` (Baseline, Findings,
@@ -288,7 +273,8 @@ Config lives in `.crewforge5.toml` (the first `new` writes it from
 `detect_language.sh` decide), `[init] target`, `[build] require_crew`, `[commands] test` (what `build red|green` run; `review
 run` adds `lint` and `build`), `[evals] threshold`,
 `[build] require_adversarial_stamp` (when true, `build check` needs the
-planner's `adversarial-review: status=clean|user-override` stamp in `plan.md`),
+`adversarial-review: status=clean|user-override` stamp `templates/adversarial-stamp.md`
+describes in `plan.md`),
 `[build] protected_paths` and `test_globs` (read by the `pre-edit` hook), and
 `[hooks] enabled`.
 
@@ -435,7 +421,7 @@ less machinery, no maintenance promise.
 
 ## Credits
 
-Not all of this was written here. Four of the shipped skills started as someone
+Not all of this was written here. Four of the shipped skills and templates started as someone
 else's work and were adapted; four external projects are driven rather than
 vendored. Both lists are below, because a skill you can read is a skill whose
 origin you should be able to check.
@@ -446,25 +432,24 @@ install line still present in the vendored copy.
 
 | Skill | Upstream | Owner | Licence |
 | --- | --- | --- | --- |
-| `skills/adhd` | [UditAkhourii/adhd](https://github.com/UditAkhourii/adhd) | UditAkhourii | MIT |
-| `skills/grill-me` | [mattpocock/skills](https://github.com/mattpocock/skills) — `productivity/grilling` | Matt Pocock | MIT |
+| `templates/interview.md` (diverge frames; was the adhd skill) | [UditAkhourii/adhd](https://github.com/UditAkhourii/adhd) | UditAkhourii | MIT |
+| `templates/interview.md` (grilling; was the grill-me skill) | [mattpocock/skills](https://github.com/mattpocock/skills) — `productivity/grilling` | Matt Pocock | MIT |
 | `skills/playwright-cli` | [microsoft/playwright](https://github.com/microsoft/playwright) — `packages/playwright-core/src/tools/skills/playwright-cli` | Microsoft | Apache-2.0 |
-| `skills/tech-debt-audit` | [ksimback/tech-debt-skill](https://github.com/ksimback/tech-debt-skill) | ksimback | **none declared** |
+| `templates/concerns.md` (was the tech-debt-audit skill) | [ksimback/tech-debt-skill](https://github.com/ksimback/tech-debt-skill) | ksimback | **none declared** |
 
 `tech-debt-skill` ships no `LICENSE`, so its redistribution terms are unstated.
 It is credited here on that basis, and would be the first thing to remove if the
 author asked.
 
-`skills/adhd` links its own upstream in `references/companion.md` — the skill is
-this repo's in-Claude implementation of a spec whose prose lives there, and the
-companion `adhd-agent` CLI is the author's.
+The diverge frames are this repo's in-Claude adaptation of the adhd spec, whose
+prose and companion `adhd-agent` CLI are the author's.
 
 **External projects the skills drive.** These are installed by you, not shipped
 here, and each degrades visibly when absent (see [Dependencies](#dependencies)).
 
 | Tool | Project | Owner | Licence | Used by |
 | --- | --- | --- | --- | --- |
-| `repomix` | [yamadashy/repomix](https://github.com/yamadashy/repomix) | yamadashy | MIT | `use-repo-code`, the recon ladder, `crewforge5 knowledge pack` |
+| `repomix` | [yamadashy/repomix](https://github.com/yamadashy/repomix) | yamadashy | MIT | `templates/repomix-flags.md`, the recon ladder, `crewforge5 knowledge pack` |
 | `graphify` (`graphifyy` on PyPI) | [Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify) | Graphify-Labs | Apache-2.0 | `team-sprint` Phase 0/2/4 recon, the knowledge layer |
 | `archify` (a Claude skill, `npx -y skills add tt-a1i/archify`) | [tt-a1i/archify](https://github.com/tt-a1i/archify) | tt-a1i | see upstream | `crewforge5 docs render|check|open` |
 | `bandit` (via `uv tool run`) | [PyCQA/bandit](https://github.com/PyCQA/bandit) | PyCQA | Apache-2.0 | the context-pack secret scan |

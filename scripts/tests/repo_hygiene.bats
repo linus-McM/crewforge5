@@ -110,7 +110,9 @@ _frontmatter() {
     grep -qF "$d" "$ci" || missing="$missing $d"
   done
   if [ -n "$missing" ]; then echo "bats suites no CI step names:$missing"; false; fi
-  [ "$n" -ge 5 ]
+  # Guard the guard: scripts/tests, team-sprint, self-improve and token-slim
+  # (the planner and sprint-watchdog suites retired with their skills).
+  [ "$n" -ge 4 ]
 }
 
 # --- R-H2: plugin/ is the installable package --------------------------------

@@ -17,9 +17,8 @@ source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/../../../../../scr
 setup() {
   SKILL="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   H="$BATS_TEST_DIRNAME/lib/workflow-harness.mjs"
-  # The phase-1 (adversarial review) workflow moved planner-side as
-  # team-sprint-planner/workflows/plan-review.workflow.js; its smoke tests live
-  # in that skill's tests/ now.
+  # Phase 1 has no workflow: the plan review is crewforge5:plan-critic, before
+  # a human accepts the plan (spec phase 8 retired the planner's workflow).
   # WA1: the old phase-4/5 workflow is git-mv'd to story-executor.workflow.js and
   # grows the Phase-3 stages (RED/RED-verify/GREEN/GREEN-verify/wip-commit)
   # ahead of Verify/Review/Fix, plus a bounded coverage loop.

@@ -118,8 +118,8 @@ wrong plan and discarded every finding). Two checks, in order:
    N = 0
    while True:
        N += 1
-       reviewer  = spawn general-purpose, seeded with the body at
-                   `subskill_resolve.sh adversarial-review` (MODE=inline),
+       reviewer  = spawn the read-only `crewforge5:reviewer` agent, briefed
+                   with $REF/reviewer-contract.md,
                    over graph.json + stories.json
                    (if $adversarial_model is `inherit` omit the model arg, else pass it)
        findings  = block-collect reviewer's final agent return
@@ -131,7 +131,7 @@ wrong plan and discarded every finding). Two checks, in order:
        apply edge corrections (re-run build_graph.sh with an overlay, or patch + re-validate)
    ```
 
-   The reviewer critiques **false independence** (nodes scheduled in parallel that actually share an interface or file the `Touches` globs missed), **missing edges**, **redundant edges**, and **semantic cycles** the mechanical check can't see. When `graphify != off`, the reviewer should query the knowledge graph to ground these claims — `graphify path "<symbol-in-node-A>" "<symbol-in-node-B>"` surfaces real call/import coupling between two supposedly-independent nodes that the `Touches` globs never saw, turning a hunch about false independence into a cited edge. It returns findings to `team-lead` as its **final agent return** — team-lead is its direct spawner, so no `SendMessage` is used (`$REF/sendmessage-protocol.md`, channel 1). `state.json.iterations.adversarial` is seeded at Phase 1 with the planner's review-round count; these graph rounds increment it from there.
+   The reviewer critiques **false independence** (nodes scheduled in parallel that actually share an interface or file the `Touches` globs missed), **missing edges**, **redundant edges**, and **semantic cycles** the mechanical check can't see. When `graphify != off`, the reviewer should query the knowledge graph to ground these claims — `graphify path "<symbol-in-node-A>" "<symbol-in-node-B>"` surfaces real call/import coupling between two supposedly-independent nodes that the `Touches` globs never saw, turning a hunch about false independence into a cited edge. It returns findings to `team-lead` as its **final agent return** — team-lead is its direct spawner, so no `SendMessage` is used (`$REF/sendmessage-protocol.md`, channel 1). `state.json.iterations.adversarial` is seeded at Phase 1 with the source plan's review-round count; these graph rounds increment it from there.
 
 6. **Define the team roles.** The session team is implicit — there is no `TeamCreate` step. The scheduler instantiates these roles per node / per wave via the `Agent` tool (selecting the role with `subagent_type`), **not** as a fixed standing pool; `max_parallel_agents` caps concurrent node executors:
 
@@ -159,7 +159,7 @@ wrong plan and discarded every finding). Two checks, in order:
    | `ac-reviewer` | `crew.code_reviewer` |
    | `<domain_agents>` | `crew.architect`, `crew.simplifier`, `crew.docs_writer`, `crew.dependency_auditor` (spawned by the scheduler as a node needs them) |
 
-   `crew.security` and `crew.profiler` are NOT spawned per story — security/perf review is the Phase 7 fleet's job (the manifest still builds them; they remain available to `pre-commit-review-fleet` and to users directly). `ui-validator` drives `ac-validate`; when the manifest carries a frontend `crew.accessibility` agent (present only for react-native/web stacks), add it as a second UI-facing reviewer at Phase 4 alongside `ui-validator` — otherwise the generated accessibility agent is never assigned. When `crew: off`, fall back to `engineer_agent` / `test_writer_agent` / `domain_agents` from config. An explicit non-`auto` agent name in config always overrides the manifest.
+   `crew.security` and `crew.profiler` are NOT spawned per story — security/perf review is the Phase 7 fleet's job (the manifest still builds them; they remain available to the Phase 7 fleet lanes and to users directly). `ui-validator` drives `ac-validate`; when the manifest carries a frontend `crew.accessibility` agent (present only for react-native/web stacks), add it as a second UI-facing reviewer at Phase 4 alongside `ui-validator` — otherwise the generated accessibility agent is never assigned. When `crew: off`, fall back to `engineer_agent` / `test_writer_agent` / `domain_agents` from config. An explicit non-`auto` agent name in config always overrides the manifest.
 
 7. **Seed the TaskList projection.** Create one task per node, `addBlockedBy` mirroring `graph.json` edges, so the team dashboard shows the structure. **`graph.json` is authoritative** — never read frontier state from the TaskList; the scheduler keeps the projection in sync via `TaskUpdate` as node statuses change.
 

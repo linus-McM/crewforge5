@@ -43,21 +43,20 @@ mkcmd() {
   printf -- '---\ndescription: %s\n---\n\nbody\n' "$2" > "$FX/commands/$1.md"
 }
 
-three_entry_points() {
-  mkskill execute "Run a sprint."
-  mkskill init-legacy "Old init flow." hidden
-  mkskill plan-legacy "Old plan flow." hidden
+entry_points() {
   mkskill team-sprint "Hidden worker." hidden
+  mkskill graphify "Hidden know-how." hidden
   mkcmd plan "Stage 1."
   mkcmd design "Stage 2."
   mkcmd build "Stage 3."
   mkcmd review "Stage 4."
   mkcmd init "Config hygiene."
   mkcmd crew "Crew factory."
+  mkcmd execute "Shortcut."
   mkcmd rules-install "Install rules."
 }
 
-# --- AC: the real tree passes and lists exactly the three entry points -------
+# --- AC: the real tree passes and lists exactly the entry points -------
 
 @test "the post-condensation tree passes --verbose and prints its total" {
   run bash "$GATE" --verbose
@@ -66,25 +65,25 @@ three_entry_points() {
   [[ "$output" == *"PASS:"* ]]
 }
 
-@test "execute is the only non-hidden skill in the table" {
+@test "no skill is listed: every skill is hidden know-how a command names" {
   run bash "$GATE" --verbose
   [ "$status" -eq 0 ]
   local listed
   listed="$(printf '%s\n' "$output" \
     | awk '$2 == "skill" && $0 !~ /\(hidden\)/ { print $3 }' | sort | tr '\n' ' ')"
-  [ "$listed" = "execute " ]
+  [ -z "$listed" ]
 }
 
-@test "the stage, init, crew and rules-install commands are the listed commands" {
+@test "the stage, execute, init, crew and rules-install commands are the listed commands" {
   run bash "$GATE" --verbose
   [ "$status" -eq 0 ]
   local listed
   listed="$(printf '%s\n' "$output" | awk '$2 == "cmd" { print $3 }' | sort | tr '\n' ' ')"
-  [ "$listed" = "build crew design init plan review rules-install " ]
+  [ "$listed" = "build crew design execute init plan review rules-install " ]
 }
 
 @test "a fifth command fails the gate under a budget it never approaches" {
-  three_entry_points
+  entry_points
   mkcmd extra "Tiny."
   run bash "$FX/scripts/budget_check.sh" --budget 5000
   [ "$status" -eq 1 ]
@@ -92,40 +91,40 @@ three_entry_points() {
 }
 
 @test "a missing stage command fails the gate" {
-  three_entry_points
+  entry_points
   rm "$FX/commands/design.md"
   run bash "$FX/scripts/budget_check.sh" --budget 5000
   [ "$status" -eq 1 ]
   [[ "$output" == *"design"* ]]
 }
 
-# --- AC: a third listed skill fails even when it is cheap ------------------
+# --- AC: a listed skill fails even when it is cheap ------------------------
 
-@test "a third listed skill fails the gate under a budget it never approaches" {
-  three_entry_points
+@test "a listed skill fails the gate under a budget it never approaches" {
+  entry_points
   mkskill extra "Tiny."
   run bash "$FX/scripts/budget_check.sh" --budget 5000
   [ "$status" -eq 1 ]
   [[ "$output" == *"extra"* ]]
 }
 
-@test "the same fixture without the third skill passes" {
-  three_entry_points
+@test "the same fixture without the listed skill passes" {
+  entry_points
   run bash "$FX/scripts/budget_check.sh" --budget 5000
   [ "$status" -eq 0 ]
   [[ "$output" == *"PASS:"* ]]
 }
 
 @test "a missing entry point fails too — the shape is asserted both ways" {
-  three_entry_points
-  rm -r "$FX/skills/execute"
+  entry_points
+  rm "$FX/commands/execute.md"
   run bash "$FX/scripts/budget_check.sh" --budget 5000
   [ "$status" -eq 1 ]
   [[ "$output" == *"execute"* ]]
 }
 
-@test "hiding a would-be third entry point clears it" {
-  three_entry_points
+@test "hiding a would-be listed skill clears it" {
+  entry_points
   mkskill extra "Tiny." hidden
   run bash "$FX/scripts/budget_check.sh" --budget 5000
   [ "$status" -eq 0 ]

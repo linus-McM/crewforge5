@@ -11,7 +11,7 @@ Arguments: $ARGUMENTS
 
 ## new [<config root>]  (read-only: edit nothing but audit.md)
 1. `crewforge5 init new [<config root>]` (default `[init] target`, else `.claude/`, else the project) measures the root with token-slim's baseline, the skill and agent validators and the CLAUDE.md, rules, hooks and MCP inventory, then writes `crewforge5/init-<date>/audit.md` with the Baseline filled and `measure.json` beside it.
-2. Read `${CLAUDE_PLUGIN_ROOT}/skills/claude-config/SKILL.md` (the house rules) and `${CLAUDE_PLUGIN_ROOT}/skills/context-hygiene/SKILL.md` (the six principles).
+2. Read `${CLAUDE_PLUGIN_ROOT}/templates/house-rules.md` (the house rules) and `${CLAUDE_PLUGIN_ROOT}/skills/context-hygiene/SKILL.md` (the six principles).
 3. Audit: run `crewforge5:config-audit` with `{slug, target}`: five lenses (CLAUDE.md and rules, hooks, MCP, skills, agents), a skeptic per finding. Inline fallback: run context-hygiene passes 2–4 yourself and read each Baseline validator finding against its file, one Agent per lens when it helps.
 4. Write Findings (`- Important:` or `- Nit:`, each naming its path), Proposed edits (numbered: the token-slim trims and the skill-rectifier/agent-rectifier fixes, each naming its file and finding) and Retention (lines every trim must keep: never/always directives, exact commands, paths, versions).
 5. `crewforge5 init check` until `ok`.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # graphify_ensure.sh — ensure the graphify knowledge-graph tool is installed for
 # this project, verify it actually runs, and report graph freshness. The
-# team-sprint and team-sprint-planner skills call this before they query the
+# team-sprint calls this before it queries the
 # project's graphify-out/graph.json knowledge graph.
 #
 # graphify's full FIRST build is agent-driven — the /graphify skill dispatches

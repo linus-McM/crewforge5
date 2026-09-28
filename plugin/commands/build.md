@@ -16,7 +16,7 @@ Arguments: $ARGUMENTS
    - Order of work: numbered steps, each one story: one behaviour, committable green on its own, observable acceptance criteria, and the failing test written first (`1. <behaviour> — test: <path>::<name> fails first`). `check` refuses a step that names no test.
    - Risks: what could break, the riskiest step (put it early), options rejected; `Tech lead: <name>` when `Risk: high`.
    - Proof: the commands and their expected output.
-3. Critique: `crewforge5 knowledge pack build` (build accept needs this pack at HEAD; rebuild it after any commit), then run `crewforge5:plan-critic` with `{slug, pack}` (blast radius, test-first, ordering, spec coverage, cross-boundary; a skeptic per finding). Apply or explicitly reject each confirmed issue. Inline fallback: put the plan through those five lenses yourself, one Agent per lens when it helps. Iterate until an engineer who never saw this conversation could implement from plan.md alone.
+3. Critique: `crewforge5 knowledge pack build` (build accept needs this pack at HEAD; rebuild it after any commit), then run `crewforge5:plan-critic` with `{slug, pack}` (blast radius, test-first, ordering, spec coverage, cross-boundary; a skeptic per finding). Apply or explicitly reject each confirmed issue. Inline fallback: put the plan through those five lenses yourself, one Agent per lens when it helps. Iterate until an engineer who never saw this conversation could implement from plan.md alone; with `[build] require_adversarial_stamp`, stamp it as `${CLAUDE_PLUGIN_ROOT}/templates/adversarial-stamp.md` says.
 4. `crewforge5 build check` until `ok`.
 
 ## check

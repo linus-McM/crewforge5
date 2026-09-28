@@ -11,7 +11,7 @@ lint = ""                   # optional; `review run` runs test, lint and build a
 build = ""                  # optional
 
 [build]
-require_adversarial_stamp = false   # `build check` needs an adversarial-review stamp in plan.md when true
+require_adversarial_stamp = false   # `build check` needs an adversarial-review stamp in plan.md when true (templates/adversarial-stamp.md)
 protected_paths = []        # globs the pre-edit hook never lets Claude edit, e.g. "src/gen/**"
 require_crew = false        # `build accept` needs a crew for the project language with passing grades (/crewforge5:crew forge <lang>)
 test_globs = ["tests/**", "test/**", "test_*.py", "*_test.py", "*_test.go", "*.test.*", "*.spec.*", "*.bats"]   # read-only while `build fix on`

@@ -13,10 +13,9 @@ verbatim from SKILL.md.
 
 **Skill invocation analysis:**
 - Scan for `/skill-name` patterns and `Skill tool` references in the body
-- Verify each referenced skill resolves:
-  `bash "${CREWFORGE5_ROOT}/scripts/flow/subskill_resolve.sh" --probe <name>` — it
-  searches the plugin tree, then `.claude/skills/`, then `$HOME/.claude/skills/`, the
-  same order everything else uses. A `$HOME`-only check false-WARNs every plugin skill.
+- Verify each referenced skill resolves: a `<name>/SKILL.md` under the plugin's
+  `skills/`, then `.claude/skills/`, then `$HOME/.claude/skills/`. A `$HOME`-only check
+  false-WARNs every plugin skill.
 - WARN if a referenced skill doesn't resolve
 
 **Agent spawning analysis:**

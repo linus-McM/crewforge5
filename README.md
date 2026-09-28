@@ -19,18 +19,19 @@ guide for working on the repo; `docs/specs/cc-sdlc-alignment.md` is the roadmap.
 | --- | --- |
 | `plugin/` | The installable package: `.claude-plugin/plugin.json`, `agents/`, `commands/`, `hooks/`, `rules/`, `skills/`, `templates/`, `workflows/`, and the runtime `scripts/` (bash gates and the Python verdict CLI) |
 | `.claude-plugin/marketplace.json` | The marketplace entry (`source: git-subdir`, `path: plugin`) |
-| `scripts/tests/` | The repo-level bats suite (flow driver, gates, docs surface, repo hygiene) and the one shared `lib/bats-fallback.sh` |
+| `scripts/tests/` | The repo-level bats suite (gates, hooks, docs surface, repo hygiene) and the one shared `lib/bats-fallback.sh` |
 | `scripts/verify_*.sh` | Dev probes: degradation (CI), rule scoping and GNU portability (by hand) |
 | `scripts/bump_version.py`, `tests/` | The CI version bump (spec R-H6); pytest for it, the verdict CLI, the commands and the workflows |
 | `docs/` | Specs and ADRs |
 
 Dogfood output (the generated crew in `.claude/crews/` and `.claude/agents/`,
-`crewforge5/`, `.crewforge5/`) lives only on the `dogfood` branch (spec R-H8).
+`crewforge5/`, `.team-sprint/`) lives only on the `dogfood` branch (spec R-H8).
 
 ## Tests
 
-1,030 cases: 1,019 bats cases cover the shell toolchain and the plugin's own
-scripts, and 11 pytest cases cover the version bump. CI runs the bats suites on
+1,156 cases: 819 bats cases cover the shell toolchain and the plugin's own
+scripts, and 337 pytest cases cover the verdict CLI, the commands, the workflows
+and the version bump. CI runs the bats suites on
 Ubuntu and macOS, plus the gates, a degradation job and, on pull requests, the
 automatic version bump. `just check` runs the lot (`just test`, `just lint`,
 `just precommit`, `just gates`); see `CLAUDE.md`.
@@ -41,11 +42,10 @@ green-looking count with a red suite is exactly how a dangling `$REF` citation
 survived a full review here. `echo $?` is the signal.
 
 ```bash
-bash plugin/skills/team-sprint/scripts/tests/run-all.sh   # 649 — the toolchain
-bats scripts/tests/                                       # 334 — flow driver, gates, docs surface, validator grading, repo hygiene
-bash plugin/skills/team-sprint-planner/scripts/tests/run-all.sh   # 5 — plan read-back
-bats plugin/skills/self-improve/scripts/tests/ plugin/skills/sprint-watchdog/tests/ plugin/skills/token-slim/tests/   # 30
-uv run --group dev pytest                                 # 11 — scripts/bump_version.py
+bash plugin/skills/team-sprint/scripts/tests/run-all.sh   # 664 — the toolchain
+bats scripts/tests/                                       # 135 — gates, hooks, docs surface, validator grading, repo hygiene
+bats plugin/skills/self-improve/scripts/tests/ plugin/skills/token-slim/tests/   # 20
+uv run --group dev pytest                                 # 337 — the verdict CLI, commands, workflows, bump_version.py
 bash plugin/scripts/budget_check.sh       # always-loaded context budget
 bash plugin/scripts/name_check.sh         # frontmatter name matches path
 bash plugin/scripts/validate_all.sh       # every skill and agent passes its own validator

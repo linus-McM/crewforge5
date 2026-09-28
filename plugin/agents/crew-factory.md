@@ -42,13 +42,7 @@ Every stack claim baked into a generated agent must trace to the stack profile o
    command runs red/green after it applies your branch: return the test commit and the change commit instead.
    Run it as `uv run --no-project "$(cat "${XDG_STATE_HOME:-$HOME/.local/state}/crewforge5/root")/scripts/crewforge5.py" build ...`.
    ```
-5. **Validate it**: run `agent-validator` over the developer agent. It is hidden from the catalogue, so the `Skill` tool cannot reach it — resolve it instead:
-
-   ```bash
-   bash "${CREWFORGE5_ROOT}/scripts/flow/subskill_resolve.sh" --load-mode agent-validator
-   ```
-
-   That answers `MODE=agent`, so spawn it through the `Agent` tool with the type its frontmatter names; never read its body inline. The validator↔rectifier loop self-heals to grade A — it is bounded (grade A, a 5-round cap, or escalation), so "cannot reach A" is the loop's own escalation verdict, not a judgment call. **If it cannot run from this subagent context** (nested spawn-from-subagent is not guaranteed), fall back to the non-spawning script `bash ${CREWFORGE5_ROOT}/skills/agent-validator/scripts/validate_agent.sh <path>` for a structural grade and fix every WARN/FAIL by hand until it is clean. Proceed only at grade A. If it cannot reach A, stop and report the blocker — do not seed a failing base.
+5. **Validate it**: run `agent-validator` over the developer agent. It is hidden from the catalogue, so the `Skill` tool cannot reach it: its body is `${CREWFORGE5_ROOT}/skills/agent-validator/SKILL.md`, and it declares `context: fork` with `agent: general-purpose`, so spawn a `general-purpose` agent through the `Agent` tool with that file as its brief; never read its body inline. The validator↔rectifier loop self-heals to grade A — it is bounded (grade A, a 5-round cap, or escalation), so "cannot reach A" is the loop's own escalation verdict, not a judgment call. **If it cannot run from this subagent context** (nested spawn-from-subagent is not guaranteed), fall back to the non-spawning script `bash ${CREWFORGE5_ROOT}/skills/agent-validator/scripts/validate_agent.sh <path>` for a structural grade and fix every WARN/FAIL by hand until it is clean. Proceed only at grade A. If it cannot reach A, stop and report the blocker — do not seed a failing base.
 
 ## Phase 3 — Seed the rest from the validated base
 
@@ -96,7 +90,7 @@ If it reports `IGNORED`, stop and tell the caller: the crew has been generated b
 
 Each generated agent's prompt carries a `## Skills` section naming the skills it should load and the one-line condition for invoking each — assigned at build time, not left for the agent to discover. Grant the `Skill` tool to every role with at least one assigned skill (in addition to its roster tools). Reused agents are never edited — they keep whatever skills they already reference. Assignment rules:
 
-- **A bundle sub-skill is reached by resolver, not by the `Skill` tool.** Every skill this bundle ships except `execute` carries `disable-model-invocation: true`, which puts it out of the `Skill` tool's reach entirely. When an assigned skill is one of those, the generated `## Skills` line must say to resolve it — `bash "${CREWFORGE5_ROOT}/scripts/flow/subskill_resolve.sh" --load-mode <name>` — and to honour the answer: `MODE=inline` reads the body, `MODE=agent` spawns it through the `Agent` tool with the type named. Emitting a bare "invoke the `<name>` skill" line seeds an agent that fails the first time it tries.
+- **A bundle skill is reached by path, not by the `Skill` tool.** Every skill this bundle ships carries `disable-model-invocation: true`, which puts it out of the `Skill` tool's reach entirely. When an assigned skill is one of those, the generated `## Skills` line must name its body, `${CREWFORGE5_ROOT}/skills/<name>/SKILL.md`, and say how to load it: a skill whose frontmatter declares `context: fork` is spawned through the `Agent` tool with the `agent:` type it names; any other is read and followed inline. Emitting a bare "invoke the `<name>` skill" line seeds an agent that fails the first time it tries.
 
 - **Resolvable skills only**: assign skills from this bundle (reached by resolver, per the rule above) or skills tracked in the target's `.claude/skills/` / `$CLAUDE_CONFIG_DIR/skills/`. Never a skill from some *other* plugin's machine-local `plugins/` tree — a crew agent referencing one breaks on every other machine; this bundle's own sub-skills are fine, because `${CREWFORGE5_ROOT}` resolves wherever the plugin is installed.
 - **Probe before assigning**: `bash ${CREWFORGE5_ROOT}/skills/team-sprint/scripts/preflight_subskills.sh --probe-only <skill>` — exit 0 or the skill is not assigned.

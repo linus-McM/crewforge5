@@ -44,7 +44,7 @@ Changes from the pre-graph schema: `current_phase` now accepts the string `"exec
 | `scheduling` | string | `"graph"` or `"sequential"` |
 | `worktree_strategy` | string | `"per-node"` or `"single"` |
 | `graph_path` | string | path to `graph.json`; required under graph mode |
-| `iterations` | object | `{ adversarial, coverage, review_fix }`, each integer ≥ 0; `adversarial` is seeded at Phase 1 from the planner's provenance stamp, then incremented by Phase 2 graph-review rounds |
+| `iterations` | object | `{ adversarial, coverage, review_fix }`, each integer ≥ 0; `adversarial` is seeded at Phase 1 from the source plan.md's stamp rounds (0 without one), then incremented by Phase 2 graph-review rounds |
 | `crew` | object | resolved agent crew for the sprint |
 | `crew_commands` | object | per-role command overrides for the crew |
 | `subskill_hooks` | array | hook records `{ skill, command, required, phase, source }` |
@@ -67,7 +67,7 @@ Changes from the pre-graph schema: `current_phase` now accepts the string `"exec
 
 ```json
 {
-  "plan_path": "docs/plans/sprint-example.md",
+  "plan_path": "crewforge5/example/sprint-example.md",
   "plan_slug": "sprint-example",
   "worktree_name": "sprint-sprint-example",
   "target_branch": "main",

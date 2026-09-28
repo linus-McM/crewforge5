@@ -1,6 +1,6 @@
 # Phase 4 — AC/DoD review + test validation (per story)
 
-**Goal.** Validate the story mechanically (unit tests, typecheck, lint), then run a single **AC reviewer** over *this story's* diff against its acceptance criteria and Definition of Done; UI-facing diffs additionally get the conditional `ui-validator`. Reviewers deliver findings to their **spawner** as their final agent return — the lead under sequential mode, the node executor under graph mode — and the spawner persists the aggregate to the story-keyed review artifact (step 6). Security and performance review happen once per sprint — inside `pre-commit-review-fleet` at Phase 7 — not per story.
+**Goal.** Validate the story mechanically (unit tests, typecheck, lint), then run a single **AC reviewer** over *this story's* diff against its acceptance criteria and Definition of Done; UI-facing diffs additionally get the conditional `ui-validator`. Reviewers deliver findings to their **spawner** as their final agent return — the lead under sequential mode, the node executor under graph mode — and the spawner persists the aggregate to the story-keyed review artifact (step 6). Security and performance review happen once per sprint — inside the Phase 7 review fleet — not per story.
 
 > **Workflow path.** If the `Workflow` tool is present in your tool list, use it. If it is not, use the prose below. This is
 > a fact to check, not a preference to weigh — do not choose between the two paths on judgment. `$SKILL/references/workflows/story-executor.workflow.js`
@@ -26,7 +26,7 @@ Under `scheduling: graph` this phase runs inside a **node executor** against the
 
 ## Gate
 - Test validation green (step 2).
-- Every spawned reviewer delivered findings to its spawner as its final agent return (verified by sprint-watchdog at Phase 5 step 1 via the aggregated artifact — existence + per-AC checklist — not the message log).
+- Every spawned reviewer delivered findings to its spawner as its final agent return (verified by the lead at Phase 5 step 1 via the aggregated artifact — existence + per-AC checklist — not the message log).
 - Aggregated reviewer report exists at `$ART/reviews-<story-id>-round-<N>.md` for this story.
 
 ## Steps
@@ -41,7 +41,7 @@ Under `scheduling: graph` this phase runs inside a **node executor** against the
    - **Recon preamble:** grep the worktree-local `.repomix-output.xml` (repo-relative paths resolve against the worktree root, not the main tree); when `<worktree>/graphify-out/graph.json` exists, `graphify query`/`path`/`explain` may answer relationship/coupling questions — cite `source_location` the same way as file:line.
 4. **Conditional `ui-validator`.** Only when the diff touches JSX/TSX/CSS/template files — spawned in the same turn as step 3 (plus `state.json.crew.accessibility` alongside, frontend stacks only). Same delivery contract as step 5. Non-UI diff → skip entirely.
 5. **Each reviewer ends by returning findings to its spawner** as its final agent return, in both modes: `{"reviewer": "<role>", "findings": [{"severity": "CRITICAL|HIGH|MEDIUM|LOW", "file": "...", "line": 42, "issue": "...", "fix": "...", "ac_ref": "<AC/DoD item or null>"}]}`. No SendMessage is required (the crew-resolved `code-reviewer` type has none; under graph mode team-lead is the wrong aggregation layer). Lead-spawned reviewers that have it may additionally send the stringified payload — belt-and-braces, never required. Delivery matrix: `$REF/sendmessage-protocol.md`.
-6. **The spawner aggregates** all reports into `$ART/reviews-<story-id>-round-<N>.md` (story-keyed — no filename collisions across executors or stories; `<N>` = current Phase-5 fix iteration, starting at 0) with a per-AC checklist table. **The artifact is the audit record** — sprint-watchdog verifies delivery by its existence + per-AC checklist, not the message log.
+6. **The spawner aggregates** all reports into `$ART/reviews-<story-id>-round-<N>.md` (story-keyed — no filename collisions across executors or stories; `<N>` = current Phase-5 fix iteration, starting at 0) with a per-AC checklist table. **The artifact is the audit record** — the lead verifies delivery by its existence + per-AC checklist, not the message log.
 7. **Sub-skill hooks, fail-soft** — `bash "$SCRIPTS/run_subskill_hooks.sh" 4 "$plan_path"`.
 8. **Persist (sequential mode only).** `bash $SCRIPTS/state.sh update "$plan_path" current_phase=5` once all reports are aggregated (graph mode: `schedule.sh phase` per the delta above — executors never write `state.json`).
 

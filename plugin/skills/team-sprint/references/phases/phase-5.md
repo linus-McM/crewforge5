@@ -32,7 +32,7 @@ Under `scheduling: graph` this phase runs inside a **node executor** against the
 
 ## Steps
 For each iteration up to `review_fix_iterations`:
-1. **Sprint-watchdog policy audit.** Every spawned Phase-4 reviewer (AC reviewer, plus ui-validator/accessibility when the diff was UI-facing) delivered — verified by artifact: `$ART/reviews-<story-id>-round-<N>.md` exists and carries the per-AC checklist, NOT by scanning the message log. Missing or checklist-less artifact → re-spawn the reviewer with explicit final-return delivery instructions (`$REF/sendmessage-protocol.md`); an unpersisted report breaks resume.
+1. **Delivery audit (the lead).** Every spawned Phase-4 reviewer (AC reviewer, plus ui-validator/accessibility when the diff was UI-facing) delivered — verified by artifact: `$ART/reviews-<story-id>-round-<N>.md` exists and carries the per-AC checklist, NOT by scanning the message log. Missing or checklist-less artifact → re-spawn the reviewer with explicit final-return delivery instructions (`$REF/sendmessage-protocol.md`); an unpersisted report breaks resume.
 <!-- wf:p5-triage -->
 2. **Triage findings.** CRITICAL + HIGH → fix tasks queued back to engineers. MEDIUM + LOW → surfaced to the user, non-blocking.
 <!-- wf:p5-fix -->

@@ -11,8 +11,8 @@
 # functions, then invokes each through setup/teardown), and re-execs the
 # result. The original file is untouched.
 #
-# This is the ONLY copy in the repo: scripts/tests/*.bats and the skill suites
-# (skills/team-sprint, skills/team-sprint-planner) all source it. Each fixture
+# This is the ONLY copy in the repo: scripts/tests/*.bats and the team-sprint
+# suite (plugin/skills/team-sprint) source it. Each fixture
 # sources it at the top via a path relative to its own directory, e.g.
 #   source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
 # which works under both modes.

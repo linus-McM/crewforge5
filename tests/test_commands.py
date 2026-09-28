@@ -110,13 +110,26 @@ def test_build_fix_mode_locks_tests():
 
 
 def test_execute_takes_an_accepted_feature_plan():
-    """R-S7 adapter: `next` after `build accept` is /crewforge5:execute, which runs build implement on plan.md."""
-    skill = (PLUGIN_ROOT / "skills/execute/SKILL.md").read_text()
-    alias = skill.split("## An accepted `crewforge5/<slug>/plan.md`", 1)[1].split("\n## ", 1)[0]
-    assert "/crewforge5:build implement --slug <slug>" in alias and "accepted" in alias and "crewforge5:story-executor" in alias
-    order = [alias.index(s) for s in ("/crewforge5:build implement", "/crewforge5:review run", "/crewforge5:review review")]
-    assert order == sorted(order), "R-S7: build, then review run, then review review"
-    assert "Print the underlying commands you ran" in alias and "shortcut" in alias
+    """R-S7 / D5: `next` after `build accept` is /crewforge5:execute, a command running build implement then review."""
+    alias = section("execute", "run  (the default)")
+    assert "crewforge5 status --slug <slug>" in alias and "accepted" in alias and "crewforge5:story-executor" in alias
+    order = [alias.index(s) for s in ("crewforge5 status", "/crewforge5:build implement", "/crewforge5:review run", "/crewforge5:review review")]
+    assert order == sorted(order), "R-S7: status, then build, then review run, then review review"
+    assert "Print the underlying commands you ran" in alias
+    assert "shortcut" in (COMMANDS / "execute.md").read_text()
+
+
+def test_execute_teams_routes_to_the_hidden_team_sprint_path():
+    """D3: `execute --teams` builds the story plan from the accepted plan.md and runs team-sprint in graph mode."""
+    teams = section("execute", "--teams  (graph-mode Teams path; kept until measured, spec D3)")
+    assert teams.index("crewforge5 status") < teams.index("plan_stories.sh") < teams.index("skills/team-sprint/SKILL.md")
+    assert "scheduling: graph" in teams and "C4" in teams
+    fm = frontmatter(COMMANDS / "execute.md")
+    tools = [t.strip() for t in fm["allowed-tools"].split(",")]
+    assert set(tools) <= ALLOWED | {"Bash(bash *)"} and "Bash" not in tools
+    assert "--teams" in fm["argument-hint"]
+    body = (COMMANDS / "execute.md").read_text().split("\n---\n", 1)[1]
+    assert body.startswith((TEMPLATES / "command-preamble.md").read_text().strip())
 
 
 def test_build_hands_on_to_review_run():

@@ -207,9 +207,8 @@ Otherwise, show the user the summary table and overall grade. Then:
 
 2. **If grade is below A** (B, C, D, or F): automatically hand off to **agent-rectifier**
    with this validation report and the target agent path. It is hidden from the catalogue,
-   so the `Skill` tool cannot reach it — resolve it with
-   `bash "${CREWFORGE5_ROOT}/scripts/flow/subskill_resolve.sh" --load-mode agent-rectifier`
-   and honour the answer (`MODE=inline` — read the body and follow it here).
+   so the `Skill` tool cannot reach it — read
+   `${CREWFORGE5_ROOT}/skills/agent-rectifier/SKILL.md` and follow it here.
    Do not ask the user for confirmation — this is mandatory. Pass on one condition with the
    report: any fix that makes the agent file **shorter** must clear the retention gate
    before it is applied, because a trim is measured by how much shorter it got and the
