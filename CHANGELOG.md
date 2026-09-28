@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+Phase 7b of `docs/specs/cc-sdlc-alignment.md` (shared codebase context: R-K1–R-K5, C5).
+
+- `crewforge5 knowledge bootstrap [check] | status | refresh | check` (`knowledge.py`): Graphify graph plus an OKF bundle (`index.md`, `features/`, `modules/`). Bootstrap is check-only unless `[knowledge] auto_install = true`; every command's preamble runs it, reads the index before raw files and asks `graphify query|affected` before grep (R-K1). cc_sdlc's `sdlc/knowledge/` is shared when present, else `crewforge5/knowledge/` (R-K4, D2).
+- `crewforge5 knowledge pack <stage> [--slug s] [--max-tokens N]` (`packs.py`): commit-pinned Repomix packs under `graphify-out/packs/<slug>/`, seeded from the stage artifact plus one graph hop; frozen secret exclude list, fail-closed Bandit scan, Repomix secret check forced on; passed to workflows as `args.pack` (R-K2, C5).
+- `build accept` needs a build pack at HEAD, `review review` a review pack covering every changed text file (R-K3).
+- `crewforge5 docs render|check|open <stage>` (`docs.py`): Archify stage documents under `<slug>/docs/` with receipts; `plan|design|build accept` and `review review` refused while stale; skipped without Node; `open` suppressed under CI; `templates/docs-step.md` (R-K5).
+- New layers with off switches: `[knowledge|packs|docs] enabled = false`, `CREWFORGE5_KNOWLEDGE|PACKS|DOCS=off`.
+- **Breaking:** execute's phase 8 (draw.io integration diagram) is retired and the `drawio` skill is replaced by an `archify` pointer skill (D4).
+- Always-loaded: ~464 tok across 14 entries (was ~470 tok, 14).
+
 Phase 7 of `docs/specs/cc-sdlc-alignment.md` (init and crew as commands).
 
 - `/crewforge5:init new | check | accept | status` over the CLI (R-S4): `new` measures a config root through token-slim's `baseline.py`, the skill/agent validators and `grade.sh`, plus CLAUDE.md, rules, hooks and MCP, and writes `crewforge5/init-<date>/audit.md` (template `templates/audit.md`) and `measure.json`. `accept`, after a human picks the edits, runs `retention_gate.sh` over changed instruction files, re-measures, refuses a rise in validator failures, appends the Result and commits `init(<slug>): accept — audit.md`.

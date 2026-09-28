@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from . import artifacts as a
+from . import docs
 from . import project as p
 from .project import fail
 
@@ -102,8 +103,9 @@ def accept(stage: str, root: Path, slug: str | None) -> dict:
     """Only a human accepts: the command asks (AskUserQuestion) before it calls this."""
     verdict = check(stage, root, slug)
     path = Path(verdict["path"])
+    document = docs.check(root, path.parent, stage)  # R-K5: refused while the stage document is missing or stale
     path.write_text(a.set_meta(path.read_text(), "Status", "accepted"))
-    return {**verdict, "status": "accepted", "next": next_stage(stage, verdict["slug"])}
+    return {**verdict, "status": "accepted", "document": document, "next": next_stage(stage, verdict["slug"])}
 
 
 def state(feature: Path) -> dict[str, str]:

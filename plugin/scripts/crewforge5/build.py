@@ -9,7 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from . import artifacts as a
-from . import crew, stages
+from . import crew, knowledge, stages
 from . import project as p
 from .project import fail
 
@@ -38,13 +38,17 @@ def implementing(root: Path, slug: str | None) -> Path:
 def accept(root: Path, slug: str | None) -> dict:
     """`build accept`, then record the commit the plan was accepted at: `sync` diffs against it.
 
-    With `[build] require_crew` on, a valid plan is still refused until its language has a passing crew (R-S5).
+    With `[build] require_crew` on, a valid plan is still refused until its language has a passing crew (R-S5); with the
+    packs layer on, until a build context pack exists at HEAD (R-K3).
     """
-    stages.check("build", root, slug)
+    from . import packs  # packs imports this module
+
+    checked = stages.check("build", root, slug)
     crew.require(root)
+    pack = packs.require(root, Path(checked["path"]).parent, "build")
     verdict = stages.accept("build", root, slug)
     save(Path(verdict["path"]).parent, accepted_sha=p.head(root))
-    return verdict
+    return {**verdict, "pack": pack}
 
 
 def planned(feature: Path) -> list[str]:
@@ -52,9 +56,13 @@ def planned(feature: Path) -> list[str]:
     return a.list_items(a.sections(plan.read_text()).get("Files that change", "")) if plan.exists() else []
 
 
+GENERATED = ("graphify-out/", ".graphifyignore")  # the knowledge layer's output (R-K1), never a plan file or a pack seed
+
+
 def owned(root: Path, rel: str) -> bool:
-    """The plugin's own output (the feature home, .crewforge5.toml, [checkpoint] paths) is never a plan file."""
-    prefixes = [p.rel(root, p.home(root)) + "/", p.CONFIG_NAME, *p.config(root)["checkpoint"]["paths"]]
+    """The plugin's own output (the feature home, .crewforge5.toml, [checkpoint] paths, the knowledge bundle and graph)
+    is never a plan file."""
+    prefixes = [p.rel(root, p.home(root)) + "/", p.CONFIG_NAME, *p.config(root)["checkpoint"]["paths"], *GENERATED, knowledge.bundle_rel(root) + "/"]
     return any(rel == pre.rstrip("/") or rel.startswith(pre if pre.endswith("/") else pre + "/") for pre in prefixes)
 
 

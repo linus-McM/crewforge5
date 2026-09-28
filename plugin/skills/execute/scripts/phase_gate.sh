@@ -5,7 +5,7 @@
 #   phase_gate.sh <phase>
 # Runs the check `phases.json` declares for <phase> and prints one KEY=VALUE
 # line: STATUS=PASS | STATUS=SKIP REASON=<slug> | STATUS=FAIL REASON=<slug>.
-# Only 0, 1, 8 and 9 carry a mechanical gate. Phases 2-7 are judgment gates
+# Only 0, 1 and 9 carry a mechanical gate. Phases 2-7 are judgment gates
 # stated by team-sprint's own phase docs, declare no gate in the manifest, and
 # therefore never reach this script — asking for one is a usage error.
 #
@@ -20,9 +20,8 @@
 # anything else, so a gate that exits non-zero to mean "not applicable" would
 # park the flow on an optional phase forever. SKIP is therefore recorded in the
 # verdict line — which flow_gate.sh stores in state.json — while the exit code
-# says "do not stop here". A phase that is `required` in the manifest never
-# skips: it fails, which is exactly what the retired `integration_diagram: on`
-# toggle used to mean.
+# says "do not stop here". (Phase 8, the draw.io integration diagram, is retired:
+# Archify stage documents replace it, gated by the verdict CLI — spec D4.)
 #
 # Exit codes: 0 pass or skip, 1 the gate failed, 2 usage.
 set -uo pipefail
@@ -56,20 +55,6 @@ skill_dir() {
 # The plan under sprint, recorded into state.json by phase 0's intake.
 plan_path() { bash "$FLOW_STATE" execute get plan 2>/dev/null; }
 
-# `required` for a phase, straight from the manifest — the flag that replaced
-# team-sprint's `integration_diagram: off|auto|on` config toggle.
-# The manifest is `{status_source, phases: [...]}` since execute's phase list
-# became mode-aware; older flows still ship the bare array. Normalise before
-# indexing, exactly as flow_next.sh and flow_gate.sh do — reading the object
-# form as an array silently answers `false` for every phase, which would have
-# turned a required phase 8 into a skippable one.
-required_flag() {
-  local m
-  m="$(bash "$FLOW_STATE" execute manifest 2>/dev/null)" || return 1
-  jq -r --arg id "$1" '
-    (if type == "array" then {phases: .} else . end)
-    | .phases | map(select(.id == $id)) | .[0].required // false' "$m"
-}
 
 gate_0() { # Pre-flight: a real plan, a valid plan path, every required sub-skill
   local plan ts s
@@ -97,20 +82,6 @@ gate_1() { # Plan-review provenance: stamped by the planner, and fold-clean
   pass
 }
 
-gate_8() { # Integration diagram: the tool, then the artefact it should produce
-  local required diagram
-  required="$(required_flag 8)"
-  if ! bash "$RESOLVE" --probe drawio; then
-    [ "$required" = "true" ] && fail no-diagram-tool
-    skip no-diagram-tool
-  fi
-  diagram="$(bash "$FLOW_STATE" execute get diagram_path 2>/dev/null)"
-  if [ -n "$diagram" ] && [ -f "$diagram" ]; then
-    pass
-  fi
-  [ "$required" = "true" ] && fail no-diagram
-  skip no-diagram
-}
 
 gate_9() { # Distil the run's learnings, and pay for them
   local si count
@@ -125,7 +96,6 @@ gate_9() { # Distil the run's learnings, and pay for them
 case "$PHASE" in
   0) gate_0 ;;
   1) gate_1 ;;
-  8) gate_8 ;;
   9) gate_9 ;;
   *) usage ;;
 esac

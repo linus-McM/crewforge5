@@ -4,7 +4,7 @@
 
 ## Entry condition
 
-Phase 8 recorded `PASS` (or skipped). The run's learnings are already in the ledger: `self-improve`'s `scripts/ledger.sh add <target> <source> <note>` is the capture channel, written during the sprint — Phase 9 distils, it does not go hunting for lessons in a transcript that has already scrolled away.
+Phase 7 recorded `PASS`. The run's learnings are already in the ledger: `self-improve`'s `scripts/ledger.sh add <target> <source> <note>` is the capture channel, written during the sprint — Phase 9 distils, it does not go hunting for lessons in a transcript that has already scrolled away.
 
 ## Steps
 

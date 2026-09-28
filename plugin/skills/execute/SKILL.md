@@ -1,9 +1,9 @@
 ---
 name: execute
 model: opus
-description: Drive a reviewed plan to a merged commit — TDD agent fleet in an isolated worktree, coverage, AC/DoD and review-fleet gates, then an integration diagram and distilled learnings. Use on /crewforge5:execute, "run a sprint", "execute this plan"
+description: Drive a reviewed plan to a merged commit — TDD agent fleet in an isolated worktree, coverage, AC/DoD and review-fleet gates, then distilled learnings. Use on /crewforge5:execute, "run a sprint", "execute this plan"
 ---
-You are running `crewforge5:execute`: a stamped plan in, a merged commit out. The eight phases that do the work are `team-sprint`'s, unchanged and loaded from where they live; this skill is the state machine that offers them one at a time, records each gate's verdict, and adds the two phases team-sprint never had — an integration diagram of what actually merged, and a distillation pass over what the run taught.
+You are running `crewforge5:execute`: a stamped plan in, a merged commit out. The eight phases that do the work are `team-sprint`'s, unchanged and loaded from where they live; this skill is the state machine that offers them one at a time, records each gate's verdict, and adds the one phase team-sprint never had — a distillation pass over what the run taught. (The draw.io integration diagram that was phase 8 is retired; Archify stage documents from `/crewforge5:plan`, `design`, `build` and `review` replace it.)
 
 The plan must already be adversarial-clean. Reviewing it is `crewforge5:plan-legacy`'s job, and Phase 1 hard-STOPs a plan nobody reviewed.
 
@@ -69,7 +69,7 @@ For phases 0–7, **team-sprint's own `state.json` is the authority, not the dri
 
 This is why the per-story loop works at all. team-sprint has tracked `current_story_id`, `story_commits[]` and `iterations{}` since long before this driver existed, and Phase 6 puts `current_phase` back to 3 for the next story. A driver keeping its own copy could only record "phase 3 passed" once, and had no way to be sent back — so a resumed sprint lost its place across exactly the four phases that do the work.
 
-The driver's own state still decides phases 8 and 9, which team-sprint has never heard of, and it still records every gate verdict. A status source that exits non-zero — no plan recorded yet, no sprint state on disk — has no opinion, and the driver's state decides alone.
+The driver's own state still decides phase 9, which team-sprint has never heard of, and it still records every gate verdict. A status source that exits non-zero — no plan recorded yet, no sprint state on disk — has no opinion, and the driver's state decides alone.
 
 ## Phases
 
@@ -88,7 +88,6 @@ The driver's own state still decides phases 8 and 9, which team-sprint has never
 | 6 Story commit | team-sprint `phase-6.md` | judgment, stated by the doc — sequential mode only |
 | execute Wave loop | team-sprint `phase-execute.md` | judgment, stated by the doc — graph mode only |
 | 7 Review fleet, merge | team-sprint `phase-7.md` | judgment, stated by the doc |
-| 8 Integration diagram | `phases/phase-8.md` | diagram tool + recorded diagram, else SKIP |
 | 9 Distil learnings | `phases/phase-9.md` | empty ledger passes; otherwise `ceiling.sh check` |
 
 Phases 3–6 run once per story under `scheduling: sequential`, exactly as team-sprint states; the `execute` wave loop replaces them under `scheduling: graph`; everything else runs once per sprint.

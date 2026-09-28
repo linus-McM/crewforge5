@@ -3,7 +3,7 @@ description: Stage 1 Plan — interview the originator into intent.md; a human a
 argument-hint: new "<title>" | check | accept | status  [--slug <slug>]
 allowed-tools: Bash(uv run *), Bash(git *), Read, Edit, Write, Glob, Grep, AskUserQuestion, Workflow
 ---
-Run every `crewforge5` call as `uv run --no-project "${CLAUDE_PLUGIN_ROOT}/scripts/crewforge5.py" ...` from the project root. Each call prints one JSON verdict: act on `ok`, quote `reason` verbatim when false, and follow `next`. Never edit the verdict logic; the gate is the control.
+Run every `crewforge5` call as `uv run --no-project "${CLAUDE_PLUGIN_ROOT}/scripts/crewforge5.py" ...` from the project root. Each call prints one JSON verdict: act on `ok`, quote `reason` verbatim when false, and follow `next`. Never edit the verdict logic; the gate is the control. Knowledge first: run `crewforge5 knowledge bootstrap` (idempotent, check-only unless `[knowledge] auto_install = true`; when not `ok`, say once what is missing and carry on), read the knowledge index its `next` names before raw files, and ask call-graph questions with `graphify query "<question>"` or `graphify affected "<symbol>"` before grep.
 
 Workflows: when `crewforge5 workflows list` reports `enabled: true` and the Workflow tool is available, run the step's workflow as `Workflow({name: "crewforge5:<name>", args: {...}})`; otherwise do the step's inline fallback. Workflows are read-only and advisory: you write the artifact from the result, and the Python gate decides either way. The session-start hook sets `CLAUDE_CODE_WORKFLOWS=1` in `.claude/settings.local.json` (`crewforge5 workflows env` does the same on demand).
 
@@ -20,8 +20,11 @@ Arguments: $ARGUMENTS
 ## check
 `crewforge5 plan check` and report the verdict.
 
+## docs  (before accept)
+Archify `architecture` from intent.md, as `${CLAUDE_PLUGIN_ROOT}/templates/docs-step.md` says: author `docs/plan.json`, `crewforge5 docs render plan`, then `crewforge5 docs open plan`.
+
 ## accept
-Only a human accepts; never accept on the originator's behalf. Ask (AskUserQuestion) the product owner to confirm the intent is correct and in scope. On yes run `crewforge5 plan accept`: it sets `Status: accepted` and commits `plan(<slug>): accept — intent.md` (commit by hand only when the verdict's `checkpoint` says checkpoints are off). Next: `/crewforge5:design new`.
+Only a human accepts; never accept on the originator's behalf. Run `crewforge5 docs open plan` first (accept is refused while `docs/plan.html` is missing or stale). Ask (AskUserQuestion) the product owner to confirm the intent is correct and in scope. On yes run `crewforge5 plan accept`: it sets `Status: accepted` and commits `plan(<slug>): accept — intent.md` (commit by hand only when the verdict's `checkpoint` says checkpoints are off). Next: `/crewforge5:design new`.
 
 ## status
 `crewforge5 status` and summarise which artifacts are accepted, present or missing; report `next` verbatim as the command to run.

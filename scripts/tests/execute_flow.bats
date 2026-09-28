@@ -80,24 +80,8 @@ _split_run() {
 }
 
 manifest() { bash "$FLOW_STATE" execute manifest; }
-# Walk the sprint up to the point where phase 8 is the phase on offer, so a
-# phase-8 test asserts on a flow that genuinely arrived there.
-drive_to_8() {
-  local n
-  record_plan
-  for n in 0 1 2 3 4 5 6 7; do
-    bash "$FLOW_GATE" execute "$n" >/dev/null 2>&1 || return 1
-  done
-}
 verdict()  { jq -r --arg p "$1" '.phase[$p].status // "none"' "$STATE"; }
 record_plan() { bash "$FLOW_STATE" execute set plan "$PLAN"; }
-
-# Replace the symlinked skill with a writable copy, so a test can flip a
-# manifest field without editing the shipped file.
-_own_execute() {
-  rm "$CREWFORGE5_ROOT/skills/execute"
-  cp -R "$ROOT/skills/execute" "$CREWFORGE5_ROOT/skills/execute"
-}
 
 # --- the manifest ------------------------------------------------------------
 
@@ -107,9 +91,11 @@ _own_execute() {
 mphases() { jq '(if type == "array" then {phases: .} else . end) | .phases' "$(manifest)"; }
 mfield()  { mphases | jq -r --arg id "$1" --arg f "$2" 'map(select(.id == $id)) | .[0][$f] // ""'; }
 
-@test "phases.json lists eleven phases: 0-9 plus the graph-mode wave loop" {
-  [ "$(mphases | jq -r 'length')" = "11" ]
-  [ "$(mphases | jq -r 'map(.id) | join(",")')" = "0,1,2,3,4,5,6,execute,7,8,9" ]
+@test "phases.json lists ten phases: 0-7 and 9 plus the graph-mode wave loop (phase 8 is retired)" {
+  [ "$(mphases | jq -r 'length')" = "10" ]
+  [ "$(mphases | jq -r 'map(.id) | join(",")')" = "0,1,2,3,4,5,6,execute,7,9" ]
+  [ ! -e "$ROOT/skills/execute/phases/phase-8.md" ]
+  ! grep -q 'gate_8\|drawio' "$ROOT/skills/execute/scripts/phase_gate.sh"
 }
 
 @test "phases 0-7 point at team-sprint's own phase docs, which exist" {
@@ -130,19 +116,19 @@ mfield()  { mphases | jq -r --arg id "$1" --arg f "$2" 'map(select(.id == $id)) 
   [ -f "$(dirname "$m")/$doc" ]
 }
 
-@test "phases 8 and 9 are execute's own docs and exist" {
+@test "phase 9 is execute's own doc and exists" {
   local m doc
   m="$(manifest)"
-  for n in 8 9; do
+  for n in 9; do
     doc="$(mfield "$n" doc)"
     [ "$doc" = "phases/phase-$n.md" ]
     [ -f "$(dirname "$m")/$doc" ]
   done
 }
 
-@test "only 0, 1, 8 and 9 declare a gate; the rest are judgment phases" {
+@test "only 0, 1 and 9 declare a gate; the rest are judgment phases" {
   local n
-  for n in 0 1 8 9; do
+  for n in 0 1 9; do
     case "$(mfield "$n" gate)" in *"phase_gate.sh"*" $n") ;; *) return 1 ;; esac
   done
   for n in 2 3 4 5 6 execute 7; do
@@ -269,14 +255,14 @@ _driver_verdicts() {
   printf '%s' "$out"
 }
 
-@test "phases 0-7 through the driver reach 8 with team-sprint's own verdicts" {
+@test "phases 0-7 through the driver reach 9 with team-sprint's own verdicts" {
   record_plan
   expected="$(_team_sprint_verdicts)"
   actual="$(_driver_verdicts)"
   [ "$actual" = "$expected" ]
 
   _split_run bash "$FLOW_NEXT" execute
-  case "$STDOUT" in *"PHASE=8"*) ;; *) return 1 ;; esac
+  case "$STDOUT" in *"PHASE=9"*) ;; *) return 1 ;; esac
 }
 
 # The happy-path diff above is all PASS, so on its own it cannot tell a faithful
@@ -290,70 +276,6 @@ _driver_verdicts() {
   actual="$(_driver_verdicts)"
   [ "$actual" = "$expected" ]
   case "$actual" in *"1=FAIL"*) ;; *) return 1 ;; esac
-}
-
-# --- phase 8: the integration diagram ---------------------------------------
-
-@test "phase 8 not required and no diagram tool: SKIP, and the flow advances" {
-  _own_execute
-  jq '(.phases[] | select(.id == "8") | .required) |= false' "$CREWFORGE5_ROOT/skills/execute/phases.json" > "$TMP/p.json"
-  mv "$TMP/p.json" "$CREWFORGE5_ROOT/skills/execute/phases.json"
-  rm "$CREWFORGE5_ROOT/skills/drawio"
-  drive_to_8
-
-  _split_run bash "$FLOW_GATE" execute 8
-  [ "$RC" -eq 0 ]
-  [ "$STDOUT" = "STATUS=PASS" ]
-  case "$(jq -r '.phase["8"].stdout' "$STATE")" in
-    "STATUS=SKIP REASON=no-diagram-tool") ;;
-    *) return 1 ;;
-  esac
-
-  _split_run bash "$FLOW_NEXT" execute
-  case "$STDOUT" in *"PHASE=9"*) ;; *) return 1 ;; esac
-}
-
-@test "phase 8 required and no diagram tool: FAIL" {
-  _own_execute
-  jq '(.phases[] | select(.id == "8") | .required) |= true' "$CREWFORGE5_ROOT/skills/execute/phases.json" > "$TMP/p.json"
-  mv "$TMP/p.json" "$CREWFORGE5_ROOT/skills/execute/phases.json"
-  rm "$CREWFORGE5_ROOT/skills/drawio"
-  drive_to_8
-
-  _split_run bash "$FLOW_GATE" execute 8
-  [ "$RC" -ne 0 ]
-  [ "$STDOUT" = "STATUS=FAIL" ]
-  case "$(jq -r '.phase["8"].stdout' "$STATE")" in
-    *"REASON=no-diagram-tool"*) ;;
-    *) return 1 ;;
-  esac
-
-  _split_run bash "$FLOW_NEXT" execute
-  case "$STDOUT" in *"PHASE=8"*) ;; *) return 1 ;; esac
-}
-
-@test "phase 8 required with the tool present but no diagram recorded: FAIL" {
-  _own_execute
-  jq '(.phases[] | select(.id == "8") | .required) |= true' "$CREWFORGE5_ROOT/skills/execute/phases.json" > "$TMP/p.json"
-  mv "$TMP/p.json" "$CREWFORGE5_ROOT/skills/execute/phases.json"
-  record_plan
-
-  _split_run bash "$FLOW_GATE" execute 8
-  [ "$RC" -ne 0 ]
-  case "$(jq -r '.phase["8"].stdout' "$STATE")" in
-    *"REASON=no-diagram"*) ;;
-    *) return 1 ;;
-  esac
-}
-
-@test "phase 8 passes once a diagram exists on disk" {
-  record_plan
-  printf '<mxfile></mxfile>\n' > "$TMP/repo/integration.drawio"
-  bash "$FLOW_STATE" execute set diagram_path integration.drawio
-  _split_run bash "$FLOW_GATE" execute 8
-  [ "$RC" -eq 0 ]
-  [ "$STDOUT" = "STATUS=PASS" ]
-  [ "$(jq -r '.phase["8"].stdout' "$STATE")" = "STATUS=PASS" ]
 }
 
 # --- phase 9: distil what the run learned ------------------------------------
@@ -438,7 +360,7 @@ _offers() { bash "$FLOW_NEXT" execute | sed -n 's/^PHASE=//p'; }
 @test "done=true hands over to the phases team-sprint does not own" {
   bash "$FLOW_STATE" execute set plan "$PLAN"
   _sprint_state 7 true
-  [ "$(_offers)" = "8" ]
+  [ "$(_offers)" = "9" ]
 }
 
 @test "current_phase execute offers the wave loop even when config says sequential" {

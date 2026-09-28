@@ -21,7 +21,7 @@ CONFIG_NAME = ".crewforge5.toml"
 DEFAULT_CONFIG = (TEMPLATES / "crewforge5.toml").read_text()
 DEFAULTS = tomllib.loads(DEFAULT_CONFIG)
 # Layers with an off switch (R-C2): `[<layer>] enabled = false` or CREWFORGE5_<LAYER>=off.
-LAYERS = ("checkpoint", "workflows", "hooks")
+LAYERS = ("checkpoint", "workflows", "hooks", "knowledge", "packs", "docs")
 
 
 class Blocked(Exception):
@@ -34,6 +34,27 @@ class Blocked(Exception):
 
 def fail(reason: str, **extra):
     raise Blocked(reason, **extra)
+
+
+class StepFailed(Exception):
+    """A bootstrap step's command exited non-zero or left its expected result missing."""
+
+
+class StepSkipped(Exception):
+    """A bootstrap step does not apply here; later steps still run."""
+
+
+def ran(root: Path, argv: list[str], ok) -> str:
+    """Run an install command; StepFailed with its stderr tail when it exits non-zero or `ok()` is false afterwards."""
+    result = run_cmd(root, argv)
+    if result.returncode != 0 or not ok():
+        raise StepFailed(f"{' '.join(argv)} exited {result.returncode}: {result.stderr.strip()[-200:] or 'expected result missing'}")
+    return " ".join(argv)
+
+
+def claude_dir() -> Path:
+    """Where Claude Code keeps skills: CLAUDE_CONFIG_DIR, else ~/.claude."""
+    return Path(os.environ["CLAUDE_CONFIG_DIR"]) if os.environ.get("CLAUDE_CONFIG_DIR") else Path.home() / ".claude"
 
 
 def merge(base: dict, over: dict) -> dict:
@@ -101,12 +122,21 @@ def rel(root: Path, path: Path) -> str:
     return str(path.relative_to(root))
 
 
+def run_cmd(root: Path, argv: list[str], env: dict | None = None, timeout: float | None = None, input: str | None = None) -> subprocess.CompletedProcess:
+    """Run an external tool without a shell; never raises. A timeout is exit 124, a missing program exit 127."""
+    full = {**os.environ, **env} if env else None
+    try:
+        return subprocess.run(argv, cwd=root, capture_output=True, text=True, check=False, env=full, timeout=timeout, input=input)
+    except subprocess.TimeoutExpired as err:
+        partial = err.stdout.decode(errors="replace") if isinstance(err.stdout, bytes) else (err.stdout or "")
+        return subprocess.CompletedProcess(argv, 124, partial, f"timed out after {timeout}s")
+    except FileNotFoundError:
+        return subprocess.CompletedProcess(argv, 127, "", f"{argv[0]} not found on PATH")
+
+
 def run_git(root: Path, *args: str) -> subprocess.CompletedProcess:
     """git without a shell; never raises on a non-zero exit."""
-    try:
-        return subprocess.run(["git", *args], cwd=root, capture_output=True, text=True, check=False)
-    except FileNotFoundError:
-        return subprocess.CompletedProcess(["git", *args], 127, "", "git not found on PATH")
+    return run_cmd(root, ["git", *args])
 
 
 def script(root: Path, rel: str, *args: str) -> dict:

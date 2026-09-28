@@ -3,7 +3,7 @@ description: Crew factory — survey the stack, forge and validate a per-languag
 argument-hint: survey | forge <lang> | validate [<lang>] | status [<lang>]
 allowed-tools: Bash(uv run *), Bash(git *), Read, Glob, Grep, AskUserQuestion, Agent
 ---
-Run every `crewforge5` call as `uv run --no-project "${CLAUDE_PLUGIN_ROOT}/scripts/crewforge5.py" ...` from the project root. Each call prints one JSON verdict: act on `ok`, quote `reason` verbatim when false, and follow `next`. Never edit the verdict logic; the gate is the control.
+Run every `crewforge5` call as `uv run --no-project "${CLAUDE_PLUGIN_ROOT}/scripts/crewforge5.py" ...` from the project root. Each call prints one JSON verdict: act on `ok`, quote `reason` verbatim when false, and follow `next`. Never edit the verdict logic; the gate is the control. Knowledge first: run `crewforge5 knowledge bootstrap` (idempotent, check-only unless `[knowledge] auto_install = true`; when not `ok`, say once what is missing and carry on), read the knowledge index its `next` names before raw files, and ask call-graph questions with `graphify query "<question>"` or `graphify affected "<symbol>"` before grep.
 
 If a hook denies a command, quote the denial; never rewrite, encode, split or relocate a command to get past a hook.
 

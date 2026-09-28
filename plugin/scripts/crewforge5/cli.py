@@ -11,7 +11,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import build, checkpoint, crew, evals, init, review, stages, tdd, workflows
+from . import build, checkpoint, crew, docs, evals, init, knowledge, packs, review, stages, tdd, workflows
 from .project import Blocked, fail
 
 
@@ -39,6 +39,14 @@ COMMANDS = {
     ("crew", "survey"): lambda root, arg, ns: crew.survey(root),
     ("crew", "validate"): lambda root, arg, ns: crew.validate(root, arg),
     ("crew", "status"): lambda root, arg, ns: crew.status(root, arg),
+    ("knowledge", "bootstrap"): lambda root, arg, ns: knowledge.bootstrap(root, check=arg == "check"),
+    ("knowledge", "status"): lambda root, arg, ns: knowledge.status(root),
+    ("knowledge", "refresh"): lambda root, arg, ns: knowledge.refresh(root),
+    ("knowledge", "check"): lambda root, arg, ns: knowledge.check(root),
+    ("knowledge", "pack"): lambda root, arg, ns: packs.build(root, ns.slug, arg, ns.max_tokens),
+    ("docs", "render"): lambda root, arg, ns: docs.mechanic("render")(root, arg, ns.slug),
+    ("docs", "check"): lambda root, arg, ns: docs.mechanic("check")(root, arg, ns.slug),
+    ("docs", "open"): lambda root, arg, ns: docs.mechanic("open")(root, arg, ns.slug),
     ("workflows", "list"): lambda root, arg, ns: workflows.catalog(root),
     ("workflows", "env"): lambda root, arg, ns: workflows.env(root),
     ("status", None): lambda root, arg, ns: stages.status(root, ns.slug),
@@ -57,6 +65,7 @@ class Parser(argparse.ArgumentParser):
 def parser() -> argparse.ArgumentParser:
     common = Parser(add_help=False)
     common.add_argument("--slug", help="feature slug (default: the most recent feature)")
+    common.add_argument("--max-tokens", type=int, dest="max_tokens", help="context-pack budget (knowledge pack)")
     ap = Parser(prog="crewforge5")
     sub = ap.add_subparsers(dest="stage", required=True)
     for stage in dict.fromkeys(s for s, _ in COMMANDS):
@@ -64,7 +73,7 @@ def parser() -> argparse.ArgumentParser:
         st = sub.add_parser(stage, parents=[common])
         if actions:
             st.add_argument("action", choices=actions)
-            st.add_argument("arg", nargs="?", help="title (plan new), step (build red|green), on|off (build fix), config root (init new), language (crew)")
+            st.add_argument("arg", nargs="?", help="title (plan new), step (build red|green), on|off (build fix), config root (init new), language (crew), stage (knowledge pack, docs), check (knowledge bootstrap)")
     return ap
 
 

@@ -12,7 +12,7 @@ import re
 from pathlib import Path
 
 from . import artifacts as a
-from . import build, stages, tdd
+from . import build, docs, packs, stages, tdd
 from . import project as p
 from .project import fail
 
@@ -83,10 +83,12 @@ def review(root: Path, slug: str | None) -> dict:
     problems, counts = findings(path.read_text())
     if problems:
         fail("; ".join(problems), slug=feature.name, path=str(path), problems=problems, next=f"fix {REVIEW}, then {command('review', feature.name)}")
+    document = docs.check(root, feature, "review")  # R-K5: the review sequence document is fresh
+    pack = packs.require(root, feature, "review")  # R-K3: a review pack at HEAD covering every changed text file
     after = REVIEWED
     if counts["important"]:
         after = f"address each Important finding with a `/crewforge5:build red|green` cycle, then {command('run', feature.name)} and re-review"
-    return {"ok": True, "slug": feature.name, "path": str(path), **counts, "next": after}
+    return {"ok": True, "slug": feature.name, "path": str(path), **counts, "document": document, "pack": pack, "next": after}
 
 
 def next_for(feature: Path) -> str:

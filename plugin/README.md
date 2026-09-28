@@ -40,7 +40,7 @@ forms of the others are ambiguous in the same way.
 | `/crewforge5:design` | Stage 2: the accepted intent becomes `spec.md` with Concerns and a Requirements trace | "design this feature" |
 | `/crewforge5:build` | Stage 3: plan mode against the accepted spec writes `plan.md`, every step naming its failing test | "write the build plan" |
 | `/crewforge5:review` | Stage 4: `run` (test/lint/build into `test-report.json`, refused without red→green evidence), `review` (`review.md` from the review workflow, committed), `evals` | "review this feature" |
-| `/crewforge5:execute` | On an accepted `plan.md`, the shortcut for `build implement` then `review run` and `review review`. On a stamped `docs/plans/` plan, a reviewed plan becomes a merged commit — TDD agent fleet in an isolated worktree, coverage, AC/DoD and review-fleet gates, then an integration diagram and distilled learnings | "run a sprint", "execute this plan" |
+| `/crewforge5:execute` | On an accepted `plan.md`, the shortcut for `build implement` then `review run` and `review review`. On a stamped `docs/plans/` plan, a reviewed plan becomes a merged commit — TDD agent fleet in an isolated worktree, coverage, AC/DoD and review-fleet gates, then distilled learnings | "run a sprint", "execute this plan" |
 
 `init`, `crew`, `plan`, `design`, `build` and `review` are slash commands over the verdict CLI (below).
 `execute` is still a flow skill, and the hidden `init-legacy` and `plan-legacy` are the
@@ -92,7 +92,7 @@ in the catalogue, so a flow reaches one through
 | `team-sprint` | `/crewforge5:execute` | phases 0–7 are its phase docs, wrapped unchanged |
 | `sprint-watchdog` | `/crewforge5:execute` | phase 0, the pre-sprint audit |
 | `pre-commit-review-fleet` | `/crewforge5:execute` | phase 7, over the sprint diff (a stamped plan; `/crewforge5:review` replaces it in spec phase 8) |
-| `drawio` | `/crewforge5:execute` | phase 8, the integration diagram |
+| `archify` | `/crewforge5:plan`, `design`, `build`, `review` | the `## docs` step's pointer to the Archify skill (stage documents); replaced `drawio` and execute's phase-8 integration diagram |
 | `self-improve` | `/crewforge5:execute` | phase 9, distilling the ledger |
 | `ac-validate` | — | assigned to a generated crew member by `crew-factory`; no phase drives it |
 | `playwright-cli` | — | same, for frontend AC verification |
@@ -108,7 +108,7 @@ them. That is the plugin's rent, and it is measured rather than asserted:
 bash "$CREWFORGE5_ROOT/scripts/budget_check.sh" --verbose
 ```
 
-The bundle is **~470 tokens** always-loaded across 14 catalogue entries, against
+The bundle is **~464 tokens** always-loaded across 14 catalogue entries, against
 a budget of **550** — one description's worth of headroom, so rewording a
 trigger phrase does not turn the build red, while a whole new listed surface
 still cannot slip in unpriced. The other **26 skills** carry
@@ -307,6 +307,55 @@ Every layer has one off switch in config and one environment variable:
 | Checkpoint commits | `[checkpoint] enabled = false` | `CREWFORGE5_CHECKPOINT=off` |
 | Stage workflows | `[workflows] enabled = false` (`auto_env = false` stops only the env merge) | `CREWFORGE5_WORKFLOWS=off` |
 | Hooks | `[hooks] enabled = false` | `CREWFORGE5_HOOKS=off` (in `settings.json`'s `env` block) |
+| Knowledge (graph + bundle) | `[knowledge] enabled = false` (also turns packs off) | `CREWFORGE5_KNOWLEDGE=off` |
+| Context packs and their gates | `[packs] enabled = false` | `CREWFORGE5_PACKS=off` |
+| Stage documents and their gates | `[docs] enabled = false` (`open = false` stops only the opener) | `CREWFORGE5_DOCS=off` |
+
+**Knowledge.** Every command opens with `crewforge5 knowledge bootstrap`
+(idempotent; `bootstrap check` writes nothing). It is check-only unless
+`[knowledge] auto_install = true`: it writes `.graphifyignore`, builds
+`graphify-out/graph.json` when `graphify` is on PATH and the OKF bundle
+(`index.md`, `features/`, `modules/`), but installs uv, Graphify
+(`uv tool install graphifyy`), Repomix and Archify only with the opt-in, and
+otherwise names each missing tool. The command then reads the bundle's
+`index.md` before raw files and asks `graphify query` / `graphify affected`
+before grep. When cc_sdlc's `sdlc/knowledge/` exists the bundle is shared
+(spec D2): CrewForge5 writes only its own `features/` concepts and the
+Features block of that index; otherwise it lives in `crewforge5/knowledge/`.
+`knowledge status` says how far the graph and bundle are behind HEAD
+(`[knowledge] max_behind`), `refresh` rebuilds them and `check` validates
+OKF conformance. Graphify, uv and npm are subprocesses; nothing is installed
+from a hook.
+
+**Context packs.** `crewforge5 knowledge pack <stage> [--slug s]
+[--max-tokens N]` writes a commit-pinned Repomix pack plus manifest to
+`graphify-out/packs/<slug>/` (git-ignored, never committed). Seeds come from
+the stage artifact (plan: the backticked paths in intent.md's Affected users
+and systems; design: those plus spec.md's Design; build: plan.md's Files that
+change; review: `git diff <[packs] base>...HEAD`), grown `[packs] hops` call
+edges plus each seed's community. A frozen exclude list (`.env*`,
+`.claude/settings.local.json`, keys and certificates, `.netrc`/`.npmrc`/`.pypirc`,
+`*credentials*`, `graphify-out/`, untracked, symlinked and git-ignored files),
+a Bandit scan of the Python files (`uv tool run --from bandit==1.9.4`) that
+fails closed, and Repomix's secret check, forced on by
+`templates/knowledge/repomix.config.json`, keep secrets out; verdicts name
+paths and rule ids, never the matched text. The command passes the pack's
+`path` to the stage workflow as `args.pack`. `build accept` needs a build pack
+at HEAD and `review review` a review pack at HEAD accounting for every changed
+text file; plan and design packs are advisory. Missing Repomix
+(`npm i -g repomix`) skips an advisory pack and refuses a gated one.
+
+**Stage documents.** Each stage ends with an Archify diagram under
+`crewforge5/<slug>/docs/` (plan `architecture`, design `dataflow`, build
+`workflow`, review `sequence`), authored as `<stage>.json` by
+`templates/docs-step.md`, delivered by `crewforge5 docs render <stage>` with a
+receipt of source digests (the `Status:` line masked), checked by `docs check`
+and shown by `docs open` (never under `CI`). `plan|design|build accept` and
+`review review` are refused while the document is missing or stale. Without
+Node >= 18 or the Archify skill (`npx -y skills add tt-a1i/archify --skill
+archify --agent claude-code --global --copy --yes`) the step is skipped, not
+failed. Documents are never rendered from a hook. This replaces the draw.io
+integration diagram execute ran as phase 8.
 
 **Workflows.** Each planning command runs one read-only Workflow script from
 `workflows/`, as `crewforge5:<name>`: `config-audit` (init: CLAUDE.md and
@@ -386,7 +435,7 @@ less machinery, no maintenance promise.
 
 ## Credits
 
-Not all of this was written here. Five of the shipped skills started as someone
+Not all of this was written here. Four of the shipped skills started as someone
 else's work and were adapted; four external projects are driven rather than
 vendored. Both lists are below, because a skill you can read is a skill whose
 origin you should be able to check.
@@ -399,7 +448,6 @@ install line still present in the vendored copy.
 | --- | --- | --- | --- |
 | `skills/adhd` | [UditAkhourii/adhd](https://github.com/UditAkhourii/adhd) | UditAkhourii | MIT |
 | `skills/grill-me` | [mattpocock/skills](https://github.com/mattpocock/skills) — `productivity/grilling` | Matt Pocock | MIT |
-| `skills/drawio` | [jgraph/drawio-mcp](https://github.com/jgraph/drawio-mcp) — `plugins/claude-code/skills/drawio` | JGraph Ltd (draw.io) | Apache-2.0 |
 | `skills/playwright-cli` | [microsoft/playwright](https://github.com/microsoft/playwright) — `packages/playwright-core/src/tools/skills/playwright-cli` | Microsoft | Apache-2.0 |
 | `skills/tech-debt-audit` | [ksimback/tech-debt-skill](https://github.com/ksimback/tech-debt-skill) | ksimback | **none declared** |
 
@@ -416,9 +464,10 @@ here, and each degrades visibly when absent (see [Dependencies](#dependencies)).
 
 | Tool | Project | Owner | Licence | Used by |
 | --- | --- | --- | --- | --- |
-| `repomix` | [yamadashy/repomix](https://github.com/yamadashy/repomix) | yamadashy | MIT | `use-repo-code`, the recon ladder |
-| `graphify` (`graphifyy` on PyPI) | [Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify) | Graphify-Labs | Apache-2.0 | `team-sprint` Phase 0/2/4 recon |
-| `drawio` desktop CLI, `drawio-mcp` | [jgraph/drawio-mcp](https://github.com/jgraph/drawio-mcp) | JGraph Ltd | Apache-2.0 | `drawio` export and live-viewer paths |
+| `repomix` | [yamadashy/repomix](https://github.com/yamadashy/repomix) | yamadashy | MIT | `use-repo-code`, the recon ladder, `crewforge5 knowledge pack` |
+| `graphify` (`graphifyy` on PyPI) | [Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify) | Graphify-Labs | Apache-2.0 | `team-sprint` Phase 0/2/4 recon, the knowledge layer |
+| `archify` (a Claude skill, `npx -y skills add tt-a1i/archify`) | [tt-a1i/archify](https://github.com/tt-a1i/archify) | tt-a1i | see upstream | `crewforge5 docs render|check|open` |
+| `bandit` (via `uv tool run`) | [PyCQA/bandit](https://github.com/PyCQA/bandit) | PyCQA | Apache-2.0 | the context-pack secret scan |
 | `playwright-cli` | [microsoft/playwright](https://github.com/microsoft/playwright) | Microsoft | Apache-2.0 | `playwright-cli`, `ac-validate` |
 
 Everything else under `skills/`, `agents/`, `hooks/` and `scripts/` is original

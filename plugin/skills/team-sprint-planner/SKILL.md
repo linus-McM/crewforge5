@@ -253,13 +253,13 @@ read-back is script-generated, not composed — same output every run, nothing p
    Follow the script output with bullets only a human judgement can add: scope, non-goals,
    any user-waived findings (there are none on a `status=clean` run — all severities are applied).
 2. **Diagram gate (boolean, must be answered).** Ask via AskUserQuestion — exactly yes or no:
-   *"Want a draw.io diagram of how this plan fits into the existing system?"*
-   - **Yes** → load `drawio` (hidden from the catalogue: `bash "${CREWFORGE5_ROOT}/scripts/flow/subskill_resolve.sh" --load-mode drawio`
-     answers `MODE=inline`, so read the body it names) and author a **system-context diagram** — NOT a story
+   *"Want an Archify diagram of how this plan fits into the existing system?"*
+   - **Yes** → load `archify` (hidden from the catalogue: `bash "${CREWFORGE5_ROOT}/scripts/flow/subskill_resolve.sh" --load-mode archify`
+     answers `MODE=inline`, so read the body it names) and author an Archify `architecture` **system-context diagram** — NOT a story
      dependency graph; stories, sprint ordering, and deployment sequence do not belong on it.
      Show, grounded in this session's recon: the existing components/files the plan touches,
      the inputs the new functionality consumes, the outputs it produces, and what the system
-     does once the plan is complete. Save as `<plan-dir>/<plan-stem>-context.drawio`; include
+     does once the plan is complete. Save the source as `<plan-dir>/<plan-stem>-context.json` and deliver it to `.html`; include
      the path in the report.
    - **No** → skip, note "diagram: declined" in the report.
 

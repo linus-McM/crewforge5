@@ -1,0 +1,291 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "built_at_commit": "__COMMIT__",
+  "nodes": [
+    {
+      "id": "src_app_core_engine",
+      "label": "Engine",
+      "community": 0,
+      "community_name": "core.py",
+      "source_file": "src/app/core.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "file_type": "code"
+    },
+    {
+      "id": "src_app_core_run",
+      "label": "run()",
+      "community": 0,
+      "community_name": "core.py",
+      "source_file": "src/app/core.py",
+      "source_location": "L20",
+      "_origin": "ast",
+      "file_type": "code"
+    },
+    {
+      "id": "src_app_core_stop",
+      "label": "stop()",
+      "community": 0,
+      "community_name": "core.py",
+      "source_file": "src/app/core.py",
+      "source_location": "L40",
+      "_origin": "ast",
+      "file_type": "code"
+    },
+    {
+      "id": "src_app_util_slug",
+      "label": "slug()",
+      "community": 0,
+      "community_name": "core.py",
+      "source_file": "src/app/util.py",
+      "source_location": "L3",
+      "_origin": "ast",
+      "file_type": "code"
+    },
+    {
+      "id": "src_app_util_now",
+      "label": "now()",
+      "community": 0,
+      "community_name": "core.py",
+      "source_file": "src/app/util.py",
+      "source_location": "L9",
+      "_origin": "ast",
+      "file_type": "code"
+    },
+    {
+      "id": "src_web_api_handler",
+      "label": "Handler",
+      "community": 1,
+      "community_name": "api.py",
+      "source_file": "src/web/api.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "file_type": "code"
+    },
+    {
+      "id": "src_web_api_get",
+      "label": "get()",
+      "community": 1,
+      "community_name": "api.py",
+      "source_file": "src/web/api.py",
+      "source_location": "L12",
+      "_origin": "ast",
+      "file_type": "code"
+    },
+    {
+      "id": "src_web_api_post",
+      "label": "post()",
+      "community": 1,
+      "community_name": "api.py",
+      "source_file": "src/web/api.py",
+      "source_location": "L30",
+      "_origin": "ast",
+      "file_type": "code"
+    },
+    {
+      "id": "src_web_views_render",
+      "label": "render()",
+      "community": 1,
+      "community_name": "api.py",
+      "source_file": "src/web/views.py",
+      "source_location": "L2",
+      "_origin": "ast",
+      "file_type": "code"
+    },
+    {
+      "id": "src_web_views_page",
+      "label": "Page",
+      "community": 1,
+      "community_name": "api.py",
+      "source_file": "src/web/views.py",
+      "source_location": "L15",
+      "_origin": "ast",
+      "file_type": "code"
+    },
+    {
+      "id": "readme_intro",
+      "label": "Intro",
+      "community": 2,
+      "community_name": "README.md",
+      "source_file": "README.md",
+      "source_location": "L1",
+      "_origin": "semantic",
+      "file_type": "document"
+    },
+    {
+      "id": "readme_usage",
+      "label": "Usage",
+      "community": 2,
+      "community_name": "README.md",
+      "source_file": "README.md",
+      "source_location": "L5",
+      "_origin": "semantic",
+      "file_type": "document"
+    },
+    {
+      "id": "docs_guide_intro",
+      "label": "Guide intro",
+      "community": 3,
+      "community_name": "Guide",
+      "source_file": "docs/guide.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "file_type": "document",
+      "node_kind": "heading"
+    },
+    {
+      "id": "docs_guide_setup",
+      "label": "Setup",
+      "community": 3,
+      "community_name": "Guide",
+      "source_file": "docs/guide.md",
+      "source_location": "L10",
+      "_origin": "ast",
+      "file_type": "document",
+      "node_kind": "heading"
+    },
+    {
+      "id": "docs_guide_usage",
+      "label": "Usage",
+      "community": 3,
+      "community_name": "Guide",
+      "source_file": "docs/guide.md",
+      "source_location": "L20",
+      "_origin": "ast",
+      "file_type": "document",
+      "node_kind": "heading"
+    },
+    {
+      "id": "src_web_api_delete",
+      "label": "delete()",
+      "community": 1,
+      "community_name": "api.py",
+      "source_file": "src/web/api.py",
+      "source_location": "L44",
+      "_origin": "ast",
+      "file_type": "code"
+    },
+    {
+      "id": "src_app_util_fmt",
+      "label": "fmt()",
+      "community": 4,
+      "community_name": "fmt",
+      "source_file": "src/app/util.py",
+      "source_location": "L20",
+      "_origin": "ast",
+      "file_type": "code"
+    },
+    {
+      "id": "src_app_util_pad",
+      "label": "pad()",
+      "community": 4,
+      "community_name": "fmt",
+      "source_file": "src/app/util.py",
+      "source_location": "L30",
+      "_origin": "ast",
+      "file_type": "code"
+    },
+    {
+      "id": "src_app_util_wrap",
+      "label": "wrap()",
+      "community": 4,
+      "community_name": "fmt",
+      "source_file": "src/app/util.py",
+      "source_location": "L40",
+      "_origin": "ast",
+      "file_type": "code"
+    }
+  ],
+  "links": [
+    {
+      "source": "src_app_core_run",
+      "target": "src_app_util_slug",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/core.py"
+    },
+    {
+      "source": "src_app_core_run",
+      "target": "src_app_util_now",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/core.py"
+    },
+    {
+      "source": "src_web_api_get",
+      "target": "src_app_core_run",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/web/api.py"
+    },
+    {
+      "source": "src_web_api_post",
+      "target": "src_web_views_render",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/web/api.py"
+    },
+    {
+      "source": "src_web_views_page",
+      "target": "src_app_core_stop",
+      "relation": "relates_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": "src/web/views.py"
+    },
+    {
+      "source": "readme_intro",
+      "target": "readme_usage",
+      "relation": "relates_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md"
+    },
+    {
+      "source": "src_web_api_delete",
+      "target": "src_web_api_get",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/web/api.py"
+    },
+    {
+      "source": "readme_intro",
+      "target": "src_app_core_engine",
+      "relation": "mentions",
+      "confidence": "INFERRED",
+      "confidence_score": 0.6,
+      "source_file": "README.md"
+    },
+    {
+      "source": "readme_intro",
+      "target": "src_app_core_run",
+      "relation": "mentions",
+      "confidence": "INFERRED",
+      "confidence_score": 0.6,
+      "source_file": "README.md"
+    },
+    {
+      "source": "readme_intro",
+      "target": "src_web_api_handler",
+      "relation": "mentions",
+      "confidence": "INFERRED",
+      "confidence_score": 0.6,
+      "source_file": "README.md"
+    },
+    {
+      "source": "src_app_util_fmt",
+      "target": "src_app_util_pad",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/util.py"
+    }
+  ]
+}

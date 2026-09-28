@@ -18,7 +18,7 @@
   hard-STOPs without it.
 - The Phase 8 dot-point read-back ran (`scripts/plan_readback.sh <plan-path>`) and its output
   was shown to the user **verbatim** — the user saw the plan as bullets, not prose.
-- The Phase 8 diagram question was **asked via AskUserQuestion and answered** — a draw.io
+- The Phase 8 diagram question was **asked via AskUserQuestion and answered** — an Archify
   system-context diagram was emitted (how the plan fits the existing code: touched components,
   inputs, outputs, resulting behaviour — not a story dependency graph), or "diagram: declined"
   is in the report. Reporting done without asking is a process failure, not a shortcut.

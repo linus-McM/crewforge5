@@ -10,7 +10,7 @@
 #   - Single-story plans (no "## Story" headings) emit one bullet keyed by filename stem.
 #   - Trailing line points at <plan-dir>/<plan-stem>-review/ if it exists.
 #
-# The Phase 8 system-context diagram is authored via the drawio skill (it needs
+# The Phase 8 system-context diagram is authored via the archify skill (it needs
 # recon judgment: touched components, inputs, outputs) — not generated here.
 
 set -euo pipefail
