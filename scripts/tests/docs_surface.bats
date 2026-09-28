@@ -14,11 +14,14 @@
 source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
 
 setup() {
-  ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd -P)"
+  # REPO is the dev checkout; ROOT is the installable package (R-H2). The user
+  # README ships with the package; CHANGELOG and the marketplace stay at REPO.
+  REPO="$(cd "$BATS_TEST_DIRNAME/../.." && pwd -P)"
+  ROOT="$REPO/plugin"
   README="$ROOT/README.md"
-  CHANGELOG="$ROOT/CHANGELOG.md"
+  CHANGELOG="$REPO/CHANGELOG.md"
   PLUGIN="$ROOT/.claude-plugin/plugin.json"
-  MARKET="$ROOT/.claude-plugin/marketplace.json"
+  MARKET="$REPO/.claude-plugin/marketplace.json"
 }
 
 # The gate is the source of truth for every measured figure below.
@@ -82,7 +85,7 @@ hidden_skills() {
   ! grep -q '1,200' "$README"
 }
 
-# --- AC: exactly three entry points, namespaced, with trigger phrases --------
+# --- AC: the entry points, namespaced, with trigger phrases -----------------
 
 @test "README documents all three entry points in namespaced form" {
   grep -q '/crewforge5:init' "$README"
@@ -102,7 +105,7 @@ hidden_skills() {
   done
 }
 
-@test "README maps every hidden sub-skill to an entry point" {
+@test "README maps every hidden skill to the command that uses it" {
   local n missing=""
   for n in $(hidden_skills); do
     grep -q "\`$n\`" "$README" || missing="$missing $n"
@@ -110,14 +113,21 @@ hidden_skills() {
   [ -z "$missing" ]
 }
 
-@test "README names the three workflow commands plus the rules-install utility, no others" {
+@test "README names the entry points and rules-install, no others" {
   # A hidden skill is still reachable by slash, so it is easy to document one
-  # as if it were an entry point. The catalogue shape says otherwise. The one
-  # non-workflow slash surface is the rules installer shipped in commands/.
+  # as if it were an entry point. The catalogue shape says otherwise. Since
+  # spec phase 8 the slash surface is exactly the commands in commands/.
   local named
   named="$(grep -oE '/crewforge5:[a-z_-]+' "$README" | sed 's|/crewforge5:||' \
            | sort -u | tr '\n' ' ')"
-  [ "$named" = "execute init plan rules-install " ]
+  [ "$named" = "build crew design execute init plan review rules-install " ]
+}
+
+@test "README gives every stage command a row in the entry-point table" {
+  local s
+  for s in design build review crew; do
+    grep -qE "^\| \`/crewforge5:$s\` \|" "$README"
+  done
 }
 
 # --- AC: CHANGELOG records before/after always-loaded totals ----------------

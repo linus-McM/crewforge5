@@ -2,11 +2,10 @@
 # env_install.bats — contract for the settings.json `env` installer.
 #
 # WHY THIS FILE EXISTS. This script writes into a file the user owns and may
-# have hand-edited, and it is the only mechanism by which CREWFORGE5_HOOKS can
-# ever be armed — a hook subprocess cannot see anything a session exported. Two
-# properties therefore have to hold under test rather than under inspection:
-# the merge preserves every key it did not put there, and `install` without
-# `--hooks` never arms a hook that DENIES commands.
+# have hand-edited, so the merge must preserve every key it did not put there.
+# Hooks are no longer armed here (spec R-G1: they act in any project with
+# .crewforge5.toml), so `--hooks` is retired: accepted, ignored, and a
+# CREWFORGE5_HOOKS=1 an older version wrote is cleaned up.
 #
 # The claim underneath all of it — that settings.json `env` reaches both the
 # Bash tool and hook subprocesses — is undocumented, so `env_install.sh`'s
@@ -16,7 +15,7 @@
 # the version it was proven against.
 
 setup() {
-  ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd -P)"
+  ROOT="$(cd "$BATS_TEST_DIRNAME/../../plugin" && pwd -P)"
   ENVI="$ROOT/scripts/env_install.sh"
   TMP="$(cd "$(mktemp -d)" && pwd -P)"
   PROJ="$TMP/proj"
@@ -63,24 +62,28 @@ PY
   [ "$(cat "$(_settings)")" = "$first" ]
 }
 
-# --- AC: the hooks toggle is opt-in, both ways -------------------------------
+# --- AC: the retired --hooks flag arms nothing (R-G1) --------------------------
 
-# bash-guard DENIES commands. An installer that armed it by default would be the
-# behaviour change the README's default-off stance exists to prevent, so the
-# absence of the key is asserted, not just its value.
-@test "install without --hooks does NOT arm the hooks" {
+@test "install never writes CREWFORGE5_HOOKS" {
   bash "$ENVI" install --project "$PROJ"
   [ "$(_key CREWFORGE5_HOOKS)" = "<absent>" ]
 }
 
-@test "install --hooks arms them explicitly" {
-  bash "$ENVI" install --project "$PROJ" --hooks
-  [ "$(_key CREWFORGE5_HOOKS)" = "1" ]
+@test "install --hooks is accepted, ignored, and says why" {
+  run bash "$ENVI" install --project "$PROJ" --hooks
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"--hooks is retired"* ]]
+  [ "$(_key CREWFORGE5_HOOKS)" = "<absent>" ]
 }
 
-@test "install without --hooks says how to arm them" {
-  run bash "$ENVI" install --project "$PROJ"
-  [[ "$output" == *"--hooks"* ]]
+@test "install removes a CREWFORGE5_HOOKS=1 an older version wrote, keeps =off" {
+  mkdir -p "$PROJ/.claude"
+  printf '{"env": {"CREWFORGE5_HOOKS": "1"}}' > "$(_settings)"
+  bash "$ENVI" install --project "$PROJ"
+  [ "$(_key CREWFORGE5_HOOKS)" = "<absent>" ]
+  printf '{"env": {"CREWFORGE5_HOOKS": "off"}}' > "$(_settings)"
+  bash "$ENVI" install --project "$PROJ"
+  [ "$(_key CREWFORGE5_HOOKS)" = "off" ]
 }
 
 # --- AC: the merge preserves what it did not write ---------------------------
@@ -112,7 +115,7 @@ print(d['permissions']['allow'][0])" "$(_settings)"
 
 # --- AC: uninstall removes ours and only ours --------------------------------
 
-@test "uninstall removes both of our keys" {
+@test "uninstall removes our keys" {
   bash "$ENVI" install --project "$PROJ" --hooks
   bash "$ENVI" uninstall --project "$PROJ"
   [ "$(_key CREWFORGE5_ROOT)" = "<absent>" ]
@@ -196,9 +199,9 @@ print('env' in json.load(open(sys.argv[1])))" "$(_settings)"
   [ ! -f "$(_settings)" ]
 }
 
-@test "report names the current value of both keys" {
-  bash "$ENVI" install --project "$PROJ" --hooks
+@test "report names the current root and says hooks need no install" {
+  bash "$ENVI" install --project "$PROJ"
   run bash "$ENVI" report --project "$PROJ"
   [[ "$output" == *"CREWFORGE5_ROOT=$ROOT"* ]]
-  [[ "$output" == *"CREWFORGE5_HOOKS=1"* ]]
+  [[ "$output" == *".crewforge5.toml"* ]]
 }

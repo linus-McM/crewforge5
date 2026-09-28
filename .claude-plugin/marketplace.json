@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "crewforge5",
-  "description": "CrewForge5 — agent crews as a managed resource, behind three commands: /crewforge5:init, /crewforge5:plan and /crewforge5:execute.",
+  "description": "CrewForge5 — agent crews as a managed resource: /crewforge5:init, /crewforge5:crew, the /crewforge5:plan, design, build and review stages, and /crewforge5:execute.",
   "owner": {
     "name": "Linus McManamey",
     "url": "https://github.com/linusamcm-source"
@@ -9,9 +9,14 @@
   "plugins": [
     {
       "name": "crewforge5",
-      "description": "Three commands over one repo: /crewforge5:init audits and slims your Claude config, /crewforge5:plan turns a goal into an adversarially-reviewed plan, and /crewforge5:execute drives that plan to a merged commit with a generated agent crew and its quality gates.",
-      "source": "./",
-      "version": "0.4.4",
+      "description": "Seven commands over one repo: /crewforge5:init audits and slims your Claude config, /crewforge5:crew forges a validated agent crew for your stack, /crewforge5:plan, /crewforge5:design and /crewforge5:build turn a goal into human-accepted intent, spec and test-first plan, /crewforge5:review checks and reviews the implementation, and /crewforge5:execute is the shortcut that runs build then review on an accepted plan (with --teams, the graph-mode agent-team sprint).",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/linus-McM/crewforge5.git",
+        "path": "plugin",
+        "ref": "main"
+      },
+      "version": "1.0.0",
       "category": "development",
       "keywords": [
         "agents",
@@ -19,7 +24,12 @@
         "code-review",
         "tdd",
         "orchestration"
-      ]
+      ],
+      "homepage": "https://github.com/linus-McM/crewforge5"
     }
-  ]
+  ],
+  "metadata": {
+    "description": "Marketplace for the crewforge5 plugin; add with `claude plugin marketplace add linus-McM/crewforge5`.",
+    "pluginRoot": "./plugin"
+  }
 }

@@ -1,0 +1,75 @@
+{
+  "_source": "linus-McM/cc_sdlc @ 8c8d78f: plugin/scripts/sdlc/artifacts.py REQUIRED, plugin/templates/*.md, build.py tdd.jsonl entry, testing.py test-report.json. Re-vendor deliberately; tests/test_interop.py pins CrewForge5 to it (spec R-X2).",
+  "required": {
+    "intent.md": [
+      "Problem",
+      "Proposed outcome",
+      "Affected users and systems",
+      "Constraints",
+      "Open questions"
+    ],
+    "spec.md": [
+      "Requirements",
+      "Design",
+      "Concerns",
+      "Open questions",
+      "Proof"
+    ],
+    "plan.md": [
+      "Files that change",
+      "Order of work",
+      "Risks",
+      "Proof"
+    ],
+    "review.md": [
+      "Bugs",
+      "Security",
+      "Compliance"
+    ]
+  },
+  "templates": {
+    "intent.md": {
+      "title": "# Intent: {title}",
+      "metadata": "Author: {author}. Status: draft. Risk: {risk}.",
+      "sections": [
+        "Problem",
+        "Proposed outcome",
+        "Affected users and systems",
+        "Constraints",
+        "Open questions"
+      ]
+    },
+    "spec.md": {
+      "title": "# Spec: {title}",
+      "metadata": "From: intent.md ({date}). Status: draft. Risk: {risk}.",
+      "sections": [
+        "Requirements",
+        "Design",
+        "Concerns",
+        "Open questions",
+        "Proof"
+      ]
+    },
+    "plan.md": {
+      "title": "# Plan: {title}",
+      "metadata": "From: spec.md ({date}). Status: draft. Risk: {risk}.",
+      "sections": [
+        "Files that change",
+        "Order of work",
+        "Risks",
+        "Proof"
+      ]
+    }
+  },
+  "tdd_entry_keys": [
+    "phase",
+    "step",
+    "exit",
+    "ts"
+  ],
+  "test_report_keys": [
+    "passed",
+    "results",
+    "ts"
+  ]
+}

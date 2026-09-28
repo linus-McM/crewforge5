@@ -29,6 +29,9 @@
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# The installable package lives under plugin/ (spec R-H2); ROOT stays the dev
+# checkout because it is also the project the entry points are pointed at.
+PLUGIN="$ROOT/plugin"
 BIN="$(mktemp -d)"
 FAKE_HOME="$(mktemp -d)"
 trap 'rm -rf "$BIN" "$FAKE_HOME"' EXIT
@@ -77,15 +80,28 @@ verdict() { # $1 label  $2… command
 }
 
 echo "entry points on the base set alone:"
-verdict "detect_language" bash "$ROOT/skills/team-sprint/scripts/detect_language.sh" "$ROOT"
-verdict "crew_check"      bash "$ROOT/skills/team-sprint/scripts/crew_check.sh" check bash --project-dir "$ROOT"
-verdict "recon"           bash "$ROOT/skills/team-sprint/scripts/recon.sh" text 'require_jq' "$ROOT"
-verdict "budget_check"    bash "$ROOT/scripts/budget_check.sh"
-verdict "name_check"      bash "$ROOT/scripts/name_check.sh"
+verdict "detect_language" bash "$PLUGIN/skills/team-sprint/scripts/detect_language.sh" "$ROOT"
+verdict "crew_check"      bash "$PLUGIN/skills/team-sprint/scripts/crew_check.sh" check bash --project-dir "$ROOT"
+verdict "recon"           bash "$PLUGIN/skills/team-sprint/scripts/recon.sh" text 'require_jq' "$ROOT"
+verdict "budget_check"    bash "$PLUGIN/scripts/budget_check.sh"
+verdict "name_check"      bash "$PLUGIN/scripts/name_check.sh"
+
+# The verdict CLI (spec D1) is Python stdlib only, so python3 alone must reach a
+# JSON verdict; uv is how commands launch it, not something it needs.
+CLI_REPO="$(mktemp -d)"
+cli_out="$(cd "$CLI_REPO" && PATH="$BIN" HOME="$FAKE_HOME" python3 "$PLUGIN/scripts/crewforge5.py" status 2>&1)"
+rm -rf "$CLI_REPO"
+if printf '%s' "$cli_out" | PATH="$BIN" python3 -c 'import json,sys; v=json.load(sys.stdin); sys.exit(0 if v["ok"] is True and v["next"] else 1)' 2>/dev/null; then
+  echo "  ok       crewforge5.py — one JSON verdict (ok, next)"
+else
+  echo "  NO VERDICT crewforge5.py — died without printing one:"
+  printf '%s\n' "$cli_out" | head -3 | sed 's/^/             /'
+  fail=1
+fi
 
 echo
 echo "runtime state with no user config directory:"
-if PATH="$BIN" HOME="$FAKE_HOME" bash "$ROOT/skills/self-improve/scripts/ledger.sh" add demo hook "degradation smoke" >/dev/null 2>&1; then
+if PATH="$BIN" HOME="$FAKE_HOME" bash "$PLUGIN/skills/self-improve/scripts/ledger.sh" add demo hook "degradation smoke" >/dev/null 2>&1; then
   echo "  ok       ledger.sh wrote to the state dir"
 else
   echo "  FAIL     ledger.sh could not write with no user config dir"
@@ -96,7 +112,7 @@ fi
 # budget, and under `set -o pipefail` that status would sink the whole pipeline
 # even when grep matched — reporting a failure for the exact behaviour being
 # asserted.
-ceiling_out="$(PATH="$BIN" HOME="$FAKE_HOME" bash "$ROOT/skills/self-improve/scripts/ceiling.sh" check team-sprint 2>&1)"
+ceiling_out="$(PATH="$BIN" HOME="$FAKE_HOME" bash "$PLUGIN/skills/self-improve/scripts/ceiling.sh" check team-sprint 2>&1)"
 if printf '%s' "$ceiling_out" | grep -q 'no recorded budget'; then
   echo "  ok       ceiling.sh reports 'no recorded budget' rather than crashing"
 else

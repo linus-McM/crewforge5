@@ -1,0 +1,243 @@
+"""Project-level state: config, the feature home, git helpers and the Blocked verdict.
+
+`config()` is the only reader of `.crewforge5.toml` (spec R-C1). Expected failures raise
+through `fail()` (R-V2); only `cli.main` catches them.
+"""
+
+from __future__ import annotations
+
+import copy
+import json
+import os
+import re
+import subprocess
+import sys
+import tomllib
+from datetime import UTC, datetime
+from pathlib import Path
+
+PLUGIN_ROOT = Path(__file__).resolve().parents[2]
+TEMPLATES = PLUGIN_ROOT / "templates"
+CONFIG_NAME = ".crewforge5.toml"
+DEFAULT_CONFIG = (TEMPLATES / "crewforge5.toml").read_text()
+DEFAULTS = tomllib.loads(DEFAULT_CONFIG)
+# Layers with an off switch (R-C2): `[<layer>] enabled = false` or CREWFORGE5_<LAYER>=off.
+LAYERS = ("checkpoint", "workflows", "hooks", "knowledge", "packs", "docs")
+
+
+class Blocked(Exception):
+    """A gate refused; `.verdict` is the JSON dict the CLI prints."""
+
+    def __init__(self, reason: str, **extra):
+        super().__init__(reason)
+        self.verdict = {"ok": False, "reason": reason, **extra}  # the one place a refusal is built (R-V2)
+
+
+def fail(reason: str, **extra):
+    raise Blocked(reason, **extra)
+
+
+class StepFailed(Exception):
+    """A bootstrap step's command exited non-zero or left its expected result missing."""
+
+
+class StepSkipped(Exception):
+    """A bootstrap step does not apply here; later steps still run."""
+
+
+def ran(root: Path, argv: list[str], ok) -> str:
+    """Run an install command; StepFailed with its stderr tail when it exits non-zero or `ok()` is false afterwards."""
+    result = run_cmd(root, argv)
+    if result.returncode != 0 or not ok():
+        raise StepFailed(f"{' '.join(argv)} exited {result.returncode}: {result.stderr.strip()[-200:] or 'expected result missing'}")
+    return " ".join(argv)
+
+
+def claude_dir() -> Path:
+    """Where Claude Code keeps skills: CLAUDE_CONFIG_DIR, else the .claude directory under the user's home."""
+    return Path(os.environ["CLAUDE_CONFIG_DIR"]) if os.environ.get("CLAUDE_CONFIG_DIR") else Path.home() / ".claude"
+
+
+def merge(base: dict, over: dict) -> dict:
+    out = dict(base)
+    for key, value in over.items():
+        out[key] = merge(out[key], value) if isinstance(value, dict) and isinstance(out.get(key), dict) else value
+    return out
+
+
+def config(root: Path) -> dict:
+    """The defaults deep-merged with .crewforge5.toml, so every key is always present."""
+    path = root / CONFIG_NAME
+    if not path.exists():
+        return copy.deepcopy(DEFAULTS)
+    try:
+        return merge(DEFAULTS, tomllib.loads(path.read_text()))
+    except tomllib.TOMLDecodeError as err:
+        return fail(f"{CONFIG_NAME} is not valid TOML ({err}); fix or delete it", path=str(path))
+
+
+def ensure_config(root: Path) -> bool:
+    """Write the default config when the project has none; True when it was created."""
+    path = root / CONFIG_NAME
+    if path.exists():
+        return False
+    path.write_text(DEFAULT_CONFIG)
+    return True
+
+
+def set_config(root: Path, table: str, values: dict[str, str]) -> None:
+    """Set string keys of one `[table]` in .crewforge5.toml in place, keeping every other line and comment.
+
+    The only writer besides `ensure_config`; `config()` stays the only reader. JSON strings are valid TOML basic strings.
+    """
+    ensure_config(root)
+    path = root / CONFIG_NAME
+    lines = path.read_text().splitlines()
+    header = next((i for i, line in enumerate(lines) if line.strip() == f"[{table}]"), None)
+    if header is None:
+        lines += ["", f"[{table}]"]
+        header = len(lines) - 1
+    end = next((i for i in range(header + 1, len(lines)) if lines[i].lstrip().startswith("[")), len(lines))
+    for key, value in values.items():
+        found = next((i for i in range(header + 1, end) if lines[i].split("=", 1)[0].strip() == key and "=" in lines[i]), None)
+        entry = f"{key} = {json.dumps(value)}"
+        if found is None:
+            lines.insert(end, entry)
+            end += 1
+        else:
+            kept = re.match(r'\s*(?:""|\S+)\s*(#.*)?$', lines[found].split("=", 1)[1])  # a trailing comment survives
+            lines[found] = entry + (f"  {kept.group(1)}" if kept and kept.group(1) else "")
+    path.write_text("\n".join(lines) + "\n")
+
+
+def enabled(root: Path, layer: str) -> bool:
+    """A layer is on unless CREWFORGE5_<LAYER>=off or `[<layer>] enabled = false`."""
+    if os.environ.get(f"CREWFORGE5_{layer.upper()}", "").lower() == "off":
+        return False
+    return bool(config(root)[layer]["enabled"])
+
+
+def home(root: Path) -> Path:
+    """The feature home (default `crewforge5/`): CREWFORGE5_HOME, else `[project] home`; always inside the project."""
+    name = os.environ.get("CREWFORGE5_HOME") or config(root)["project"]["home"]
+    path = (root / name).resolve()
+    if not name or Path(name).is_absolute() or not path.is_relative_to(root.resolve()) or path == root.resolve():
+        fail(f"home {name!r} must be a directory inside the project", next=f"set [project] home in {CONFIG_NAME}")
+    return root / name
+
+
+def features(root: Path) -> list[Path]:
+    """Every feature directory (one holding an intent.md), sorted by name."""
+    base = home(root)
+    return sorted(d for d in base.iterdir() if (d / "intent.md").exists()) if base.is_dir() else []
+
+
+def feature(root: Path, slug: str | None) -> Path:
+    """The named feature, or the most recently modified one; Blocked when there is none."""
+    if slug:
+        target = home(root) / slug
+        if (target / "intent.md").exists():
+            return target
+        return fail(f"no feature {slug!r} under {rel(root, home(root))}/", next="/crewforge5:plan status")
+    if dirs := features(root):
+        return max(dirs, key=lambda d: d.stat().st_mtime)
+    return fail("no feature found", next='/crewforge5:plan new "<title>"')
+
+
+def rel(root: Path, path: Path) -> str:
+    return str(path.relative_to(root))
+
+
+def run_cmd(root: Path, argv: list[str], env: dict | None = None, timeout: float | None = None, input: str | None = None) -> subprocess.CompletedProcess:
+    """Run an external tool without a shell; never raises. A timeout is exit 124, a missing program exit 127."""
+    full = {**os.environ, **env} if env else None
+    try:
+        return subprocess.run(argv, cwd=root, capture_output=True, text=True, check=False, env=full, timeout=timeout, input=input)
+    except subprocess.TimeoutExpired as err:
+        partial = err.stdout.decode(errors="replace") if isinstance(err.stdout, bytes) else (err.stdout or "")
+        return subprocess.CompletedProcess(argv, 124, partial, f"timed out after {timeout}s")
+    except FileNotFoundError:
+        return subprocess.CompletedProcess(argv, 127, "", f"{argv[0]} not found on PATH")
+
+
+def run_git(root: Path, *args: str) -> subprocess.CompletedProcess:
+    """git without a shell; never raises on a non-zero exit."""
+    return run_cmd(root, ["git", *args])
+
+
+def script(root: Path, rel: str, *args: str) -> dict:
+    """Run one of the plugin's own gate scripts (`.sh` under bash, `.py` under this Python) in the project; never raises.
+
+    The init and crew mechanics measure through the scripts the legacy flows already ship; tests stub this one function.
+    """
+    path = PLUGIN_ROOT / rel
+    argv = ["bash" if path.suffix == ".sh" else sys.executable, str(path), *args]
+    try:
+        proc = subprocess.run(argv, cwd=root, capture_output=True, text=True, check=False, timeout=300)
+    except (FileNotFoundError, subprocess.TimeoutExpired) as err:
+        return {"exit": 127, "stdout": "", "stderr": str(err)}
+    return {"exit": proc.returncode, "stdout": proc.stdout, "stderr": proc.stderr}
+
+
+def kv(text: str) -> dict[str, str]:
+    """`KEY=VALUE` lines (the bash gates' stdout contract) as a dict; the last value of a repeated key wins."""
+    return dict(line.split("=", 1) for line in text.splitlines() if "=" in line and not line.startswith(" "))
+
+
+def git(root: Path, *args: str) -> str:
+    return run_git(root, *args).stdout.rstrip("\n")
+
+
+def author(root: Path) -> str:
+    return git(root, "config", "user.name") or os.environ.get("USER", "unknown")
+
+
+def changed_files(root: Path, *paths: str) -> list[str]:
+    """Staged, unstaged and untracked paths in one git call, limited to `paths` when given."""
+    lines = git(root, "status", "--porcelain", "--untracked-files=all", *(["--", *paths] if paths else [])).splitlines()
+    return sorted(line[3:].split(" -> ")[-1] for line in lines)
+
+
+def read_json(path: Path, default=None):
+    if not path.exists():
+        return default
+    try:
+        return json.loads(path.read_text())
+    except json.JSONDecodeError as err:
+        return fail(f"{path.name} is not valid JSON ({err.msg} at line {err.lineno}); fix or delete it", path=str(path))
+
+
+def write_json(path: Path, data) -> None:
+    """Written to a sibling temp file, then renamed into place: a reader never sees half a file."""
+    tmp = path.with_name(f".{path.name}.tmp")
+    tmp.write_text(json.dumps(data, indent=2) + "\n")
+    tmp.replace(path)
+
+
+def today() -> str:
+    return datetime.now(UTC).date().isoformat()
+
+
+def now_iso() -> str:
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def head(root: Path) -> str:
+    """The HEAD commit, or "" outside a repository or before the first commit."""
+    result = run_git(root, "rev-parse", "HEAD")
+    return result.stdout.strip() if result.returncode == 0 else ""
+
+
+def read_jsonl(path: Path) -> list[dict]:
+    if not path.exists():
+        return []
+    try:
+        return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    except json.JSONDecodeError as err:
+        return fail(f"{path.name} is not valid JSON lines ({err.msg}); fix or delete the bad line", path=str(path))
+
+
+def append_jsonl(path: Path, row: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a") as fh:
+        fh.write(json.dumps(row) + "\n")

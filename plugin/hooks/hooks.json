@@ -1,0 +1,69 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/crewforge5-root.sh\" \"${CLAUDE_PLUGIN_ROOT}\"",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/learn-nudge.sh\"",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "[ -f .crewforge5.toml ] || [ -f \"${CLAUDE_PROJECT_DIR:-.}/.crewforge5.toml\" ] || exit 0; command -v uv >/dev/null 2>&1 || exit 0; exec uv run --no-project \"${CLAUDE_PLUGIN_ROOT}/scripts/hook.py\" session-start",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f .crewforge5.toml ] || [ -f \"${CLAUDE_PROJECT_DIR:-.}/.crewforge5.toml\" ] || exit 0; command -v uv >/dev/null 2>&1 || exit 0; exec uv run --offline --no-project \"${CLAUDE_PLUGIN_ROOT}/scripts/hook.py\" pre-edit",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/bash-guard.sh\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f .crewforge5.toml ] || [ -f \"${CLAUDE_PROJECT_DIR:-.}/.crewforge5.toml\" ] || exit 0; command -v uv >/dev/null 2>&1 || exit 0; exec uv run --offline --no-project \"${CLAUDE_PLUGIN_ROOT}/scripts/hook.py\" post-edit",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/learn-capture.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

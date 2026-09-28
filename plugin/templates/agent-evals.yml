@@ -1,0 +1,19 @@
+# Copy to .github/workflows/agent-evals.yml: runs `crewforge5 review evals` (evals/*.json through `claude -p`,
+# gated on [evals] threshold in .crewforge5.toml) on any change to CLAUDE.md, .claude/ or evals/, and nightly.
+# Set CREWFORGE5_PLUGIN to the directory holding the installed plugin (the one with scripts/crewforge5.py).
+name: Agent evals
+on:
+  pull_request:
+    paths: ['CLAUDE.md', '.claude/**', 'evals/**']
+  schedule:
+    - cron: '0 2 * * *'
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm install -g @anthropic-ai/claude-code
+      - name: Run eval suite
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python3 "$CREWFORGE5_PLUGIN/scripts/crewforge5.py" review evals

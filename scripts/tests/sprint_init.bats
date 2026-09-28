@@ -11,7 +11,7 @@
 # the plugin silently install a rule that contradicts the user's own. Both directions are tested.
 
 setup() {
-  ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd -P)"
+  ROOT="$(cd "$BATS_TEST_DIRNAME/../../plugin" && pwd -P)"
   INIT="$ROOT/scripts/sprint_init.sh"
   RULES="$ROOT/rules"
   TMP="$(cd "$(mktemp -d)" && pwd -P)"

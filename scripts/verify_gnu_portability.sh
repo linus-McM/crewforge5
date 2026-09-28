@@ -78,7 +78,7 @@ fi
 if [ "$#" -gt 0 ]; then
   targets=("$@")
 else
-  targets=("$ROOT"/skills/team-sprint/scripts/tests/*.bats)
+  targets=("$ROOT"/plugin/skills/team-sprint/scripts/tests/*.bats)
 fi
 
 echo "running ${#targets[@]} bats file(s) under GNU-semantics stat…"

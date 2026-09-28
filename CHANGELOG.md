@@ -1,5 +1,107 @@
 # Changelog
 
+## 1.0.0 — 2026-09-28
+
+Phase 9 of `docs/specs/cc-sdlc-alignment.md` (interop with cc_sdlc, then a completeness pass: R-X1, R-X2, R-C1, R-S1, §8).
+
+- `crewforge5 build new --from-sdlc <slug>` (`/crewforge5:build new --from-sdlc <slug>`) takes cc_sdlc's accepted `sdlc/<slug>/spec.md` and `intent.md` as design input, copies them into `crewforge5/<slug>/` marked `From: sdlc/<slug>/spec.md (accepted)`, and refuses a draft, a missing file or a drifted format (R-X1). New config key `[interop] sdlc_home` (default `sdlc`; `SDLC_HOME` overrides).
+- `tests/test_interop.py` pins the artifact names, required sections, template heads and `tdd.jsonl`/`test-report.json` keys to a vendored copy of cc_sdlc's lists, `tests/fixtures/cc_sdlc/formats.json` (R-X2). The plugin README's "Working with cc_sdlc" explains `[sdlc] home = "crewforge5"` for cc_sdlc's test and deploy stages (a follow-up there).
+- `crew validate` copies the crew manifest's `test`/`lint`/`build` commands into `.crewforge5.toml`'s empty `[commands]` keys, so `[commands]` is the one place they live (R-C1).
+- `/crewforge5:rules-install` declares `allowed-tools` (R-S1).
+- Tests: the §8 lifecycle walk (`tests/test_lifecycle.py`), no old run directories (R-A1), CLAUDE.md sections, pre-commit/CI steps, justfile recipes and CHANGELOG entry length (`tests/test_repo.py`: R-H1, R-H5, R-H7, R-H9).
+- The spec gains §9, requirement → implementation → test. Open: the D3 Teams removal (C4) and the human-run dogfood proof.
+
+Phase 8 of `docs/specs/cc-sdlc-alignment.md` (retire the flow driver and hidden skills: R-V3, R-V6, R-P1, R-P3, R-P4, R-G5, R-S7, R-A1, C1).
+
+- **Breaking:** `scripts/flow/` (`flow_state|flow_next|flow_gate.sh`, `subskill_resolve.sh`), every `phases.json`, and the skills `execute`, `plan-legacy`, `init-legacy`, `team-feature`, `team-sprint-planner`, `master-plan`, `adhd`, `grill-me`, `adversarial-review`, `tech-debt-audit`, `pre-commit-review-fleet`, `sprint-watchdog`, `use-repo-code` and `claude-config` are removed with their tests. 13 skills remain, all hidden; commands name them by path.
+- Compatibility stubs (C1): each retired name except `execute` is a hidden one-line command stub (`commands/<old-name>.md`, `disable-model-invocation: true`, no always-loaded cost) that says which command replaces it: `team-feature`, `master-plan`, `adhd`, `grill-me`, `plan-legacy` -> `/crewforge5:plan`; `tech-debt-audit` -> `/crewforge5:design`; `team-sprint-planner`, `adversarial-review`, `use-repo-code` -> `/crewforge5:build`; `pre-commit-review-fleet`, `sprint-watchdog` -> `/crewforge5:review`; `claude-config`, `init-legacy` -> `/crewforge5:init`. **The stubs are removed in 1.1.0**, one minor release after the 1.0.0 bump. `budget_check.sh` allows hidden commands only by those names.
+- Content still used moved to `templates/`: `interview.md` (diverge frames, grilling), `concerns.md` (tech-debt dimensions), `adversarial-stamp.md`, `house-rules.md`, `repomix-flags.md`.
+- `/crewforge5:execute` is a command (`commands/execute.md`): `build implement`, `review run`, `review review`, then the self-improve distillation, printing what it ran. `--teams` runs `team-sprint` in graph mode on a story plan `plan_stories.sh` builds from the accepted plan.md; that path stays until one real sprint is measured both ways (D3, the one open item).
+- **Breaking:** the `sprint-watchdog` agent and the `PostToolUse(TaskUpdate)` guard hook are removed; fake completion is refused by `tdd.require()` (R-G5, R-T5). Team-sprint keeps `repo_preflight.sh` as its Phase 0 audit.
+- `crewforge5 migrate [<source>] [--slug s]` moves a `.crewforge5/<flow>/<subject>/` run or a `docs/plans/*.md` plan into `<home>/<slug>/migrated/` once, refusing to overwrite (R-A1, C1).
+- Tests: no `phases.json` or resolver remains and every command's CLI call is a CLI action (R-V3). CI drops the retired suites.
+- Always-loaded: ~381 tok across 13 entries (was ~464 tok, 14); budget 450 (was 550).
+
+Phase 7b of `docs/specs/cc-sdlc-alignment.md` (shared codebase context: R-K1–R-K5, C5).
+
+- `crewforge5 knowledge bootstrap [check] | status | refresh | check` (`knowledge.py`): Graphify graph plus an OKF bundle (`index.md`, `features/`, `modules/`). Bootstrap is check-only unless `[knowledge] auto_install = true`; every command's preamble runs it, reads the index before raw files and asks `graphify query|affected` before grep (R-K1). cc_sdlc's `sdlc/knowledge/` is shared when present, else `crewforge5/knowledge/` (R-K4, D2).
+- `crewforge5 knowledge pack <stage> [--slug s] [--max-tokens N]` (`packs.py`): commit-pinned Repomix packs under `graphify-out/packs/<slug>/`, seeded from the stage artifact plus one graph hop; frozen secret exclude list, fail-closed Bandit scan, Repomix secret check forced on; passed to workflows as `args.pack` (R-K2, C5).
+- `build accept` needs a build pack at HEAD, `review review` a review pack covering every changed text file (R-K3).
+- `crewforge5 docs render|check|open <stage>` (`docs.py`): Archify stage documents under `<slug>/docs/` with receipts; `plan|design|build accept` and `review review` refused while stale; skipped without Node; `open` suppressed under CI; `templates/docs-step.md` (R-K5).
+- New layers with off switches: `[knowledge|packs|docs] enabled = false`, `CREWFORGE5_KNOWLEDGE|PACKS|DOCS=off`.
+- **Breaking:** execute's phase 8 (draw.io integration diagram) is retired and the `drawio` skill is replaced by an `archify` pointer skill (D4).
+- Always-loaded: ~464 tok across 14 entries (was ~470 tok, 14).
+
+Phase 7 of `docs/specs/cc-sdlc-alignment.md` (init and crew as commands).
+
+- `/crewforge5:init new | check | accept | status` over the CLI (R-S4): `new` measures a config root through token-slim's `baseline.py`, the skill/agent validators and `grade.sh`, plus CLAUDE.md, rules, hooks and MCP, and writes `crewforge5/init-<date>/audit.md` (template `templates/audit.md`) and `measure.json`. `accept`, after a human picks the edits, runs `retention_gate.sh` over changed instruction files, re-measures, refuses a rise in validator failures, appends the Result and commits `init(<slug>): accept — audit.md`.
+- `crewforge5:config-audit` workflow: CLAUDE.md/rules, hooks, MCP, skills and agents lenses, a skeptic per finding, with an inline fallback (R-W2).
+- `/crewforge5:crew survey | forge <lang> | validate | status` (R-S5) wraps `stack-surveyor`, `crew-factory`, `detect_language.sh` and `crew_check.sh`; `crew status` reports `.claude/crews/<lang>.json` grades. With `[build] require_crew = true` (off by default) `build accept` refuses until the plan's language (`[project] language` or detected) has a passing crew; `next` is `/crewforge5:crew forge <lang>`.
+- **Breaking:** the old init flow is now the hidden `/crewforge5:init-legacy` (flow state under `.crewforge5/init-legacy/`).
+- Always-loaded: ~470 tok across 14 entries (was ~480 tok, 13).
+
+Phase 6 of `docs/specs/cc-sdlc-alignment.md` (review stage).
+
+- `/crewforge5:review run | review | evals` over the CLI. `review run` is refused until every Order-of-work step has a red→green pair (R-T2), runs `[commands] test|lint|build` and writes `crewforge5/<slug>/test-report.json`; the command then spawns the fresh-context `verifier`.
+- `review review` needs that report passing at HEAD, validates `review.md` (`## Bugs|Security|Compliance`, `Important:`/`Nit:` bullets with `path:line`, at most five nits) and is a checkpoint boundary: `review(<slug>): review — review.md` (R-A3). `review evals` runs `evals/*.json` through `claude -p`, gated on `[evals] threshold`; `templates/agent-evals.yml` for CI.
+- `crewforge5:review` workflow: three passes against `REVIEW.md`, two skeptics per finding (one refutation downgrades to Nit, two drop it), nits capped at five; its inline fallback is the read-only `reviewer` agent (R-W2). `plan-critic` gains a cross-boundary lens.
+- **Breaking:** agents `architect-reviewer`, `boundary-reviewer` and `code-reviewer`, and the `code-reviewer` skill, are removed; architecture and boundary review are lenses of the review workflow. New agents: `reviewer` (opus) and `verifier` (sonnet), both read-only (R-P1).
+- `/crewforge5:execute` on an accepted plan.md runs `build implement`, then `review run` and `review review`, and prints them (R-S7). `build green|sync` and `status` point at `/crewforge5:review run` once every step is green.
+- Team-sprint's phase 7 and `pre-commit-review-fleet` stay for stamped plans until phase 8.
+- Always-loaded: ~480 tok across 13 entries (was ~524 tok, 13).
+
+Phase 5 of `docs/specs/cc-sdlc-alignment.md` (build stage: TDD evidence, guardrail hooks, story executor).
+
+- `crewforge5 build red|green <step>` run `[commands] test` (red must fail, green must pass after a red) and append `{step, phase, sha, ts, exit}` to `crewforge5/<slug>/tdd.jsonl`; `tdd.complete()` checks every Order-of-work step has a red→green pair (R-T1, R-T2). `build sync` lists files changed since acceptance that plan.md does not name; `build fix on|off` is bug-fix mode (R-T3, R-T4). State: `build-state.json`.
+- `/crewforge5:build implement`: red→green per step, sync, `build(<slug>): <step>` commits, `/simplify` then sync (R-T6). `/crewforge5:execute` on an accepted plan.md is its alias; team-sprint still runs stamped plans.
+- `crewforge5:story-executor` (from team-sprint): one agent per step in its own git worktree, writing only there and returning test and change commits the command applies around red/green (R-W2, R-W5).
+- Python `pre-edit`/`post-edit` hooks: protected paths, the fix-mode test lock, and a notice for files missing from plan.md (R-G2, R-G3); ≤10 s, offline (R-G7).
+- **Breaking:** `CREWFORGE5_HOOKS=1` is retired. Every hook (bash-guard, learn-capture, learn-nudge included) acts only in projects with `.crewforge5.toml`; off: `[hooks] enabled = false` or `CREWFORGE5_HOOKS=off`. `env_install.sh --hooks` is ignored (R-G1). bash-guard's rules are unchanged, but heredoc bodies and quoted prose no longer match (R-G4).
+- Every plugin agent carries the never-work-around-a-hook line and declares no hooks/permissionMode (R-G6); the crew factory seeds generated developers and testers with a red/green `## Done` contract (R-T5).
+
+Phase 4 of `docs/specs/cc-sdlc-alignment.md` (planning stages as slash commands).
+
+- `/crewforge5:plan`, `/crewforge5:design` and `/crewforge5:build` (`new | check | accept | status`) are commands in `plugin/commands/` over the verdict CLI: the R-V5 preamble, least-privilege `allowed-tools`, at most 40 lines each (R-S1, R-S2, R-V5). `plan new` folds in the adhd/grill-me interview, `design new` the tech-debt audit (Concerns) and GOAL_IMPACT trace (Requirements), `build new` the team-sprint-planner story contract. Only a human accepts, through AskUserQuestion.
+- **Breaking:** the old bash planning flow is now the hidden `/crewforge5:plan-legacy` (its state moves to `.crewforge5/plan-legacy/`).
+- `build check` refuses an Order-of-work step that names no failing test, and a `Risk: high` plan without `Tech lead: <name>` under Risks.
+- Read-only workflows in `plugin/workflows/`: `intent-scout`, `design-panel`, `plan-critic`, a skeptic per finding, optional `args.pack`; `meta` is JSON (R-W1, R-W2). Every workflow step has an inline fallback (R-W3).
+- `crewforge5 workflows list|env`; a Python `SessionStart` hook merges `[workflows.env]` (only `CLAUDE_CODE_WORKFLOW*`) into `.claude/settings.local.json` in projects with `.crewforge5.toml` (R-W4). Off: `[workflows] enabled|auto_env = false`, `CREWFORGE5_WORKFLOWS=off`.
+- Always-loaded: ~524 tok across 13 entries (was ~495 tok, 11); `budget_check.sh` now asserts the listed commands too. pytest lints the commands and checks workflow meta/phase drift.
+
+## 0.4.5 — 2026-09-27
+
+Phase 3 of `docs/specs/cc-sdlc-alignment.md` (verdict CLI skeleton; the bash flows are unchanged and still drive `/crewforge5:plan`).
+
+- `plugin/scripts/crewforge5.py` plus the stdlib package `plugin/scripts/crewforge5/`: `<stage> <action> [arg] [--slug s]` prints one JSON verdict `{ok, reason, next, ...}`; refusals go through `project.fail()` and only `cli.main` catches them (R-V1, R-V2).
+- `plan|design|build new/check/accept` over `crewforge5/<slug>/{intent,spec,plan}.md`: each `new` is refused until a human has accepted the previous artifact, and `check` validates the required sections and the `Status:`/`Risk:` lines (R-S3, R-A1, R-A2). `status` lists every feature and one next command (R-S6).
+- `plugin/templates/`: `intent.md spec.md plan.md REVIEW.md` (the cc_sdlc sections), `crewforge5.toml` and the command preamble (R-V5).
+- `.crewforge5.toml`, written by the first `new` and read only by `project.config()` (R-C1). `[build] require_adversarial_stamp` makes `build check` need the planner's stamp.
+- Each accept makes one checkpoint commit of `crewforge5/` plus `[checkpoint] paths`, with a pathspec (R-A3). Off: `[checkpoint] enabled = false` or `CREWFORGE5_CHECKPOINT=off`, documented in the plugin README (R-C2).
+- pytest covers the CLI in-process. ruff, in pre-commit and CI, now covers the whole repo; the token-slim scripts were fixed and formatted. `verify_degradation.sh` checks that the CLI reaches a verdict with `python3` alone.
+- Dogfood ignore patterns are anchored to the root, and `.crewforge5.toml` joins them.
+
+Phase 2 of `docs/specs/cc-sdlc-alignment.md` (package split; no behaviour change for users).
+
+- The installable package moved to `plugin/` (R-H2): `agents/ commands/ hooks/ rules/ skills/`, the runtime scripts the skills call (`budget_check`, `name_check`, `validate_all`, `retention_gate`, `frontmatter_check`, `sprint_init`, `env_install`, `flow/`), `plugin.json`, the user README and a LICENSE copy. Tests, CI, `docs/`, `.claude/` and the `verify_*` probes stay at the root.
+- The marketplace installs `plugin/` through a `git-subdir` source (`metadata.pluginRoot: ./plugin`).
+- CI and `just gates` run `claude plugin validate --strict plugin` and `--strict .`.
+- `scripts/bump_version.py` plus a CI `version` job bump `plugin.json`, `marketplace.json`, `pyproject.toml` and `uv.lock` from the PR's `major|minor|patch` label and date `## Unreleased` (R-H6). A root `pyproject.toml` adds pytest and ruff (`uv run --group dev pytest`); ruff joins pre-commit.
+- `CLAUDE.md` records that dogfood output lives on a `dogfood` branch and `main` stays package-only (R-H8).
+- `repo_hygiene.bats` pins the layout and the `git-subdir` marketplace.
+
+Phase 1 of `docs/specs/cc-sdlc-alignment.md` (hygiene, no behaviour change).
+
+- Root `CLAUDE.md` (Commands / Architecture / Conventions / Things Claude gets wrong) and a `justfile` (`test lint precommit gates check hooks opus fable`).
+- Removed the 8 historical sprint plans from `skills/team-sprint/references/docs/plans/`; ADRs moved to `docs/adr/`. Tests that read the recon plan now read `scripts/fixtures/recon/output-grammar.md`; `parse_stories.bats`'s real-plan test runs against a trimmed fixture instead of always skipping.
+- One `bats-fallback.sh` (`scripts/tests/lib/`) replaces three copies.
+- CI now runs the self-improve, sprint-watchdog, token-slim and team-sprint-planner suites.
+- `.pre-commit-config.yaml` (check-json/toml/yaml, detect-private-key, end-of-file-fixer, shellcheck), run in CI and installed by `just hooks`. Test fixtures are excluded; ruff joins with the Python layer (phase 3).
+- CI validates the marketplace with `claude plugin validate --strict .` and the plugin manifest without `--strict`. Strict plugin validation depends on R-H2 (phase 2): until the `plugin/` split, the root dev CLAUDE.md is inside the package and raises one warning.
+- `recon_distribution.bats` AC2 now budgets the file that holds the recon ladder (`rules/recon-ladder.md`), not the root `CLAUDE.md`.
+- Every agent declares `name`, `description`, `tools` and `model`.
+- The `.`-defaulting `CREWFORGE5_ROOT` fallback is gone from every `/crewforge5:plan` call site: its gates use the driver-derived root, its docs `${CLAUDE_PLUGIN_ROOT}`.
+- `scripts/tests/repo_hygiene.bats` pins all of the above.
+
 ## 0.4.4 — 2026-08-26
 
 ### Added

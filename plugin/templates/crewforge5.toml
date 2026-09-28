@@ -1,0 +1,67 @@
+# CrewForge5 project configuration: the only config file (read by every stage; commit it).
+# Every layer has one off switch here and one environment variable (CREWFORGE5_<LAYER>=off).
+
+[project]
+home = "crewforge5"         # feature folders live in <home>/<slug>/; CREWFORGE5_HOME overrides
+language = ""               # the crew language (python, go, bash ...); empty: detect_language.sh decides
+
+[commands]
+test = ""                   # the project's test command; `build red` needs it to fail, `build green` to pass
+lint = ""                   # optional; `review run` runs test, lint and build and writes test-report.json
+build = ""                  # optional
+
+[build]
+require_adversarial_stamp = false   # `build check` needs an adversarial-review stamp in plan.md when true (templates/adversarial-stamp.md)
+protected_paths = []        # globs the pre-edit hook never lets Claude edit, e.g. "src/gen/**"
+require_crew = false        # `build accept` needs a crew for the project language with passing grades (/crewforge5:crew forge <lang>)
+test_globs = ["tests/**", "test/**", "test_*.py", "*_test.py", "*_test.go", "*.test.*", "*.spec.*", "*.bats"]   # read-only while `build fix on`
+
+[init]
+target = ""                 # config root `/crewforge5:init new` audits; empty: .claude/ when present, else the project
+
+[evals]
+threshold = 1.0             # minimum pass rate of evals/*.json for `review evals`
+
+[hooks]
+enabled = true              # guardrail hooks (pre/post-edit, bash-guard, learn-capture, learn-nudge) in this project; CREWFORGE5_HOOKS=off in settings.json env also disables
+
+[checkpoint]
+enabled = true              # commit the stage's output at each accept; CREWFORGE5_CHECKPOINT=off also disables
+paths = [".crewforge5.toml"]   # committed alongside the home directory; git-ignored entries are skipped
+
+[workflows]
+enabled = true              # commands run the read-only stage workflows (crewforge5:<name>); CREWFORGE5_WORKFLOWS=off also disables
+auto_env = true             # session start merges [workflows.env] into .claude/settings.local.json
+
+[workflows.env]
+CLAUDE_CODE_WORKFLOWS = "1" # only CLAUDE_CODE_WORKFLOW* keys are accepted; anything else is refused
+
+[knowledge]
+enabled = true              # Graphify graph + OKF knowledge bundle; CREWFORGE5_KNOWLEDGE=off also disables
+auto_install = false        # `knowledge bootstrap` installs missing tools (uv, graphify, repomix, archify) only when true
+bundle = ""                 # empty: cc_sdlc's sdlc/knowledge/ when present (shared, spec D2), else <home>/knowledge/
+max_behind = 1              # `knowledge status` fails when the graph or bundle is further behind HEAD than this
+min_community_nodes = 3     # smaller Graphify code communities get no Module concept
+ignore = ["crewforge5/*/docs/", "crewforge5/knowledge/", "graphify-out/", ".venv/"]   # written to .graphifyignore
+
+[packs]
+enabled = true              # Repomix context packs and the build-accept / review-review pack gates; CREWFORGE5_PACKS=off also disables
+max_tokens = 0              # pack budget; 0 = none (over budget: --compress, then seeds only, each step reported)
+hops = 1                    # graph hops from the stage's seed files (callers, callees, community)
+base = "main"               # the review pack covers `git diff <base>...HEAD`
+
+[docs]
+enabled = true              # Archify stage documents and their freshness gates; CREWFORGE5_DOCS=off also disables
+dir = "docs"                # per-feature subdirectory for <stage>.json, <stage>.html, <stage>.receipt.json
+quality = "showcase"        # Archify quality profile passed to `deliver`
+open = true                 # `docs open` launches the HTML locally (never when CI is set)
+min_node = 18               # lowest Node major Archify runs on; without it documents are skipped, not failed
+
+[docs.types]                # stage -> Archify diagram type
+plan = "architecture"
+design = "dataflow"
+build = "workflow"
+review = "sequence"
+
+[interop]
+sdlc_home = "sdlc"          # cc_sdlc's feature home, read by `build new --from-sdlc <slug>`; SDLC_HOME overrides (as in cc_sdlc)

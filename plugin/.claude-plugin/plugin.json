@@ -1,0 +1,17 @@
+{
+  "name": "crewforge5",
+  "version": "1.0.0",
+  "description": "Seven commands over one repo: /crewforge5:init audits and slims your Claude config, /crewforge5:crew forges a validated agent crew for your stack, /crewforge5:plan, /crewforge5:design and /crewforge5:build turn a goal into human-accepted intent, spec and test-first plan, /crewforge5:review checks and reviews the implementation, and /crewforge5:execute is the shortcut that runs build then review on an accepted plan (with --teams, the graph-mode agent-team sprint).",
+  "author": {
+    "name": "Linus McManamey",
+    "email": "linus.a.mcm@gmail.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "agents",
+    "sprint",
+    "code-review",
+    "tdd",
+    "orchestration"
+  ]
+}

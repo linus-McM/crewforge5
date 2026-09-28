@@ -10,7 +10,7 @@
 source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.sh"
 
 setup() {
-  ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd -P)"
+  ROOT="$(cd "$BATS_TEST_DIRNAME/../../plugin" && pwd -P)"
   GATE="$ROOT/scripts/budget_check.sh"
   VALIDATE="$ROOT/scripts/validate_all.sh"
   TMP="$(cd "$(mktemp -d)" && pwd -P)"
@@ -38,14 +38,25 @@ mkskill() {
   } > "$FX/skills/$1/SKILL.md"
 }
 
-three_entry_points() {
-  mkskill init "Start a crew."
-  mkskill plan "Plan a sprint."
-  mkskill execute "Run a sprint."
-  mkskill team-sprint "Hidden worker." hidden
+# mkcmd <name> <description>
+mkcmd() {
+  printf -- '---\ndescription: %s\n---\n\nbody\n' "$2" > "$FX/commands/$1.md"
 }
 
-# --- AC: the real tree passes and lists exactly the three entry points -------
+entry_points() {
+  mkskill team-sprint "Hidden worker." hidden
+  mkskill graphify "Hidden know-how." hidden
+  mkcmd plan "Stage 1."
+  mkcmd design "Stage 2."
+  mkcmd build "Stage 3."
+  mkcmd review "Stage 4."
+  mkcmd init "Config hygiene."
+  mkcmd crew "Crew factory."
+  mkcmd execute "Shortcut."
+  mkcmd rules-install "Install rules."
+}
+
+# --- AC: the real tree passes and lists exactly the entry points -------
 
 @test "the post-condensation tree passes --verbose and prints its total" {
   run bash "$GATE" --verbose
@@ -54,42 +65,84 @@ three_entry_points() {
   [[ "$output" == *"PASS:"* ]]
 }
 
-@test "init, plan and execute are the only non-hidden skills in the table" {
+@test "no skill is listed: every skill is hidden know-how a command names" {
   run bash "$GATE" --verbose
   [ "$status" -eq 0 ]
   local listed
   listed="$(printf '%s\n' "$output" \
     | awk '$2 == "skill" && $0 !~ /\(hidden\)/ { print $3 }' | sort | tr '\n' ' ')"
-  [ "$listed" = "execute init plan " ]
+  [ -z "$listed" ]
 }
 
-# --- AC: a fourth listed skill fails even when it is cheap ------------------
+@test "the stage, execute, init, crew and rules-install commands are the listed commands" {
+  run bash "$GATE" --verbose
+  [ "$status" -eq 0 ]
+  local listed
+  listed="$(printf '%s\n' "$output" | awk '$2 == "cmd" && $0 !~ /\(hidden\)/ { print $3 }' | sort | tr '\n' ' ')"
+  [ "$listed" = "build crew design execute init plan review rules-install " ]
+}
 
-@test "a fourth listed skill fails the gate under a budget it never approaches" {
-  three_entry_points
+# --- AC: spec C1, the retired 0.x names are hidden stubs for one minor release ---
+
+@test "a hidden retired-name stub pays no rent and passes" {
+  entry_points
+  printf -- '---\ndescription: Retired.\ndisable-model-invocation: true\n---\n\nbody\n' > "$FX/commands/team-feature.md"
+  run bash "$FX/scripts/budget_check.sh" --budget 5000 --verbose
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"0  cmd    team-feature  (hidden)"* ]]
+}
+
+@test "a hidden command that is not a retired-name stub fails the gate" {
+  entry_points
+  printf -- '---\ndescription: Sneaky.\ndisable-model-invocation: true\n---\n\nbody\n' > "$FX/commands/extra.md"
+  run bash "$FX/scripts/budget_check.sh" --budget 5000
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"not a retired-name stub: extra"* ]]
+}
+
+@test "a fifth command fails the gate under a budget it never approaches" {
+  entry_points
+  mkcmd extra "Tiny."
+  run bash "$FX/scripts/budget_check.sh" --budget 5000
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"extra"* ]]
+}
+
+@test "a missing stage command fails the gate" {
+  entry_points
+  rm "$FX/commands/design.md"
+  run bash "$FX/scripts/budget_check.sh" --budget 5000
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"design"* ]]
+}
+
+# --- AC: a listed skill fails even when it is cheap ------------------------
+
+@test "a listed skill fails the gate under a budget it never approaches" {
+  entry_points
   mkskill extra "Tiny."
   run bash "$FX/scripts/budget_check.sh" --budget 5000
   [ "$status" -eq 1 ]
   [[ "$output" == *"extra"* ]]
 }
 
-@test "the same fixture without the fourth skill passes" {
-  three_entry_points
+@test "the same fixture without the listed skill passes" {
+  entry_points
   run bash "$FX/scripts/budget_check.sh" --budget 5000
   [ "$status" -eq 0 ]
   [[ "$output" == *"PASS:"* ]]
 }
 
 @test "a missing entry point fails too — the shape is asserted both ways" {
-  mkskill init "Start a crew."
-  mkskill plan "Plan a sprint."
+  entry_points
+  rm "$FX/commands/execute.md"
   run bash "$FX/scripts/budget_check.sh" --budget 5000
   [ "$status" -eq 1 ]
   [[ "$output" == *"execute"* ]]
 }
 
-@test "hiding a would-be fourth entry point clears it" {
-  three_entry_points
+@test "hiding a would-be listed skill clears it" {
+  entry_points
   mkskill extra "Tiny." hidden
   run bash "$FX/scripts/budget_check.sh" --budget 5000
   [ "$status" -eq 0 ]

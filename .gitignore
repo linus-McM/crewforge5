@@ -9,5 +9,14 @@ graphify-out/
 ceilings.json
 ledger/
 team-sprint.config.yaml
-skills/.token-slim/
+.token-slim/
 .recon/
+.venv/
+.pytest_cache/
+.ruff_cache/
+# Dogfood output (spec R-H8): committed only on the `dogfood` branch.
+/crewforge5/
+/.crewforge5/
+/.crewforge5.toml
+.claude/crews/
+.claude/agents/
