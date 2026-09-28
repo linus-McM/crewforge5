@@ -114,7 +114,21 @@ def validate(root: Path, lang_arg: str | None) -> dict:
     problems += [f for f in crew["problems"] if f not in problems]
     if problems:
         fail(f"the {lang} crew does not pass: {'; '.join(problems)}", language=lang, problems=problems, measured=graded, next=command("forge", lang))
-    return {**crew, "ok": True, "measured": graded, "worktree_agents": checked.get("WORKTREE_AGENTS"), "next": "nothing to do: the crew passes"}
+    adopted = adopt_commands(root, lang)
+    after = f"review the [commands] adopted into {p.CONFIG_NAME} and commit it" if adopted else "nothing to do: the crew passes"
+    return {**crew, "ok": True, "measured": graded, "worktree_agents": checked.get("WORKTREE_AGENTS"), "commands_adopted": adopted, "next": after}
+
+
+def adopt_commands(root: Path, lang: str) -> dict[str, str]:
+    """R-C1: .crewforge5.toml's [commands] absorbs the crew manifest's commands; only keys it has, only where still empty."""
+    commands = (manifest(root, lang) or {}).get("commands")
+    if not isinstance(commands, dict):
+        return {}
+    current = p.config(root)["commands"]
+    adopted = {k: v.strip() for k, v in commands.items() if k in current and isinstance(v, str) and v.strip() and not str(current[k]).strip()}
+    if adopted:
+        p.set_config(root, "commands", adopted)
+    return adopted
 
 
 def require(root: Path) -> None:

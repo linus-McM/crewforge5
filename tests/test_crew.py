@@ -183,3 +183,33 @@ def test_build_accept_reports_plan_problems_before_the_crew(run, accepted_spec, 
     toml_config(build={"require_crew": True}, project={"language": "python"})
     out = run("build", "accept")
     assert out["ok"] is False and "unfilled section" in out["reason"]
+
+
+# --- R-C1: [commands] absorbs the manifest's command section ---
+
+
+def test_validate_adopts_the_crew_commands_into_the_config(run, repo, scripts):
+    manifest(repo, commands={"test": "pytest -q", "lint": "ruff check .", "coverage": "pytest --cov"})
+    out = run("crew", "validate", "python")
+    assert out["ok"] and out["commands_adopted"] == {"test": "pytest -q", "lint": "ruff check ."}  # only keys [commands] has
+    cfg = p.config(repo)["commands"]
+    assert cfg["test"] == "pytest -q" and cfg["lint"] == "ruff check ." and cfg["build"] == ""
+    text = (repo / p.CONFIG_NAME).read_text()
+    assert "# the project's test command" in text  # the template's comments survive
+    assert p.config(repo)["hooks"]["enabled"] is True  # the rest of the file is intact
+
+
+def test_validate_never_overrides_a_configured_command(run, repo, scripts, toml_config):
+    toml_config(commands={"test": "make test"})
+    manifest(repo)
+    out = run("crew", "validate", "python")
+    assert out["ok"] and out["commands_adopted"] == {}
+    assert p.config(repo)["commands"]["test"] == "make test"
+    assert out["next"] == "nothing to do: the crew passes"
+
+
+def test_set_config_adds_a_missing_table_and_key(repo):
+    (repo / p.CONFIG_NAME).write_text('[project]\nhome = "crewforge5"\n')
+    p.set_config(repo, "commands", {"test": 'pytest -k "not slow"'})
+    assert p.config(repo)["commands"]["test"] == 'pytest -k "not slow"'
+    assert p.config(repo)["project"]["home"] == "crewforge5"

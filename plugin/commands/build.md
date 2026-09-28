@@ -1,6 +1,6 @@
 ---
 description: Stage 3 Build — accepted spec.md to a test-first plan.md; a human accepts it
-argument-hint: new | check | accept | implement | red <step> | green <step> | sync | fix on|off | status  [--slug <slug>]
+argument-hint: new [--from-sdlc <slug>] | check | accept | implement | red <step> | green <step> | sync | fix on|off | status  [--slug <slug>]
 allowed-tools: Bash(uv run *), Bash(git *), Read, Edit, Write, Glob, Grep, AskUserQuestion, Agent, Skill, Workflow
 ---
 Run every `crewforge5` call as `uv run --no-project "${CLAUDE_PLUGIN_ROOT}/scripts/crewforge5.py" ...` from the project root. Each call prints one JSON verdict: act on `ok`, quote `reason` verbatim when false, and follow `next`. Never edit the verdict logic; the gate is the control. Knowledge first: run `crewforge5 knowledge bootstrap` (idempotent, check-only unless `[knowledge] auto_install = true`; when not `ok`, say once what is missing and carry on), read the knowledge index its `next` names before raw files, and ask call-graph questions with `graphify query "<question>"` or `graphify affected "<symbol>"` before grep.
@@ -10,7 +10,7 @@ Workflows: when `crewforge5 workflows list` reports `enabled: true` and the Work
 Arguments: $ARGUMENTS
 
 ## new  (plan mode: read and reason; edit nothing but plan.md)
-1. `crewforge5 build new` (refused until spec.md is accepted) writes `crewforge5/<slug>/plan.md`.
+1. `crewforge5 build new` (refused until spec.md is accepted) writes `crewforge5/<slug>/plan.md`. From cc_sdlc: `crewforge5 build new --from-sdlc <slug>` copies its accepted `sdlc/<slug>/{intent,spec}.md` in (marked `From: sdlc/<slug>/spec.md (accepted)`) and is refused while that spec is not accepted.
 2. Read intent.md, spec.md, CLAUDE.md and the files the spec names. Fill plan.md:
    - Files that change: one path per line, `(new)` where created.
    - Order of work: numbered steps, each one story: one behaviour, committable green on its own, observable acceptance criteria, and the failing test written first (`1. <behaviour> — test: <path>::<name> fails first`). `check` refuses a step that names no test.

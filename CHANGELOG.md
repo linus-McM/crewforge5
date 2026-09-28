@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+Phase 9 of `docs/specs/cc-sdlc-alignment.md` (interop with cc_sdlc, then a completeness pass: R-X1, R-X2, R-C1, R-S1, §8).
+
+- `crewforge5 build new --from-sdlc <slug>` (`/crewforge5:build new --from-sdlc <slug>`) takes cc_sdlc's accepted `sdlc/<slug>/spec.md` and `intent.md` as design input, copies them into `crewforge5/<slug>/` marked `From: sdlc/<slug>/spec.md (accepted)`, and refuses a draft, a missing file or a drifted format (R-X1). New config key `[interop] sdlc_home` (default `sdlc`; `SDLC_HOME` overrides).
+- `tests/test_interop.py` pins the artifact names, required sections, template heads and `tdd.jsonl`/`test-report.json` keys to a vendored copy of cc_sdlc's lists, `tests/fixtures/cc_sdlc/formats.json` (R-X2). The plugin README's "Working with cc_sdlc" explains `[sdlc] home = "crewforge5"` for cc_sdlc's test and deploy stages (a follow-up there).
+- `crew validate` copies the crew manifest's `test`/`lint`/`build` commands into `.crewforge5.toml`'s empty `[commands]` keys, so `[commands]` is the one place they live (R-C1).
+- `/crewforge5:rules-install` declares `allowed-tools` (R-S1).
+- Tests: the §8 lifecycle walk (`tests/test_lifecycle.py`), no old run directories (R-A1), CLAUDE.md sections, pre-commit/CI steps, justfile recipes and CHANGELOG entry length (`tests/test_repo.py`: R-H1, R-H5, R-H7, R-H9).
+- The spec gains §9, requirement → implementation → test. Open: the D3 Teams removal (C4) and the human-run dogfood proof.
+
 Phase 8 of `docs/specs/cc-sdlc-alignment.md` (retire the flow driver and hidden skills: R-V3, R-V6, R-P1, R-P3, R-P4, R-G5, R-S7, R-A1, C1).
 
 - **Breaking:** `scripts/flow/` (`flow_state|flow_next|flow_gate.sh`, `subskill_resolve.sh`), every `phases.json`, and the skills `execute`, `plan-legacy`, `init-legacy`, `team-feature`, `team-sprint-planner`, `master-plan`, `adhd`, `grill-me`, `adversarial-review`, `tech-debt-audit`, `pre-commit-review-fleet`, `sprint-watchdog`, `use-repo-code` and `claude-config` are removed with their tests. 13 skills remain, all hidden; commands name them by path.

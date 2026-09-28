@@ -3,8 +3,9 @@ From: review of `linus-McM/cc_sdlc` @ main (plugin 0.6.0) against CrewForge5 0.4
 
 > Risk is high because this changes the plugin's public surface (command names, artifact
 > locations, state layout) and proposes moving the gate layer to a new runtime.
-> Nothing here is implemented yet. The spec is written to be fed to
-> `/crewforge5:plan`, which turns it into story plans. The order is in §6.
+> The spec was written to be fed to `/crewforge5:plan`, which turns it into story
+> plans; the order is in §6. Phases 1–9 are implemented, and §9 records where each
+> requirement lives and which test holds it. One D3 item stays open by decision.
 
 ---
 
@@ -205,7 +206,7 @@ Each phase is one or more PRs and leaves the plugin working.
 7. **Init and crew** re-expressed as commands (R-S4, R-S5). (done: `/crewforge5:init new|check|accept|status` measures through the legacy gate scripts into `crewforge5/init-<date>/audit.md`, with the `config-audit` workflow and an `init(<slug>): accept — audit.md` checkpoint; `/crewforge5:crew survey|forge|validate|status`; `build accept` needs a passing crew under `[build] require_crew = true`, off by default. The old flow is the hidden `init-legacy`.)
 7b. **Shared codebase context** (R-K1–R-K5, C5): `knowledge bootstrap|status|refresh|check`, per-stage context packs with the build-accept and review-review gates, Archify stage documents with freshness gates, execute phase 8 and `drawio` retired. (done: `knowledge.py`, `packs.py`, `docs.py`; bootstrap is check-only unless `[knowledge] auto_install = true`; cc_sdlc's `sdlc/knowledge/` is shared when present; recon.sh is not yet removed, it still serves team-sprint's stamped plans until phase 8.)
 8. **Retire the flow driver and hidden skills** (R-V6, R-P3, R-P4, R-G5). Major version bump. Remove the compatibility stubs one minor release later. (done: `scripts/flow/`, every `phases.json`, `plan-legacy`, `init-legacy`, `execute` and the eleven folded skills are gone with their tests; what commands still use moved to `templates/` (`interview.md`, `concerns.md`, `adversarial-stamp.md`, `house-rules.md`, `repomix-flags.md`); `/crewforge5:execute` is `commands/execute.md` (R-S7); the `sprint-watchdog` agent and TaskUpdate hook are replaced by `tdd.require()` (R-P1, R-G5); `crewforge5 migrate` moves 0.x runs into the feature home once (R-A1, C1); the retired names except `execute` are hidden one-line command stubs pointing at their replacement until 1.1.0 (C1); `tests/test_retired.py` asserts no empty gate and no resolver remain (R-V3); 13 hidden skills, none listed. The single remaining D3 item: `team-sprint` stays as the hidden graph-mode Teams path behind `execute --teams`, fed by `plan_stories.sh` from the accepted plan.md and keeping its own `.team-sprint/sprints/` state, until one real sprint has been measured both ways (C4); then it and `sendmessage-protocol.md` are removed. The version bump ships separately.) (done)
-9. **Interop** with cc_sdlc (R-X1–2, R-K4).
+9. **Interop** with cc_sdlc (R-X1–2, R-K4), then a completeness pass over §4 and §8. (done: `crewforge5 build new --from-sdlc <slug>` (`interop.py`) copies cc_sdlc's accepted `sdlc/<slug>/{intent,spec}.md` into the feature marked `From: sdlc/<slug>/spec.md (accepted)` and refuses a draft; `tests/test_interop.py` pins the artifact names, required sections, template heads and `tdd.jsonl`/`test-report.json` keys to a vendored copy of cc_sdlc's lists (R-X2), and the plugin README documents `[sdlc] home = "crewforge5"` for cc_sdlc's side. The pass added `crew validate`'s adoption of the manifest's commands into `[commands]` (R-C1), `allowed-tools` for `rules-install` (R-S1), the §8 lifecycle walk (`tests/test_lifecycle.py`) and tests for R-A1, R-H1, R-H5, R-H7 and R-H9; §9 is the result.) (done)
 
 ## 7. Decisions (made by the owner, 2026-09-27)
 
@@ -231,3 +232,84 @@ Each phase is one or more PRs and leaves the plugin working.
   - A pack secret-exclusion test (R-K2).
 - A dogfood run on the `dogfood` branch takes one real CrewForge5 change end to end on the new commands, and its commit log reads as `plan(…)`, `design(…)`, `build(…)`, `review(…)`.
 - Package size: `plugin/` has at most 14 skills, no `docs/plans`, and one `bats-fallback.sh` (or none).
+
+## 9. Implementation status
+
+Recorded at the end of phase 9 (2026-09-28). Paths are under `plugin/` unless they start with `tests/`, `scripts/`, `.github/`, `docs/` or name a root file. `cli` means `scripts/crewforge5/`.
+
+| Req | Where implemented | Test |
+|---|---|---|
+| R-V1 | `cli/cli.py` (`main`, `entry`: one JSON verdict) | `tests/test_cli.py` (`test_every_verdict_has_the_schema`, `test_entry_prints_exactly_one_json_object`) |
+| R-V2 | `cli/project.py` (`fail`, `Blocked`); only `cli.main` catches | `tests/test_cli.py` (`test_no_mechanic_builds_a_refusal_by_hand`, `test_only_cli_main_catches_blocked`) |
+| R-V3 | every gate is a CLI action or a human `accept`; `phases.json` gone | `tests/test_retired.py` (`test_no_phases_manifest_or_flow_driver_remains`, `test_every_command_action_is_gated_by_the_cli`) |
+| R-V4 | commands call `${CLAUDE_PLUGIN_ROOT}/scripts/crewforge5.py`; no `${CREWFORGE5_ROOT:-.}` | `scripts/tests/repo_hygiene.bats` (R-V4 test) |
+| R-V5 | `templates/command-preamble.md`, opening every stage command | `tests/test_commands.py` (`test_stage_command_opens_with_the_preamble`, review/crew/execute tests) |
+| R-V6 | `scripts/flow/` and `phases.json` removed; `stages.status` derives progress from artifacts; `build-state.json` (`cli/build.py`) | `tests/test_retired.py`, `tests/test_stages.py` (status tests) |
+| R-S1 | `commands/*.md` frontmatter, ≤40 lines | `tests/test_commands.py` (`test_every_command_is_short_and_described`, `test_stage_command_frontmatter_is_least_privilege`, `test_every_listed_command_declares_least_privilege_tools`) |
+| R-S2 | `commands/{plan,design,build}.md`, `templates/{interview,concerns}.md`, `cli/artifacts.py` (`plan_problems`) | `tests/test_commands.py` (`test_plan_new_folds_in_…`, `test_design_new_carries_…`, `test_build_new_runs_in_plan_mode_…`), `tests/test_stages.py` |
+| R-S3 | `cli/stages.py` (`gated`, `accept`); AskUserQuestion before every accept | `tests/test_stages.py` (`test_each_new_is_refused_until_…`), `tests/test_commands.py` (`test_only_a_human_accepts`), `tests/test_lifecycle.py` |
+| R-S4 | `cli/init.py`, `commands/init.md`, `templates/audit.md` | `tests/test_init.py`, `tests/test_commands.py` (init tests) |
+| R-S5 | `cli/crew.py` (`require` in `build accept`), `commands/crew.md` | `tests/test_crew.py` |
+| R-S6 | `cli/stages.py` (`status`) | `tests/test_stages.py` (status tests) |
+| R-S7 | `commands/execute.md` | `tests/test_commands.py` (`test_execute_takes_an_accepted_feature_plan`), `tests/test_retired.py` (`test_execute_is_a_command_not_a_skill`) |
+| R-T1 | `cli/tdd.py` (`cycle`, `tdd.jsonl`) | `tests/test_build.py` (red/green tests) |
+| R-T2 | `cli/tdd.py` (`require`), `cli/review.py` (`run`) | `tests/test_review.py` (`test_run_is_refused_until_every_step_…`), `tests/test_lifecycle.py` |
+| R-T3 | `cli/build.py` (`sync`) | `tests/test_build.py` (sync tests) |
+| R-T4 | `cli/build.py` (`fix`), `cli/hooks.py` (pre-edit) | `tests/test_build.py` (`test_fix_mode_toggles_…`), `tests/test_hooks.py` (`test_fix_mode_locks_test_files_only`) |
+| R-T5 | `agents/crew-factory.md` (`## Done` contract); watchdog replaced by `tdd.require` | `tests/test_build.py` (`test_generated_developers_and_testers_…`), `tests/test_retired.py` (`test_fake_completion_is_refused_…`) |
+| R-T6 | `commands/build.md` (implement: `/simplify`, then `build sync`) | `tests/test_commands.py` (`test_build_implements_red_green_per_step_then_simplifies`) |
+| R-W1 | `workflows/*.js` (JSON `meta`), `cli/workflows.py` | `tests/test_workflows.py` (`test_meta_is_json_and_its_phases_match_the_body`, `test_scripts_are_deterministic_scoped_and_skeptical`) |
+| R-W2 | `workflows/{intent-scout,design-panel,plan-critic,story-executor,review,config-audit}.js` | `tests/test_workflows.py` (`test_every_catalog_entry_ships_one_script_…`) |
+| R-W3 | an `Inline fallback:` on every workflow step | `tests/test_commands.py` (`test_every_workflow_step_has_an_inline_fallback`) |
+| R-W4 | `cli/workflows.py` (`env`), `cli/hooks.py` session-start, `hooks/hooks.json`. `env_install.sh` is no longer needed for workflows; it is kept only as the optional way to put `CREWFORGE5_ROOT` in the Bash tool's env for hidden skills read by path | `tests/test_workflows.py` (env and session-start tests), `scripts/tests/env_install.bats` |
+| R-W5 | `workflows/story-executor.js` (worktrees) | `tests/test_workflows.py` (`test_story_executor_leaves_the_evidence_to_the_gate`). **Pending (D3, C4):** Teams/SendMessage removal waits for one real sprint measured both ways; until then `skills/team-sprint/` (with its `recon.sh`, `team-sprint.config.yaml` and `.team-sprint/sprints/` state) is the hidden `execute --teams` path, then it and `sendmessage-protocol.md` are deleted |
+| R-G1 | `hooks/hooks.json`, `hooks/hooks-on.sh`, `cli/hooks.py` (only with `.crewforge5.toml`; `[hooks] enabled = false`) | `tests/test_hooks.py` (`test_hooks_are_inert_…`, `test_the_hooks_off_switch`), `scripts/tests/bash_hooks.bats` |
+| R-G2 | `cli/hooks.py` (pre-edit) | `tests/test_hooks.py` (`test_protected_paths_are_denied`, `test_fix_mode_locks_test_files_only`) |
+| R-G3 | `cli/hooks.py` (post-edit) | `tests/test_hooks.py` (`test_post_edit_says_when_a_file_is_missing_from_the_plan`) |
+| R-G4 | `hooks/bash-guard.sh` | `scripts/tests/bash_hooks.bats` (deny, heredoc and quoted-prose tests) |
+| R-G5 | `hooks/learn-capture.sh`; TaskUpdate watchdog removed | `tests/test_retired.py` (`test_sprint_watchdog_agent_and_hook_are_retired`), `scripts/tests/bash_hooks.bats` |
+| R-G6 | every `agents/*.md` | `tests/test_agents.py`, `scripts/tests/repo_hygiene.bats` (R-G6 tests) |
+| R-G7 | `hooks/hooks.json` timeouts; no render or install in a hook | `tests/test_hooks.py` (`test_hooks_stay_fast_and_offline`), `tests/test_docs.py` (`test_documents_are_never_rendered_inside_a_hook`) |
+| R-A1 | `cli/project.py` (`home`), `cli/migrate.py` | `tests/test_stages.py`, `tests/test_migrate.py`, `tests/test_retired.py` (`test_nothing_but_migrate_names_the_old_run_directories`); `.team-sprint/` stays with the D3 path |
+| R-A2 | `templates/{intent,spec,plan,REVIEW}.md`, `cli/artifacts.py` (`validate`, `plan_problems`: Risk: high needs a tech lead) | `tests/test_stages.py` (`test_check_validates_the_metadata`, `test_high_risk_plan_needs_a_named_tech_lead`), `tests/test_interop.py` |
+| R-A3 | `cli/checkpoint.py`, `cli/cli.py` (`BOUNDARIES`) | `tests/test_checkpoint.py`, `tests/test_review.py` (`test_review_is_a_checkpoint_boundary`), `tests/test_lifecycle.py` |
+| R-C1 | `cli/project.py` (`config`, the one reader; `set_config`), `templates/crewforge5.toml`; `crew validate` adopts the crew manifest's commands into `[commands]` (`cli/crew.py` `adopt_commands`). `team-sprint.config.yaml` stays with the D3 path | `tests/test_config.py`, `tests/test_crew.py` (`test_validate_adopts_the_crew_commands_…`) |
+| R-C2 | `cli/project.py` (`LAYERS`, `enabled`), README off-switch table | `tests/test_config.py` (`test_every_layer_has_both_off_switches`, `test_every_off_switch_is_documented_…`) |
+| R-K1 | `cli/knowledge.py` (`bootstrap`), the command preamble | `tests/test_knowledge.py` (`test_bootstrap_is_check_only_by_default`, `test_every_command_preamble_puts_knowledge_first`) |
+| R-K2 | `cli/packs.py`, `templates/knowledge/repomix.config.json` | `tests/test_packs.py` (`test_secret_exclusion_applies_after_expansion`, `test_bandit_fails_closed`, …); `recon.sh` stays inside the D3 path |
+| R-K3 | `cli/packs.py` (`require`) in `build accept` and `review review` | `tests/test_packs.py` (`test_build_accept_requires_a_build_pack_at_head`, `test_review_review_requires_a_review_pack_…`) |
+| R-K4 | `cli/knowledge.py` (shares `sdlc/knowledge/`) | `tests/test_knowledge.py` (`test_shared_cc_sdlc_bundle_is_read_and_written_not_duplicated`) |
+| R-K5 | `cli/docs.py`, `templates/docs-step.md`, `skills/archify/` | `tests/test_docs.py` |
+| R-P1 | `agents/{reviewer,verifier,crew-factory,stack-surveyor}.md` | `tests/test_agents.py`, `tests/test_workflows.py` (`test_the_retired_reviewer_agents_are_gone`), `tests/test_retired.py` |
+| R-P2 | agent frontmatter | `tests/test_agents.py`, `scripts/tests/repo_hygiene.bats` (R-P2 test) |
+| R-P3 | 13 hidden skills | `tests/test_retired.py` (`test_the_skill_set_is_the_target`), `plugin/scripts/budget_check.sh` |
+| R-P4 | `subskill_resolve.sh` removed | `tests/test_retired.py` |
+| R-X1 | `cli/interop.py`, `cli/stages.py` (`new --from-sdlc`), `commands/build.md` | `tests/test_interop.py` (R-X1 tests, fixture `tests/fixtures/cc_sdlc/sdlc/claims-status/`) |
+| R-X2 | `cli/artifacts.py` (`REQUIRED`), `templates/`, README "Working with cc_sdlc" (`[sdlc] home = "crewforge5"`; the cc_sdlc key is a follow-up there) | `tests/test_interop.py` (against `tests/fixtures/cc_sdlc/formats.json`) |
+| R-H1 | root `CLAUDE.md` | `tests/test_repo.py` (`test_claude_md_has_the_cc_sdlc_sections`) |
+| R-H2 | `plugin/`, `.claude-plugin/marketplace.json` (`git-subdir`) | `scripts/tests/repo_hygiene.bats` (R-H2 tests) |
+| R-H3 | skill `docs/plans` deleted; `docs/adr/` | `scripts/tests/repo_hygiene.bats` (R-H3 test) |
+| R-H4 | one `scripts/tests/lib/bats-fallback.sh` (the bats suites that remain still need it) | `scripts/tests/repo_hygiene.bats` (R-H4 test) |
+| R-H5 | `.github/workflows/ci.yml`, `.pre-commit-config.yaml` | `scripts/tests/repo_hygiene.bats` (every bats dir in CI), `tests/test_repo.py` (hooks, strict validation, pytest, degradation) |
+| R-H6 | `scripts/bump_version.py`, the CI `version` job | `tests/test_bump.py` |
+| R-H7 | `justfile` | `tests/test_repo.py` (`test_justfile_has_the_recipes`) |
+| R-H8 | the local `dogfood` branch; `.gitignore` | `scripts/tests/repo_hygiene.bats` (R-H8 test) |
+| R-H9 | `CHANGELOG.md` | `tests/test_repo.py` (`test_changelog_entries_stay_short`: each entry group from 0.4.5 on is at most 15 lines) |
+
+§8 Proof:
+
+| Item | Status |
+|---|---|
+| `just check` in CI on every PR | CI's `tests`, `python`, `gates` and `degradation` jobs run the same commands as `just check` |
+| CLI verdict schema (R-V1) | `tests/test_cli.py` |
+| No empty gates, no `${CREWFORGE5_ROOT:-.}` (R-V3, R-V4) | `tests/test_retired.py`, `scripts/tests/repo_hygiene.bats` |
+| Command size and frontmatter lint (R-S1, R-P2) | `tests/test_commands.py`, `tests/test_agents.py` |
+| Lifecycle walk plan → design → build → review, `new` refused before `accept`, one commit per accept (R-S3, R-A3) | `tests/test_lifecycle.py` |
+| Red/green refusal (R-T1, R-T2) | `tests/test_build.py`, `tests/test_review.py`, `tests/test_lifecycle.py` |
+| Hook deny tests (R-G2, R-G4) | `tests/test_hooks.py`, `scripts/tests/bash_hooks.bats` |
+| Workflow meta / phase-title drift (R-W1) | `tests/test_workflows.py` |
+| Pack secret exclusion (R-K2) | `tests/test_packs.py` |
+| Dogfood run on the `dogfood` branch, log reading `plan(…)`, `design(…)`, `build(…)`, `review(…)` | **Pending a human.** Its accepts are human decisions (R-S3), so an agent cannot complete it; `tests/test_lifecycle.py` asserts the same commit log on the CLI |
+| Package size: ≤14 skills, no `docs/plans`, at most one `bats-fallback.sh` | `tests/test_retired.py`, `scripts/tests/repo_hygiene.bats` |
+
+Open by decision: R-W5 / C4 (D3), above. Nothing else in §4 is open.

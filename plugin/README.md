@@ -250,7 +250,10 @@ edits themselves are left for you to commit, as `next` says.
 **Crew.** `crew survey` detects the language (`[project] language`, else
 `detect_language.sh`); `crew validate [<lang>]` runs `crew_check.sh check`,
 re-grades each generated agent and checks `.claude/crews/<lang>.json`'s
-`validation` grades (grade A passes); `crew status [<lang>]` reports them. With
+`validation` grades (grade A passes), then copies the manifest's `test`, `lint`
+and `build` commands into `.crewforge5.toml`'s `[commands]` where those are still
+empty (`.crewforge5.toml` is the only config, spec R-C1); `crew status [<lang>]`
+reports them. With
 `[build] require_crew = true` (off by default), `build accept` is refused until
 the plan's language has a passing crew, and `next` is `/crewforge5:crew forge
 <lang>`.
@@ -275,8 +278,8 @@ run` adds `lint` and `build`), `[evals] threshold`,
 `[build] require_adversarial_stamp` (when true, `build check` needs the
 `adversarial-review: status=clean|user-override` stamp `templates/adversarial-stamp.md`
 describes in `plan.md`),
-`[build] protected_paths` and `test_globs` (read by the `pre-edit` hook), and
-`[hooks] enabled`.
+`[build] protected_paths` and `test_globs` (read by the `pre-edit` hook),
+`[hooks] enabled`, and `[interop] sdlc_home` (cc_sdlc's feature home, below).
 
 **Checkpoints.** Each `accept`, and `review review`, commits only the plugin's
 output, which is the home directory plus `[checkpoint] paths`. The commit subject
@@ -368,6 +371,39 @@ env` in projects that have `.crewforge5.toml`, and only there: it merges
 overwriting a value already set, and appends `export` lines to
 `CLAUDE_ENV_FILE`. The Workflow tool sees it from the next session.
 `disableWorkflows` in Claude Code settings still wins.
+
+## Working with cc_sdlc
+
+CrewForge5 and [cc_sdlc](https://github.com/linus-McM/cc_sdlc) share one artifact
+format, so either can take a feature from the other (spec R-X1, R-X2).
+
+**cc_sdlc plans, CrewForge5 builds.** When cc_sdlc has accepted
+`sdlc/<slug>/spec.md`, `/crewforge5:build new --from-sdlc <slug>` (CLI:
+`crewforge5 build new --from-sdlc <slug>`) copies its `intent.md` and `spec.md`
+into `crewforge5/<slug>/`, replacing the metadata line with
+`From: sdlc/<slug>/spec.md (accepted). Status: accepted. Risk: <risk>.`, and
+writes `plan.md`. It is refused while either file is missing, not accepted, or
+missing a required section, and it never overwrites a CrewForge5 feature of the
+same name. cc_sdlc's home is `sdlc/` (`[interop] sdlc_home`, or `SDLC_HOME` as
+cc_sdlc reads it). The rest of the build stage, and `review`, run as usual.
+
+**CrewForge5 builds, cc_sdlc tests and deploys.** The artifact names
+(`intent.md`, `spec.md`, `plan.md`, `tdd.jsonl`, `test-report.json`,
+`review.md`) and the required sections of each template are cc_sdlc's, and
+`tdd.jsonl` rows and `test-report.json` carry cc_sdlc's keys (CrewForge5 adds
+`sha`). `tests/test_interop.py` pins them to a vendored copy of cc_sdlc's
+section lists, so the formats cannot drift. Pointing cc_sdlc's `test` and
+`deploy` stages at a CrewForge5 feature folder is a setting on the cc_sdlc side:
+
+```toml
+# .sdlc.toml
+[sdlc]
+home = "crewforge5"   # read crewforge5/<slug>/ instead of sdlc/<slug>/
+```
+
+That key is a follow-up in the cc_sdlc repository (today cc_sdlc reads only
+`SDLC_HOME`, so `SDLC_HOME=crewforge5` works in the meantime); nothing here
+changes when it lands.
 
 ## Rules
 

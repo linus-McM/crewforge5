@@ -18,7 +18,7 @@ Arguments: $ARGUMENTS
 2. `crewforge5 crew validate <lang>` must be `ok`. On `worktree_agents` other than `ok`, tell the user the generated agents are invisible to worktree sprints until they are committed (`git add .claude/agents .claude/crews .claude/rules`); do not commit for them.
 
 ## validate [<lang>]
-`crewforge5 crew validate [<lang>]` runs `crew_check.sh check`, re-grades every generated agent with the agent validator and checks the manifest's `validation` grades. On a refusal, follow `next` (`/crewforge5:crew forge <lang>`).
+`crewforge5 crew validate [<lang>]` runs `crew_check.sh check`, re-grades every generated agent with the agent validator and checks the manifest's `validation` grades. On `ok` it copies the manifest's `test`/`lint`/`build` commands into `.crewforge5.toml`'s empty `[commands]` keys (`commands_adopted`); tell the user to commit that. On a refusal, follow `next` (`/crewforge5:crew forge <lang>`).
 
 ## status [<lang>]
 `crewforge5 crew status [<lang>]` lists each crew, its roles and grades; report `next` verbatim. With `[build] require_crew = true`, `build accept` refuses until the plan's language has a passing crew.

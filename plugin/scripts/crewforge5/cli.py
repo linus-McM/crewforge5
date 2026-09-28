@@ -18,7 +18,7 @@ from .project import Blocked, fail
 def lifecycle(stage: str, action: str):
     """new/check/accept for an artifact stage; only `plan new` takes the positional title."""
     if action == "new":
-        return lambda root, arg, ns: stages.new(stage, root, arg if stage == "plan" else None, ns.slug)
+        return lambda root, arg, ns: stages.new(stage, root, arg if stage == "plan" else None, ns.slug, ns.from_sdlc)
     return lambda root, arg, ns: getattr(stages, action)(stage, root, ns.slug)
 
 
@@ -68,6 +68,7 @@ class Parser(argparse.ArgumentParser):
 def parser() -> argparse.ArgumentParser:
     common = Parser(add_help=False)
     common.add_argument("--slug", help="feature slug (default: the most recent feature)")
+    common.add_argument("--from-sdlc", dest="from_sdlc", metavar="SLUG", help="build new: take cc_sdlc's accepted sdlc/<slug>/spec.md as the design input")
     common.add_argument("--max-tokens", type=int, dest="max_tokens", help="context-pack budget (knowledge pack)")
     ap = Parser(prog="crewforge5")
     sub = ap.add_subparsers(dest="stage", required=True)

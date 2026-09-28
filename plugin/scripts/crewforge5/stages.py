@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from . import artifacts as a
-from . import docs
+from . import docs, interop
 from . import project as p
 from .project import fail
 
@@ -58,8 +58,15 @@ def create_feature(root: Path, title: str) -> Path:
     return feature
 
 
-def new(stage: str, root: Path, title: str | None, slug: str | None) -> dict:
+def new(stage: str, root: Path, title: str | None, slug: str | None, from_sdlc: str | None = None) -> dict:
+    """Write the stage's artifact from its template; `build new --from-sdlc <slug>` first imports cc_sdlc's accepted spec (R-X1)."""
     artifact = ARTIFACTS[stage]
+    imported = None
+    if from_sdlc is not None:
+        if stage != "build":
+            fail("--from-sdlc applies to build new only", next=command("build", "new --from-sdlc <slug>"))
+        slug = interop.from_sdlc(root, from_sdlc).name
+        imported = p.rel(root, interop.sdlc_home(root) / slug / "spec.md")
     if stage == "plan":
         feature = create_feature(root, title or "")
         fields = {"title": (title or "").strip(), "author": p.author(root), "risk": "low"}
@@ -77,6 +84,7 @@ def new(stage: str, root: Path, title: str | None, slug: str | None) -> dict:
         "slug": feature.name,
         "path": str(path),
         "config_created": created,
+        **({"from_sdlc": imported} if imported else {}),
         "next": f"fill every section of {artifact}, then {command(stage, 'check', feature.name)}",
     }
 

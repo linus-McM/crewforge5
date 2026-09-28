@@ -62,3 +62,6 @@ plan = "architecture"
 design = "dataflow"
 build = "workflow"
 review = "sequence"
+
+[interop]
+sdlc_home = "sdlc"          # cc_sdlc's feature home, read by `build new --from-sdlc <slug>`; SDLC_HOME overrides (as in cc_sdlc)

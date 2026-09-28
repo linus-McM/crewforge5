@@ -196,3 +196,14 @@ def test_crew_command_wraps_the_surveyor_and_the_factory():
     assert forge.index("crewforge5:crew-factory") < forge.index("crewforge5 crew validate <lang>")
     assert "/crewforge5:crew forge <lang>" in section("crew", "validate [<lang>]")
     assert "require_crew" in section("crew", "status [<lang>]")
+
+
+@pytest.mark.parametrize("path", sorted(COMMANDS.glob("*.md")), ids=lambda p: p.stem)
+def test_every_listed_command_declares_least_privilege_tools(path: Path):
+    """R-S1 for every command a user can run (retired stubs are hidden and run nothing)."""
+    fm = frontmatter(path)
+    if fm.get("disable-model-invocation") == "true":
+        return
+    tools = [t.strip() for t in fm.get("allowed-tools", "").split(",") if t.strip()]
+    assert tools, f"{path.name} declares no allowed-tools"
+    assert "Bash" not in tools, f"{path.name}: bare Bash is not least privilege"

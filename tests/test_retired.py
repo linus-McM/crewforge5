@@ -143,3 +143,14 @@ def test_fake_completion_is_refused_by_tdd_evidence(run, repo, accepted_plan, to
     assert tdd.complete(feature)["missing"] == ["1", "2"]
     with pytest.raises(Exception, match="no red->green pair"):
         tdd.require(feature)
+
+
+def test_nothing_but_migrate_names_the_old_run_directories():
+    """R-A1: flow output lives in the feature home; only `migrate` (and its help text) still reads the 0.x locations.
+
+    `.team-sprint/` stays with the hidden Teams path until the D3 measurement, so it is not checked here.
+    """
+    old = re.compile(r"(?<![\w.])\.crewforge5/|docs/plans\b")
+    shipped = [*(PLUGIN_ROOT / "scripts/crewforge5").glob("*.py"), *COMMANDS.glob("*.md"), *(PLUGIN_ROOT / "workflows").glob("*.js"), *(PLUGIN_ROOT / "templates").glob("*.md")]
+    offenders = [p.name for p in shipped if p.name not in {"migrate.py", "cli.py"} and old.search(p.read_text())]
+    assert offenders == []

@@ -9,6 +9,7 @@ from __future__ import annotations
 import copy
 import json
 import os
+import re
 import subprocess
 import sys
 import tomllib
@@ -82,6 +83,31 @@ def ensure_config(root: Path) -> bool:
         return False
     path.write_text(DEFAULT_CONFIG)
     return True
+
+
+def set_config(root: Path, table: str, values: dict[str, str]) -> None:
+    """Set string keys of one `[table]` in .crewforge5.toml in place, keeping every other line and comment.
+
+    The only writer besides `ensure_config`; `config()` stays the only reader. JSON strings are valid TOML basic strings.
+    """
+    ensure_config(root)
+    path = root / CONFIG_NAME
+    lines = path.read_text().splitlines()
+    header = next((i for i, line in enumerate(lines) if line.strip() == f"[{table}]"), None)
+    if header is None:
+        lines += ["", f"[{table}]"]
+        header = len(lines) - 1
+    end = next((i for i in range(header + 1, len(lines)) if lines[i].lstrip().startswith("[")), len(lines))
+    for key, value in values.items():
+        found = next((i for i in range(header + 1, end) if lines[i].split("=", 1)[0].strip() == key and "=" in lines[i]), None)
+        entry = f"{key} = {json.dumps(value)}"
+        if found is None:
+            lines.insert(end, entry)
+            end += 1
+        else:
+            kept = re.match(r'\s*(?:""|\S+)\s*(#.*)?$', lines[found].split("=", 1)[1])  # a trailing comment survives
+            lines[found] = entry + (f"  {kept.group(1)}" if kept and kept.group(1) else "")
+    path.write_text("\n".join(lines) + "\n")
 
 
 def enabled(root: Path, layer: str) -> bool:
