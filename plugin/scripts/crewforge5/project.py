@@ -53,7 +53,7 @@ def ran(root: Path, argv: list[str], ok) -> str:
 
 
 def claude_dir() -> Path:
-    """Where Claude Code keeps skills: CLAUDE_CONFIG_DIR, else ~/.claude."""
+    """Where Claude Code keeps skills: CLAUDE_CONFIG_DIR, else the .claude directory under the user's home."""
     return Path(os.environ["CLAUDE_CONFIG_DIR"]) if os.environ.get("CLAUDE_CONFIG_DIR") else Path.home() / ".claude"
 
 
