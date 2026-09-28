@@ -42,6 +42,16 @@ RETIRED = {
     "use-repo-code",
     "claude-config",
 }
+# Spec C1: every retired 0.x name except `execute` (a real command) is kept for one
+# minor release as a hidden command stub that points at its replacement; removed in 1.1.0.
+STUBS = RETIRED - {"execute"}
+STUB_POINTER = re.compile(r"use `/crewforge5:([a-z-]+)`")
+
+
+def is_stub(path: Path) -> bool:
+    return "disable-model-invocation: true" in path.read_text().split("\n---\n", 1)[0]
+
+
 CALL = re.compile(r"`crewforge5 ([a-z]+)(?: ([a-z]+))?")
 
 
@@ -79,7 +89,7 @@ def test_every_cli_call_in_a_command_is_a_cli_action(path: Path):
         assert cli_key(stage, action) in cli.COMMANDS, f"{path.name}: `crewforge5 {stage} {action}` is not a CLI action"
 
 
-@pytest.mark.parametrize("path", sorted(p for p in COMMANDS.glob("*.md") if p.stem != "rules-install"), ids=lambda p: p.stem)
+@pytest.mark.parametrize("path", sorted(p for p in COMMANDS.glob("*.md") if p.stem != "rules-install" and not is_stub(p)), ids=lambda p: p.stem)
 def test_every_command_action_is_gated_by_the_cli(path: Path):
     """R-V3: each `## <action>` section of a stage command runs at least one CLI action: no empty gates."""
     body = path.read_text().split("\n---\n", 1)[1]
@@ -89,6 +99,19 @@ def test_every_command_action_is_gated_by_the_cli(path: Path):
         heading = section.splitlines()[0]
         calls = {(s, a) for s, a in CALL.findall(section) if cli_key(s, a) in cli.COMMANDS}
         assert calls, f"{path.name}: `## {heading}` names no CLI action"
+
+
+def test_retired_names_are_hidden_stubs_for_one_minor_release():
+    """C1: exactly the retired names are stubs; each is hidden and names one real (non-stub) command."""
+    stubs = {p.stem for p in COMMANDS.glob("*.md") if is_stub(p)}
+    assert stubs == STUBS
+    for name in sorted(stubs):
+        text = (COMMANDS / f"{name}.md").read_text()
+        targets = STUB_POINTER.findall(text)
+        assert len(targets) == 1, f"{name}.md must point at exactly one command"
+        target = COMMANDS / f"{targets[0]}.md"
+        assert target.exists() and not is_stub(target), f"{name}.md points at /crewforge5:{targets[0]}, not a command"
+        assert "1.1.0" in text and len(text.splitlines()) <= 6
 
 
 def test_execute_is_a_command_not_a_skill():

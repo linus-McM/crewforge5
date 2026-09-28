@@ -63,6 +63,12 @@ ENTRY_SKILLS = []
 # The public slash commands: the stages, the execute shortcut, config hygiene,
 # the crew factory and the rules installer.
 ENTRY_COMMANDS = ["build", "crew", "design", "execute", "init", "plan", "review", "rules-install"]
+# Spec C1: the 0.x skill names survive for one minor release as hidden command
+# stubs (`disable-model-invocation: true`) that point at the new command. Hidden,
+# they pay no rent; they are allowed only by name, and go in 1.1.0.
+RETIRED_STUBS = ["adhd", "adversarial-review", "claude-config", "grill-me", "init-legacy",
+                 "master-plan", "plan-legacy", "pre-commit-review-fleet", "sprint-watchdog",
+                 "team-feature", "team-sprint-planner", "tech-debt-audit", "use-repo-code"]
 
 def frontmatter(path):
     text = path.read_text(errors="replace")
@@ -95,7 +101,11 @@ for agent in sorted((root / "agents").glob("*.md")):
     rows.append(("agent", agent.stem, n, ""))
 
 for cmd in sorted((root / "commands").glob("*.md")) if (root / "commands").is_dir() else []:
-    n = len(f"- {cmd.stem}: {field(frontmatter(cmd), 'description')}\n")
+    fm = frontmatter(cmd)
+    if field(fm, "disable-model-invocation").lower() == "true":
+        rows.append(("cmd", cmd.stem, 0, "hidden"))
+        continue
+    n = len(f"- {cmd.stem}: {field(fm, 'description')}\n")
     total += n
     rows.append(("cmd", cmd.stem, n, ""))
 
@@ -114,9 +124,11 @@ if verbose:
         print(f"{n:5d}  {kind:5s}  {name}{'  (' + note + ')' if note else ''}")
     print()
 
-hidden = sum(1 for r in rows if r[3] == "hidden")
+hidden = sum(1 for r in rows if r[0] == "skill" and r[3] == "hidden")
+stubs = sum(1 for r in rows if r[0] == "cmd" and r[3] == "hidden")
 print(f"always-loaded: {total} chars (~{tokens} tok) across "
-      f"{sum(1 for r in rows if r[3] != 'hidden')} descriptions; {hidden} skills hidden")
+      f"{sum(1 for r in rows if r[3] != 'hidden')} descriptions; {hidden} skills hidden; "
+      f"{stubs} retired-name stubs hidden")
 print(f"budget: {budget} tok")
 
 failed = False
@@ -133,7 +145,12 @@ if missing:
     print(f"FAIL: entry point missing from the catalogue: {', '.join(missing)}.")
     failed = True
 
-commands = [r[1] for r in rows if r[0] == "cmd"]
+commands = [r[1] for r in rows if r[0] == "cmd" and r[3] != "hidden"]
+stray = [r[1] for r in rows if r[0] == "cmd" and r[3] == "hidden" and r[1] not in RETIRED_STUBS]
+if stray:
+    print(f"FAIL: hidden command that is not a retired-name stub: {', '.join(sorted(stray))}. "
+          f"Only the C1 stubs in RETIRED_STUBS may hide in commands/.")
+    failed = True
 extra_cmds = [n for n in commands if n not in ENTRY_COMMANDS]
 missing_cmds = [n for n in ENTRY_COMMANDS if n not in commands]
 if extra_cmds:

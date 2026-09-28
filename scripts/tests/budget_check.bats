@@ -78,8 +78,26 @@ entry_points() {
   run bash "$GATE" --verbose
   [ "$status" -eq 0 ]
   local listed
-  listed="$(printf '%s\n' "$output" | awk '$2 == "cmd" { print $3 }' | sort | tr '\n' ' ')"
+  listed="$(printf '%s\n' "$output" | awk '$2 == "cmd" && $0 !~ /\(hidden\)/ { print $3 }' | sort | tr '\n' ' ')"
   [ "$listed" = "build crew design execute init plan review rules-install " ]
+}
+
+# --- AC: spec C1, the retired 0.x names are hidden stubs for one minor release ---
+
+@test "a hidden retired-name stub pays no rent and passes" {
+  entry_points
+  printf -- '---\ndescription: Retired.\ndisable-model-invocation: true\n---\n\nbody\n' > "$FX/commands/team-feature.md"
+  run bash "$FX/scripts/budget_check.sh" --budget 5000 --verbose
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"0  cmd    team-feature  (hidden)"* ]]
+}
+
+@test "a hidden command that is not a retired-name stub fails the gate" {
+  entry_points
+  printf -- '---\ndescription: Sneaky.\ndisable-model-invocation: true\n---\n\nbody\n' > "$FX/commands/extra.md"
+  run bash "$FX/scripts/budget_check.sh" --budget 5000
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"not a retired-name stub: extra"* ]]
 }
 
 @test "a fifth command fails the gate under a budget it never approaches" {
