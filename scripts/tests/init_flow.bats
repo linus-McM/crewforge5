@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# init_flow.bats — the contract for `crewforge5:init`: its phase manifest, the
+# init_flow.bats — the contract for `crewforge5:init-legacy`: its phase manifest, the
 # gate script behind every phase, and the two flow-level behaviours the story
 # cares about (a rejected proposal must not advance the flow; a clean tree must).
 #
@@ -11,7 +11,7 @@ source "$(dirname "${BATS_TEST_FILENAME:-${BASH_SOURCE[0]}}")/lib/bats-fallback.
 
 setup() {
   ROOT="$(cd "$BATS_TEST_DIRNAME/../../plugin" && pwd -P)"
-  INIT_DIR="$ROOT/skills/init"
+  INIT_DIR="$ROOT/skills/init-legacy"
   MANIFEST="$INIT_DIR/phases.json"
   SKILL_MD="$INIT_DIR/SKILL.md"
   GATE_SH="$INIT_DIR/scripts/init_gate.sh"
@@ -720,7 +720,7 @@ EOF
 # ---------------------------------------------------------------------------
 
 @test "a rejected phase-2 proposal records FAIL and flow_next re-offers phase 2" {
-  bash "$FLOW_STATE" init set phase.0.status pass phase.1.status pass
+  bash "$FLOW_STATE" init-legacy set phase.0.status pass phase.1.status pass
 
   write_proposal_pair claude-md \
 "# House rules
@@ -730,21 +730,21 @@ Never run find from the filesystem root; scope it to the project tree." \
 
 Search carefully."
 
-  run bash "$FLOW_GATE" init 2
+  run bash "$FLOW_GATE" init-legacy 2
   [ "$status" -eq 1 ]
   case "$output" in *STATUS=FAIL*) : ;; *) return 1 ;; esac
 
-  run bash "$FLOW_STATE" init get phase.2.status
+  run bash "$FLOW_STATE" init-legacy get phase.2.status
   assert_success
   assert_output "FAIL"
 
-  run bash "$FLOW_NEXT" init
+  run bash "$FLOW_NEXT" init-legacy
   assert_success
   case "$output" in *PHASE=2*) : ;; *) return 1 ;; esac
 }
 
 @test "a retention-safe phase-2 proposal records PASS and the flow advances to phase 3" {
-  bash "$FLOW_STATE" init set phase.0.status pass phase.1.status pass
+  bash "$FLOW_STATE" init-legacy set phase.0.status pass phase.1.status pass
 
   write_proposal_pair claude-md \
 "# House rules
@@ -754,10 +754,10 @@ Never run find from the filesystem root; scope it to the project tree." \
 
 - Never run find from the filesystem root; scope it to the project tree."
 
-  run bash "$FLOW_GATE" init 2
+  run bash "$FLOW_GATE" init-legacy 2
   assert_success
 
-  run bash "$FLOW_NEXT" init
+  run bash "$FLOW_NEXT" init-legacy
   assert_success
   case "$output" in *PHASE=3*) : ;; *) return 1 ;; esac
 }
@@ -766,7 +766,7 @@ Never run find from the filesystem root; scope it to the project tree." \
 # AC: skill-validator grades the new skill A.
 # ---------------------------------------------------------------------------
 
-@test "skill-validator grades skills/init A: 0 failures and at most 2 warnings" {
+@test "skill-validator grades skills/init-legacy A: 0 failures and at most 2 warnings" {
   local out fails warns findings
   out="$(bash "$ROOT/skills/skill-validator/scripts/validate_structure.sh" "$INIT_DIR" 2>&1)"
   fails="$(printf '%s' "$out" | grep -c '"status":"FAIL"' || true)"

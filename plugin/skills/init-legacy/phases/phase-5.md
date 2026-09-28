@@ -35,7 +35,7 @@ Two rules keep this from turning into drift:
 The rectifier loop is bounded: grade A, a 5-round cap, zero-fix rounds, or
 no-progress rounds — the last three all **escalate** rather than spin. An
 escalated component is a legitimate outcome, not a retry: record it with
-`flow_state.sh init set rectify_escalated.<component> <report-path>`, stop
+`flow_state.sh init-legacy set rectify_escalated.<component> <report-path>`, stop
 working that component, and carry it forward.
 
 ## Gate

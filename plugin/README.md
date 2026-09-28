@@ -4,7 +4,8 @@ Agents and skills are a resource with a cost. This plugin generates them where
 they belong, executes work with them, and stops them rotting.
 
 ```
-/crewforge5:init    → measure, slim and validate the config you already have
+/crewforge5:init    → measure and audit the config you already have into audit.md; a human accepts the edits
+/crewforge5:crew    → survey the stack and forge a validated per-language agent crew
 /crewforge5:plan    → a goal becomes crewforge5/<slug>/intent.md, accepted by a human
 /crewforge5:design  → the accepted intent becomes spec.md, accepted by a human
 /crewforge5:build   → the accepted spec becomes a test-first plan.md, accepted by a human
@@ -12,7 +13,7 @@ they belong, executes work with them, and stops them rotting.
 /crewforge5:execute → the shortcut: build implement then review; or a stamped plan becomes a merged commit
 ```
 
-That is the whole surface. Everything underneath — the crew factory, the
+That is the whole surface. Everything underneath — the crew agents, the
 review fleet, the recon tooling, the distillation pass — is a sub-skill one of
 them loads when its phase needs it.
 
@@ -33,15 +34,17 @@ forms of the others are ambiguous in the same way.
 
 | Command | What it does | Also triggers on |
 | --- | --- | --- |
-| `/crewforge5:init` | Gated config hygiene — measure, slim, validate, rectify and report a Claude setup's skills, agents and CLAUDE.md | "clean up my Claude config", "audit context load", "rightsize the environment" |
+| `/crewforge5:init` | Config hygiene: `new` measures a config root and writes `crewforge5/init-<date>/audit.md`, `check`, `accept` applies the human-approved slimming and rectify edits, re-measures and commits (`new | check | accept | status`) | "clean up my Claude config", "audit context load", "rightsize the environment" |
+| `/crewforge5:crew` | The crew factory: `survey` the stack, `forge <lang>` a graded agent crew, `validate` and `status` it | "build the agent crew", "onboard a language" |
 | `/crewforge5:plan` | Stage 1: interview the originator into `intent.md` (`new "<title>" | check | accept | status`) | "plan this feature" |
 | `/crewforge5:design` | Stage 2: the accepted intent becomes `spec.md` with Concerns and a Requirements trace | "design this feature" |
 | `/crewforge5:build` | Stage 3: plan mode against the accepted spec writes `plan.md`, every step naming its failing test | "write the build plan" |
 | `/crewforge5:review` | Stage 4: `run` (test/lint/build into `test-report.json`, refused without red→green evidence), `review` (`review.md` from the review workflow, committed), `evals` | "review this feature" |
 | `/crewforge5:execute` | On an accepted `plan.md`, the shortcut for `build implement` then `review run` and `review review`. On a stamped `docs/plans/` plan, a reviewed plan becomes a merged commit — TDD agent fleet in an isolated worktree, coverage, AC/DoD and review-fleet gates, then an integration diagram and distilled learnings | "run a sprint", "execute this plan" |
 
-`plan`, `design`, `build` and `review` are slash commands over the verdict CLI (below).
-`init` and `execute` are still flow skills; each is a state machine over a `phases.json` manifest: a phase is offered,
+`init`, `crew`, `plan`, `design`, `build` and `review` are slash commands over the verdict CLI (below).
+`execute` is still a flow skill, and the hidden `init-legacy` and `plan-legacy` are the
+old bash flows the commands replace; each is a state machine over a `phases.json` manifest: a phase is offered,
 its gate is run, and the verdict is written to state before the next phase is
 offered. A gate announced in prose and never run did not happen.
 
@@ -69,13 +72,14 @@ in the catalogue, so a flow reaches one through
 
 | Sub-skill | Driven by | Reached in |
 | --- | --- | --- |
-| `claude-config` | `/crewforge5:init` | phase 0, resolving the live config |
-| `token-slim` | `/crewforge5:init` | phases 1, 3 and 7 — baseline, trim, re-measure |
-| `context-hygiene` | `/crewforge5:init` | phase 2, passes 1–4 over CLAUDE.md, rules, hooks, MCP |
-| `skill-validator` | `/crewforge5:init` | phase 4 |
-| `agent-validator` | `/crewforge5:init` | phase 4 |
-| `skill-rectifier` | `/crewforge5:init` | phase 5 |
-| `agent-rectifier` | `/crewforge5:init` | phase 5 |
+| `init-legacy` | `/crewforge5:init-legacy` | the old eight-phase bash config-hygiene flow, hidden; the `init` command replaces it |
+| `claude-config` | `/crewforge5:init`, `/crewforge5:init-legacy` | `init new`'s house rules; legacy phase 0 |
+| `token-slim` | `/crewforge5:init`, `/crewforge5:init-legacy` | `init new` and `accept` measure with its `baseline.py`; legacy phases 1, 3 and 7 |
+| `context-hygiene` | `/crewforge5:init`, `/crewforge5:init-legacy` | `init new`'s audit passes (the `config-audit` fallback); legacy phase 2 |
+| `skill-validator` | `/crewforge5:init`, `/crewforge5:init-legacy` | `init new`, `init accept` and `crew validate` grade through its scripts; legacy phase 4 |
+| `agent-validator` | `/crewforge5:init`, `/crewforge5:init-legacy` | same; legacy phase 4 |
+| `skill-rectifier` | `/crewforge5:init`, `/crewforge5:init-legacy` | the Proposed edits `init accept` applies; legacy phase 5 |
+| `agent-rectifier` | `/crewforge5:init`, `/crewforge5:init-legacy` | same; legacy phase 5 |
 | `plan-legacy` | `/crewforge5:plan-legacy` | the old nine-phase bash planning flow, hidden; `plan`, `design` and `build` replace it |
 | `use-repo-code` | `/crewforge5:plan-legacy`, `/crewforge5:execute` | plan-legacy phase 1; execute's preflight and recon |
 | `adhd` | `/crewforge5:plan-legacy` | phase 2, parallel divergent frames (the Diverge step of `plan new`) |
@@ -104,17 +108,17 @@ them. That is the plugin's rent, and it is measured rather than asserted:
 bash "$CREWFORGE5_ROOT/scripts/budget_check.sh" --verbose
 ```
 
-The bundle is **~480 tokens** always-loaded across 13 catalogue entries, against
+The bundle is **~470 tokens** always-loaded across 14 catalogue entries, against
 a budget of **550** — one description's worth of headroom, so rewording a
 trigger phrase does not turn the build red, while a whole new listed surface
-still cannot slip in unpriced. The other **25 skills** carry
+still cannot slip in unpriced. The other **26 skills** carry
 `disable-model-invocation: true`, so they cost nothing until a flow resolves one
 or you call it by name. That discipline is the only reason a bundle this size is
 affordable, and `budget_check.sh` fails the build over the budget rather than
 moving it.
 
 Cost is only half of what the gate asserts. It also checks *which* skills are
-listed: exactly the `init` and `execute` skills and the `plan`, `design`, `build`,
+listed: exactly the `execute` skill and the `init`, `crew`, `plan`, `design`, `build`,
 `review` and `rules-install` commands. An extra entry point with a short description used
 to pay its tokens and walk through unnoticed.
 
@@ -187,16 +191,16 @@ name; nothing fails silently. `graphify` is not shipped as a skill — it needs 
 `uv`-installed binary, and a plugin that hard-fails on a missing external tool
 is a bad first impression.
 
-`/crewforge5:init` checks this list before it does anything else, and it is the
+The legacy config-hygiene flow (`/crewforge5:init-legacy`) checks this list before it does anything else, and it is the
 one check that answers on a machine without `jq` — every other gate, and the
 flow driver itself, exits early there, so reaching them first would report one
 missing tool and hide the rest:
 
 ```bash
-bash "$CREWFORGE5_ROOT/skills/init/scripts/init_gate.sh" deps
+bash "$CREWFORGE5_ROOT/skills/init-legacy/scripts/init_gate.sh" deps
 ```
 
-A missing required tool stops the run: init offers to install what needs no
+A missing required tool stops the run: it offers to install what needs no
 `sudo`, hands you a copy-paste block for anything else, and waits — re-checking
 and re-listing until every required tool is there. Optional tools missing are
 named and carried.
@@ -215,8 +219,8 @@ default.
 
 The gate layer is moving to a Python 3.11 standard-library CLI, following
 `docs/specs/cc-sdlc-alignment.md` in the repository. `/crewforge5:plan`,
-`/crewforge5:design`, `/crewforge5:build` and `/crewforge5:review` run on it;
-`init` and `execute` are still bash flows:
+`/crewforge5:design`, `/crewforge5:build`, `/crewforge5:review`, `/crewforge5:init`
+and `/crewforge5:crew` run on it; `execute` is still a bash flow:
 
 ```bash
 uv run --no-project "${CLAUDE_PLUGIN_ROOT}/scripts/crewforge5.py" <stage> <action> [arg] [--slug <slug>]
@@ -246,6 +250,26 @@ holds the acceptance commit and fix mode. `/crewforge5:execute` on an accepted
 plan.md is the shortcut for `/crewforge5:build implement` then `/crewforge5:review
 run` and `review`, and prints the commands it ran.
 
+**Init.** `init new [<config root>]` (default `[init] target`, else `.claude/`,
+else the project) measures the root through the scripts the legacy flow ships —
+token-slim's `baseline.py`, the skill and agent validators graded by `grade.sh` —
+plus CLAUDE.md, rules, hooks and MCP servers, writes the before-picture to
+`crewforge5/init-<date>/measure.json` and renders `audit.md` (Baseline, Findings,
+Proposed edits, Retention, Open questions). The command fills it from the
+read-only `config-audit` workflow. `init check` validates it; `init accept`,
+after a human picks which edits to apply, runs `retention_gate.sh` over every
+changed instruction file, re-measures, refuses if validator failures rose,
+appends the Result and commits `init(<slug>): accept — audit.md`. The config
+edits themselves are left for you to commit, as `next` says.
+
+**Crew.** `crew survey` detects the language (`[project] language`, else
+`detect_language.sh`); `crew validate [<lang>]` runs `crew_check.sh check`,
+re-grades each generated agent and checks `.claude/crews/<lang>.json`'s
+`validation` grades (grade A passes); `crew status [<lang>]` reports them. With
+`[build] require_crew = true` (off by default), `build accept` is refused until
+the plan's language has a passing crew, and `next` is `/crewforge5:crew forge
+<lang>`.
+
 **Review.** `review run` is refused until every Order-of-work step has a
 red→green pair in `tdd.jsonl`; it then runs `[commands] test`, `lint` and
 `build` and writes `crewforge5/<slug>/test-report.json`, and the command spawns
@@ -260,7 +284,8 @@ under `[evals] threshold`; `templates/agent-evals.yml` runs it in CI.
 Config lives in `.crewforge5.toml` (the first `new` writes it from
 `templates/crewforge5.toml`). It is deep-merged over the defaults:
 `[project] home` (the feature folder, default `crewforge5`, or set
-`CREWFORGE5_HOME`), `[commands] test` (what `build red|green` run; `review
+`CREWFORGE5_HOME`), `[project] language` (the crew language; empty lets
+`detect_language.sh` decide), `[init] target`, `[build] require_crew`, `[commands] test` (what `build red|green` run; `review
 run` adds `lint` and `build`), `[evals] threshold`,
 `[build] require_adversarial_stamp` (when true, `build check` needs the
 planner's `adversarial-review: status=clean|user-override` stamp in `plan.md`),
@@ -284,7 +309,8 @@ Every layer has one off switch in config and one environment variable:
 | Hooks | `[hooks] enabled = false` | `CREWFORGE5_HOOKS=off` (in `settings.json`'s `env` block) |
 
 **Workflows.** Each planning command runs one read-only Workflow script from
-`workflows/`, as `crewforge5:<name>`: `intent-scout` (plan), `design-panel`
+`workflows/`, as `crewforge5:<name>`: `config-audit` (init: CLAUDE.md and
+rules, hooks, MCP, skills and agents lenses), `intent-scout` (plan), `design-panel`
 (design), `plan-critic` (build) and `review` (review: Bugs, Security and
 Compliance passes against `REVIEW.md` with the architecture and cross-boundary
 lenses of the retired `architect-reviewer` and `boundary-reviewer` agents folded

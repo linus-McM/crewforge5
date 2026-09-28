@@ -1,6 +1,6 @@
 """Stage workflows (R-W1-R-W4): the catalog of plugin Workflow scripts and the env that turns the Workflow tool on.
 
-Each planning stage and review ships one read-only `workflows/<name>.js`, run as `crewforge5:<name>`; the build command's
+Init, each planning stage and review ship one read-only `workflows/<name>.js`, run as `crewforge5:<name>`; the build command's
 implementation step runs `story-executor`, which writes only inside its git worktrees. Its `export const meta`
 is written as JSON so this module can read it. Plugin settings cannot set env, so `env` merges `[workflows.env]` into
 the project's `.claude/settings.local.json` (never overwriting a value already there) and appends `export` lines to
@@ -24,7 +24,7 @@ SETTINGS = ".claude/settings.local.json"
 KEY = re.compile(r"CLAUDE_CODE_WORKFLOW[A-Z0-9_]*")  # a checked-in config must not reach PATH, NODE_OPTIONS or the shell
 # step -> the workflow its command runs; every step that runs one has an inline fallback (R-W3). The planning and review
 # workflows are read-only; `implement` (the build command's implementation step) writes only inside its worktrees.
-CATALOG = {"plan": "intent-scout", "design": "design-panel", "build": "plan-critic", "implement": "story-executor", "review": "review"}
+CATALOG = {"init": "config-audit", "plan": "intent-scout", "design": "design-panel", "build": "plan-critic", "implement": "story-executor", "review": "review"}
 WRITERS = ("story-executor",)
 
 

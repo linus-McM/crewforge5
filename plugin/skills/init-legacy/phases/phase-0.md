@@ -9,7 +9,7 @@ anything is measured or rewritten.
    driver.** Run the check directly, not through `flow_gate.sh`:
 
    ```bash
-   bash "${CREWFORGE5_ROOT}/skills/init/scripts/init_gate.sh" deps
+   bash "${CREWFORGE5_ROOT}/skills/init-legacy/scripts/init_gate.sh" deps
    ```
 
    It is the only gate that answers on a machine without `jq`, which is the
@@ -64,8 +64,8 @@ anything is measured or rewritten.
    ```bash
    : "${INIT_TARGET:=$(git rev-parse --show-toplevel)}"
    export INIT_TARGET
-   bash "${CREWFORGE5_ROOT}/scripts/flow/flow_state.sh" init use --from "$INIT_TARGET"
-   bash "${CREWFORGE5_ROOT}/scripts/flow/flow_state.sh" init set target "$INIT_TARGET"
+   bash "${CREWFORGE5_ROOT}/scripts/flow/flow_state.sh" init-legacy use --from "$INIT_TARGET"
+   bash "${CREWFORGE5_ROOT}/scripts/flow/flow_state.sh" init-legacy set target "$INIT_TARGET"
    ```
 
    Resolve the default before claiming anything. `INIT_TARGET` unset means the
@@ -73,8 +73,8 @@ anything is measured or rewritten.
    shared `default` subject and record an empty `target` — the subject would no
    longer name what is under audit.
 
-   `flow_state.sh init list` shows the audits this repo already holds;
-   `flow_state.sh init reset` discards the current one to start it over.
+   `flow_state.sh init-legacy list` shows the audits this repo already holds;
+   `flow_state.sh init-legacy reset` discards the current one to start it over.
 2. **Load the house rules.** `claude-config` is the standing statement of how
    this bundle wants skills, agents and hooks written, and every later phase
    proposes edits against it. Load it inline:

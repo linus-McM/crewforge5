@@ -9,7 +9,7 @@ from crewforge5 import workflows
 from crewforge5.project import PLUGIN_ROOT, TEMPLATES
 
 COMMANDS = PLUGIN_ROOT / "commands"
-STAGES = ["plan", "design", "build"]
+STAGES = ["init", "plan", "design", "build"]
 MAX_LINES = 40
 ALLOWED = {"Bash(uv run *)", "Bash(git *)", "Read", "Edit", "Write", "Glob", "Grep", "AskUserQuestion", "Agent", "Workflow", "Skill"}
 
@@ -149,3 +149,37 @@ def test_review_runs_the_verifier_then_the_workflow_with_a_reviewer_fallback():
     assert review.index("red→green") < review.index("crewforge5 review review")
     assert "review(<slug>): review — review.md" in review
     assert "claude -p" in section("review", "evals") and "agent-evals.yml" in section("review", "evals")
+
+
+def test_init_new_measures_then_audits_read_only():
+    """R-S4, R-W2: init new measures, runs config-audit (else the context-hygiene passes inline) and gates on check."""
+    new = section("init", "new [<config root>]")
+    assert "crewforge5 init new" in new and "crewforge5:config-audit" in new and "context-hygiene" in new
+    assert new.index("crewforge5 init new") < new.index("crewforge5:config-audit") < new.index("crewforge5 init check")
+    assert "read-only" in new
+
+
+def test_init_accept_applies_only_the_approved_edits_and_checkpoints():
+    accept = section("init", "accept")
+    assert "multiSelect" in accept and "never apply one the human did not pick" in accept
+    assert accept.index("AskUserQuestion") < accept.index("Apply exactly those") < accept.index("crewforge5 init accept")
+    assert "retention_gate.sh" in accept and "init(<slug>): accept — audit.md" in accept
+
+
+def test_crew_command_wraps_the_surveyor_and_the_factory():
+    """R-S5: survey | forge <lang> | validate | status over the CLI and the two crew agents."""
+    path = COMMANDS / "crew.md"
+    fm = frontmatter(path)
+    tools = [t.strip() for t in fm["allowed-tools"].split(",")]
+    assert set(tools) <= ALLOWED and "Bash" not in tools and {"Bash(uv run *)", "Agent"} <= set(tools)
+    for action in ("survey", "forge <lang>", "validate", "status"):
+        assert action in fm["argument-hint"]
+    body = path.read_text().split("\n---\n", 1)[1]
+    assert body.startswith((TEMPLATES / "command-preamble.md").read_text().strip())
+    for action in ("survey", "forge", "validate", "status"):
+        assert re.search(rf"^## {action}\b", body, re.MULTILINE), f"crew.md has no `## {action}` section"
+    assert "crewforge5 crew survey" in section("crew", "survey") and "crewforge5:stack-surveyor" in section("crew", "survey")
+    forge = section("crew", "forge <lang>")
+    assert forge.index("crewforge5:crew-factory") < forge.index("crewforge5 crew validate <lang>")
+    assert "/crewforge5:crew forge <lang>" in section("crew", "validate [<lang>]")
+    assert "require_crew" in section("crew", "status [<lang>]")

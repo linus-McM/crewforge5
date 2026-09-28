@@ -3,6 +3,7 @@
 
 [project]
 home = "crewforge5"         # feature folders live in <home>/<slug>/; CREWFORGE5_HOME overrides
+language = ""               # the crew language (python, go, bash ...); empty: detect_language.sh decides
 
 [commands]
 test = ""                   # the project's test command; `build red` needs it to fail, `build green` to pass
@@ -12,7 +13,11 @@ build = ""                  # optional
 [build]
 require_adversarial_stamp = false   # `build check` needs an adversarial-review stamp in plan.md when true
 protected_paths = []        # globs the pre-edit hook never lets Claude edit, e.g. "src/gen/**"
+require_crew = false        # `build accept` needs a crew for the project language with passing grades (/crewforge5:crew forge <lang>)
 test_globs = ["tests/**", "test/**", "test_*.py", "*_test.py", "*_test.go", "*.test.*", "*.spec.*", "*.bats"]   # read-only while `build fix on`
+
+[init]
+target = ""                 # config root `/crewforge5:init new` audits; empty: .claude/ when present, else the project
 
 [evals]
 threshold = 1.0             # minimum pass rate of evals/*.json for `review evals`

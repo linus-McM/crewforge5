@@ -11,7 +11,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import build, checkpoint, evals, review, stages, tdd, workflows
+from . import build, checkpoint, crew, evals, init, review, stages, tdd, workflows
 from .project import Blocked, fail
 
 
@@ -32,12 +32,19 @@ COMMANDS = {
     ("review", "run"): lambda root, arg, ns: review.run(root, ns.slug),
     ("review", "review"): lambda root, arg, ns: review.review(root, ns.slug),
     ("review", "evals"): lambda root, arg, ns: evals.run(root),
+    ("init", "new"): lambda root, arg, ns: init.new(root, arg, ns.slug),
+    ("init", "check"): lambda root, arg, ns: init.check(root, ns.slug),
+    ("init", "accept"): lambda root, arg, ns: init.accept(root, ns.slug),
+    ("init", "status"): lambda root, arg, ns: init.status(root),
+    ("crew", "survey"): lambda root, arg, ns: crew.survey(root),
+    ("crew", "validate"): lambda root, arg, ns: crew.validate(root, arg),
+    ("crew", "status"): lambda root, arg, ns: crew.status(root, arg),
     ("workflows", "list"): lambda root, arg, ns: workflows.catalog(root),
     ("workflows", "env"): lambda root, arg, ns: workflows.env(root),
     ("status", None): lambda root, arg, ns: stages.status(root, ns.slug),
 }
 # Stage boundaries: after a success, checkpoint commits the verdict's `path` with this action label (R-A3).
-BOUNDARIES = {**{(s, "accept"): "accept" for s in stages.ORDER}, ("review", "review"): "review"}
+BOUNDARIES = {**{(s, "accept"): "accept" for s in stages.ORDER}, ("init", "accept"): "accept", ("review", "review"): "review"}
 
 
 class Parser(argparse.ArgumentParser):
@@ -57,7 +64,7 @@ def parser() -> argparse.ArgumentParser:
         st = sub.add_parser(stage, parents=[common])
         if actions:
             st.add_argument("action", choices=actions)
-            st.add_argument("arg", nargs="?", help="title (plan new), step (build red|green), on|off (build fix)")
+            st.add_argument("arg", nargs="?", help="title (plan new), step (build red|green), on|off (build fix), config root (init new), language (crew)")
     return ap
 
 

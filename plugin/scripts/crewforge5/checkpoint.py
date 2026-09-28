@@ -8,12 +8,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from . import build
+from . import build, init
 from . import project as p
 from .project import fail
 
-# The CLI's own bookkeeping (build.STATE) rides along with a boundary without counting as an extra file.
-BOOKKEEPING = (build.STATE,)
+# The CLI's own bookkeeping (build.STATE, init.MEASURE) rides along with a boundary without counting as an extra file.
+BOOKKEEPING = (build.STATE, init.MEASURE)
 IN_PROGRESS = ("MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "rebase-merge", "rebase-apply")
 
 

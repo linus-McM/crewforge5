@@ -1,6 +1,6 @@
 ---
 name: context-hygiene
-description: Context-engineering passes over CLAUDE.md, rules, hooks and MCP config — /crewforge5:init drives it in phase 2. Use directly on "slim CLAUDE.md" or "apply context-engineering rules"
+description: Context-engineering passes over CLAUDE.md, rules, hooks and MCP config — /crewforge5:init new runs them. Use directly on "slim CLAUDE.md" or "apply context-engineering rules"
 disable-model-invocation: true
 ---
 
@@ -48,8 +48,8 @@ rigid rules. Every instruction file in the environment should be re-audited agai
 
 ## Refactor Workflow
 
-Run these passes over the target environment — the config root under audit: `INIT_TARGET`
-when `/crewforge5:init` drives this skill, otherwise whatever root the user named
+Run these passes over the target environment — the config root under audit: the Baseline's
+config root when `/crewforge5:init new` drives this skill (`INIT_TARGET` under the legacy flow), otherwise whatever root the user named
 (typically their user config plus the project's `.claude/`):
 
 **Audit the principles, not surface patterns.** Judge each file against the principle, don't pattern-match for keywords. Read the context the way Claude receives it - what loads always, what loads on demand - and ask per shift: is this workspace still living in the THEN column? The smells below are illustrations, not definitions; something can smell fine and still break the principle, and vice versa.

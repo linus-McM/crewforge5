@@ -19,7 +19,7 @@
 # This gate measures what the session actually carries.
 #
 # Cost is only half the contract. The bundle is meant to show a fixed public
-# surface — the `init` and `execute` flow skills plus the slash commands in
+# surface — the `execute` flow skill plus the slash commands in
 # commands/ (spec R-S1) — and an extra entry with a short description used to
 # pay its tokens and walk through unnoticed. So the listed skills and commands
 # are asserted by name as well as charged, independently of the budget.
@@ -57,11 +57,12 @@ from pathlib import Path
 root, budget, verbose = Path(sys.argv[1]), int(sys.argv[2]), sys.argv[3] == "1"
 
 # The listed flow skills. Everything else is reached through the resolver, not
-# through the catalogue. `plan` moved to commands/ (R-S2); its old bash flow is
-# the hidden `plan-legacy`.
-ENTRY_SKILLS = ["init", "execute"]
-# The public slash commands: the planning and review stages plus the rules installer.
-ENTRY_COMMANDS = ["build", "design", "plan", "review", "rules-install"]
+# through the catalogue. `plan` and `init` moved to commands/ (R-S2, R-S4);
+# their old bash flows are the hidden `plan-legacy` and `init-legacy`.
+ENTRY_SKILLS = ["execute"]
+# The public slash commands: the stages, config hygiene, the crew factory and
+# the rules installer.
+ENTRY_COMMANDS = ["build", "crew", "design", "init", "plan", "review", "rules-install"]
 
 def frontmatter(path):
     text = path.read_text(errors="replace")

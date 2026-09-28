@@ -9,8 +9,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from . import artifacts as a
+from . import crew, stages
 from . import project as p
-from . import stages
 from .project import fail
 
 STATE = "build-state.json"
@@ -36,7 +36,12 @@ def implementing(root: Path, slug: str | None) -> Path:
 
 
 def accept(root: Path, slug: str | None) -> dict:
-    """`build accept`, then record the commit the plan was accepted at: `sync` diffs against it."""
+    """`build accept`, then record the commit the plan was accepted at: `sync` diffs against it.
+
+    With `[build] require_crew` on, a valid plan is still refused until its language has a passing crew (R-S5).
+    """
+    stages.check("build", root, slug)
+    crew.require(root)
     verdict = stages.accept("build", root, slug)
     save(Path(verdict["path"]).parent, accepted_sha=p.head(root))
     return verdict

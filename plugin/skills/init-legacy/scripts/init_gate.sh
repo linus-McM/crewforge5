@@ -18,14 +18,14 @@
 #
 # Overridable so the tests can point at a fixture:
 #   INIT_TARGET    config root under audit, holding skills/ and agents/ (repo root)
-#   INIT_STATE     baseline.json, proposals/ and report.md (<repo>/.crewforge5/init)
+#   INIT_STATE     baseline.json, proposals/ and report.md (<repo>/.crewforge5/init-legacy)
 #   INIT_DESC_CAP  description trim cap handed to token-slim's check.sh (300)
 #
 # Exit codes: 0 pass, 1 fail, 2 usage.
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-# skills/init/scripts -> the plugin root, so every sub-skill script this gate
+# skills/init-legacy/scripts -> the plugin root, so every sub-skill script this gate
 # reuses is found without an environment variable being set correctly first.
 PLUGIN_ROOT="$(cd "$HERE/../../.." && pwd -P)"
 
@@ -59,7 +59,7 @@ else
 fi
 
 TARGET="${INIT_TARGET:-$REPO_ROOT}"
-STATE="${INIT_STATE:-$REPO_ROOT/.crewforge5/init}"
+STATE="${INIT_STATE:-$REPO_ROOT/.crewforge5/init-legacy}"
 DESC_CAP="${INIT_DESC_CAP:-300}"
 BASELINE="$STATE/baseline.json"
 # Where phase 4's spawned validators record what only a model can see, and where

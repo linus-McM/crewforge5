@@ -689,20 +689,21 @@ JSON
 
 @test "flow_next answers with CREWFORGE5_ROOT unset rather than expanding it away" {
   cd "$TMP/repo" || return 1
-  run env -u CREWFORGE5_ROOT bash "$FLOW_NEXT" init
+  # The derived root is this checkout, whose config-hygiene flow is init-legacy.
+  run env -u CREWFORGE5_ROOT bash "$FLOW_NEXT" init-legacy
   [ "$status" -eq 0 ]
   # It must not have expanded the variable to "" — an empty expansion resolves
   # no skill at all and the driver reports that instead of a phase.
   case "$output" in *"no skill resolves"*) return 1 ;; esac
   # Stronger than "it answered": the doc path proves the derived root is this
   # checkout, which is the only way a manifest command string can resolve.
-  case "$output" in *"DOC=$ROOT/skills/init/phases/"*) : ;; *) return 1 ;; esac
+  case "$output" in *"DOC=$ROOT/skills/init-legacy/phases/"*) : ;; *) return 1 ;; esac
 }
 
 @test "the driver exports a root that points at a real plugin tree" {
   cd "$TMP/repo" || return 1
   run env -u CREWFORGE5_ROOT bash -c \
-    "bash \"$FLOW_NEXT\" init >/dev/null 2>&1; printf '%s' \"\${CREWFORGE5_ROOT:-unset}\""
+    "bash \"$FLOW_NEXT\" init-legacy >/dev/null 2>&1; printf '%s' \"\${CREWFORGE5_ROOT:-unset}\""
   # The export is scoped to the driver's own process, so the caller still sees
   # nothing — the point is that the gate subshell inside it does.
   [ "$output" = "unset" ]

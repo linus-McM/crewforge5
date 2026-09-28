@@ -10,6 +10,7 @@ import copy
 import json
 import os
 import subprocess
+import sys
 import tomllib
 from datetime import UTC, datetime
 from pathlib import Path
@@ -106,6 +107,25 @@ def run_git(root: Path, *args: str) -> subprocess.CompletedProcess:
         return subprocess.run(["git", *args], cwd=root, capture_output=True, text=True, check=False)
     except FileNotFoundError:
         return subprocess.CompletedProcess(["git", *args], 127, "", "git not found on PATH")
+
+
+def script(root: Path, rel: str, *args: str) -> dict:
+    """Run one of the plugin's own gate scripts (`.sh` under bash, `.py` under this Python) in the project; never raises.
+
+    The init and crew mechanics measure through the scripts the legacy flows already ship; tests stub this one function.
+    """
+    path = PLUGIN_ROOT / rel
+    argv = ["bash" if path.suffix == ".sh" else sys.executable, str(path), *args]
+    try:
+        proc = subprocess.run(argv, cwd=root, capture_output=True, text=True, check=False, timeout=300)
+    except (FileNotFoundError, subprocess.TimeoutExpired) as err:
+        return {"exit": 127, "stdout": "", "stderr": str(err)}
+    return {"exit": proc.returncode, "stdout": proc.stdout, "stderr": proc.stderr}
+
+
+def kv(text: str) -> dict[str, str]:
+    """`KEY=VALUE` lines (the bash gates' stdout contract) as a dict; the last value of a repeated key wins."""
+    return dict(line.split("=", 1) for line in text.splitlines() if "=" in line and not line.startswith(" "))
 
 
 def git(root: Path, *args: str) -> str:

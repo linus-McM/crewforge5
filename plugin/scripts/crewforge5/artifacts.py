@@ -19,6 +19,7 @@ REQUIRED = {
     "spec.md": ["Requirements", "Design", "Concerns", "Open questions", "Proof"],
     "plan.md": ["Files that change", "Order of work", "Risks", "Proof"],
     "review.md": ["Bugs", "Security", "Compliance"],  # REVIEW.md's three passes; no Status/Risk line
+    "audit.md": ["Baseline", "Findings", "Proposed edits", "Retention", "Open questions"],  # init (R-S4)
 }
 # plan.md's Order of work: numbered steps, each naming the failing test written first (R-S2).
 STEP = re.compile(r"^\s*(\d+)[.)]\s+(.*)$", re.MULTILINE)

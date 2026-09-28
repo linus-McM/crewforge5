@@ -1,14 +1,15 @@
 ---
-name: init
+name: init-legacy
 model: opus
-description: Gated config hygiene — measure, slim, validate, rectify and report a Claude setup's skills, agents and CLAUDE.md. Use on /crewforge5:init, "clean up my Claude config", "audit context load", "rightsize the environment"
+description: Legacy bash flow - gated config hygiene over skills, agents and CLAUDE.md in eight phases. Superseded by the /crewforge5:init command (new, check, accept).
+disable-model-invocation: true
 ---
 
-# crewforge5:init — config hygiene as a gated state machine
+# crewforge5:init-legacy — config hygiene as a gated state machine
 
-Invoke as **`/crewforge5:init`**. A bare slash-init reaches Claude Code's own
-CLAUDE.md initializer, which is a different tool doing a different job; the
-namespaced form is the only one that reaches this skill.
+Invoke as **`/crewforge5:init-legacy`**: the bash flow the `/crewforge5:init`
+command (`new | check | accept | status`, spec R-S4) replaces. It stays hidden,
+reachable by name, until the retirement phase.
 
 Eight phases take a Claude config root from "nobody has looked at this in
 months" to measured, slimmed, validated and reported. Each phase is a doc plus a
@@ -21,9 +22,9 @@ State and sequencing come from the shared flow driver, not from this file:
 
 ```bash
 FLOW="${CREWFORGE5_ROOT}/scripts/flow"
-"$FLOW/flow_next.sh"  init            # STATUS=NEXT PHASE=<id> DOC=<phase doc>
-"$FLOW/flow_gate.sh"  init <phase>    # runs that phase's gate, records the verdict
-"$FLOW/flow_state.sh" init get <key>  # read anything a phase recorded
+"$FLOW/flow_next.sh"  init-legacy            # STATUS=NEXT PHASE=<id> DOC=<phase doc>
+"$FLOW/flow_gate.sh"  init-legacy <phase>    # runs that phase's gate, records the verdict
+"$FLOW/flow_state.sh" init-legacy get <key>  # read anything a phase recorded
 ```
 
 **One thing runs before that driver.** The dependency check is step 0 of phase 0
@@ -32,7 +33,7 @@ and is invoked directly: `flow_next.sh` and `flow_gate.sh` both exit early when
 machinery that needs it:
 
 ```bash
-bash "${CREWFORGE5_ROOT}/skills/init/scripts/init_gate.sh" deps
+bash "${CREWFORGE5_ROOT}/skills/init-legacy/scripts/init_gate.sh" deps
 ```
 
 `phases.json` is the manifest — `{id, title, doc, gate, required}` per phase.
@@ -45,11 +46,11 @@ Two locations, both overridable:
 | Variable | Meaning | Default |
 | --- | --- | --- |
 | `INIT_TARGET` | config root under audit (holds `skills/`, `agents/`) | repo root |
-| `INIT_STATE` | baseline, proposals, findings and report | `.crewforge5/init/` |
+| `INIT_STATE` | baseline, proposals, findings and report | `.crewforge5/init-legacy/` |
 
-Flow state is keyed by subject (`.crewforge5/init/<subject>/state.json`), claimed
+Flow state is keyed by subject (`.crewforge5/init-legacy/<subject>/state.json`), claimed
 in phase 0 from `INIT_TARGET`: a second config root starts at phase 0 rather than
-resuming into the first audit's verdicts. `flow_state.sh init list` names them.
+resuming into the first audit's verdicts. `flow_state.sh init-legacy list` names them.
 
 ## Phases
 

@@ -44,14 +44,16 @@ mkcmd() {
 }
 
 three_entry_points() {
-  mkskill init "Start a crew."
   mkskill execute "Run a sprint."
+  mkskill init-legacy "Old init flow." hidden
   mkskill plan-legacy "Old plan flow." hidden
   mkskill team-sprint "Hidden worker." hidden
   mkcmd plan "Stage 1."
   mkcmd design "Stage 2."
   mkcmd build "Stage 3."
   mkcmd review "Stage 4."
+  mkcmd init "Config hygiene."
+  mkcmd crew "Crew factory."
   mkcmd rules-install "Install rules."
 }
 
@@ -64,21 +66,21 @@ three_entry_points() {
   [[ "$output" == *"PASS:"* ]]
 }
 
-@test "init and execute are the only non-hidden skills in the table" {
+@test "execute is the only non-hidden skill in the table" {
   run bash "$GATE" --verbose
   [ "$status" -eq 0 ]
   local listed
   listed="$(printf '%s\n' "$output" \
     | awk '$2 == "skill" && $0 !~ /\(hidden\)/ { print $3 }' | sort | tr '\n' ' ')"
-  [ "$listed" = "execute init " ]
+  [ "$listed" = "execute " ]
 }
 
-@test "the plan, design, build, review and rules-install commands are the listed commands" {
+@test "the stage, init, crew and rules-install commands are the listed commands" {
   run bash "$GATE" --verbose
   [ "$status" -eq 0 ]
   local listed
   listed="$(printf '%s\n' "$output" | awk '$2 == "cmd" { print $3 }' | sort | tr '\n' ' ')"
-  [ "$listed" = "build design plan review rules-install " ]
+  [ "$listed" = "build crew design init plan review rules-install " ]
 }
 
 @test "a fifth command fails the gate under a budget it never approaches" {

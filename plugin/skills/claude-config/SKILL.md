@@ -8,7 +8,7 @@ disable-model-invocation: true
 # Editing a Claude config
 
 House rules for any config root under edit — a user's `$CLAUDE_CONFIG_DIR`, a project's
-`.claude/`, or this plugin's own tree. `/crewforge5:init` phase 0 loads this as the bar
+`.claude/`, or this plugin's own tree. `/crewforge5:init new` (and the legacy flow's phase 0) loads this as the bar
 every later proposal is judged against. These are the non-obvious constraints; everything
 else is inferable from the tree.
 

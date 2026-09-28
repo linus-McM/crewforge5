@@ -113,20 +113,20 @@ hidden_skills() {
   [ -z "$missing" ]
 }
 
-@test "README names the entry points, the legacy plan flow and rules-install, no others" {
+@test "README names the entry points, the legacy flows and rules-install, no others" {
   # A hidden skill is still reachable by slash, so it is easy to document one
   # as if it were an entry point. The catalogue shape says otherwise. The
   # non-stage slash surfaces are the rules installer shipped in commands/ and
-  # the hidden plan-legacy flow the plan/design/build commands replace.
+  # the hidden plan-legacy and init-legacy flows the commands replace.
   local named
   named="$(grep -oE '/crewforge5:[a-z_-]+' "$README" | sed 's|/crewforge5:||' \
            | sort -u | tr '\n' ' ')"
-  [ "$named" = "build design execute init plan plan-legacy review rules-install " ]
+  [ "$named" = "build crew design execute init init-legacy plan plan-legacy review rules-install " ]
 }
 
 @test "README gives every stage command a row in the entry-point table" {
   local s
-  for s in design build review; do
+  for s in design build review crew; do
     grep -qE "^\| \`/crewforge5:$s\` \|" "$README"
   done
 }

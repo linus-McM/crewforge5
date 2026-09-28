@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+Phase 7 of `docs/specs/cc-sdlc-alignment.md` (init and crew as commands).
+
+- `/crewforge5:init new | check | accept | status` over the CLI (R-S4): `new` measures a config root through token-slim's `baseline.py`, the skill/agent validators and `grade.sh`, plus CLAUDE.md, rules, hooks and MCP, and writes `crewforge5/init-<date>/audit.md` (template `templates/audit.md`) and `measure.json`. `accept`, after a human picks the edits, runs `retention_gate.sh` over changed instruction files, re-measures, refuses a rise in validator failures, appends the Result and commits `init(<slug>): accept — audit.md`.
+- `crewforge5:config-audit` workflow: CLAUDE.md/rules, hooks, MCP, skills and agents lenses, a skeptic per finding, with an inline fallback (R-W2).
+- `/crewforge5:crew survey | forge <lang> | validate | status` (R-S5) wraps `stack-surveyor`, `crew-factory`, `detect_language.sh` and `crew_check.sh`; `crew status` reports `.claude/crews/<lang>.json` grades. With `[build] require_crew = true` (off by default) `build accept` refuses until the plan's language (`[project] language` or detected) has a passing crew; `next` is `/crewforge5:crew forge <lang>`.
+- **Breaking:** the old init flow is now the hidden `/crewforge5:init-legacy` (flow state under `.crewforge5/init-legacy/`).
+- Always-loaded: ~470 tok across 14 entries (was ~480 tok, 13).
+
 Phase 6 of `docs/specs/cc-sdlc-alignment.md` (review stage).
 
 - `/crewforge5:review run | review | evals` over the CLI. `review run` is refused until every Order-of-work step has a red→green pair (R-T2), runs `[commands] test|lint|build` and writes `crewforge5/<slug>/test-report.json`; the command then spawns the fresh-context `verifier`.
