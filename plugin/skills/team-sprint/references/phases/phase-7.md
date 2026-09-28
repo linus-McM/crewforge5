@@ -1,6 +1,6 @@
 # Phase 7 — Sprint-level review fleet, final merge & cleanup
 
-**Goal.** Run the `pre-commit-review-fleet` once over the full sprint diff (security, performance, codebase-consistency, simplifier — this is the sprint's only security/perf review), drive any HIGH findings **and every simplifier finding** through a sprint-level fix loop, then run the sprint-level pre-flight, merge into the target branch, tear down the worktree and team, and finalise the sprint report. Only reached when every story has committed cleanly in Phase 6.
+**Goal.** Run the `pre-commit-review-fleet` once over the full sprint diff (security, performance, codebase-consistency, simplifier — this is the sprint's only security/perf review), drive any HIGH findings **and every simplifier finding** through a sprint-level fix loop, then run the sprint-level pre-flight, merge into the target branch, tear down the worktree and team, and finalise the sprint report. Only reached when every story has committed cleanly in Phase 6. Retiring in spec phase 8: this serves stamped `docs/plans/` sprints only; an accepted `crewforge5/<slug>/plan.md` is reviewed by `/crewforge5:review` (the `crewforge5:review` workflow), which replaces this phase and `pre-commit-review-fleet`.
 
 > **Workflow path.** If the `Workflow` tool is present in your tool list, use it. If it is not, use the prose below. This is
 > a fact to check, not a preference to weigh — do not choose between the two paths on judgment. `$SKILL/references/workflows/phase-7.workflow.js`

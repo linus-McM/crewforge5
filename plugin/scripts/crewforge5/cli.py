@@ -11,7 +11,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import build, checkpoint, stages, tdd, workflows
+from . import build, checkpoint, evals, review, stages, tdd, workflows
 from .project import Blocked, fail
 
 
@@ -29,12 +29,15 @@ COMMANDS = {
     ("build", "green"): lambda root, arg, ns: tdd.cycle(root, ns.slug, "green", arg),
     ("build", "sync"): lambda root, arg, ns: build.sync(root, ns.slug),
     ("build", "fix"): lambda root, arg, ns: build.fix(root, ns.slug, arg),
+    ("review", "run"): lambda root, arg, ns: review.run(root, ns.slug),
+    ("review", "review"): lambda root, arg, ns: review.review(root, ns.slug),
+    ("review", "evals"): lambda root, arg, ns: evals.run(root),
     ("workflows", "list"): lambda root, arg, ns: workflows.catalog(root),
     ("workflows", "env"): lambda root, arg, ns: workflows.env(root),
     ("status", None): lambda root, arg, ns: stages.status(root, ns.slug),
 }
 # Stage boundaries: after a success, checkpoint commits the verdict's `path` with this action label (R-A3).
-BOUNDARIES = {(s, "accept"): "accept" for s in stages.ORDER}
+BOUNDARIES = {**{(s, "accept"): "accept" for s in stages.ORDER}, ("review", "review"): "review"}
 
 
 class Parser(argparse.ArgumentParser):

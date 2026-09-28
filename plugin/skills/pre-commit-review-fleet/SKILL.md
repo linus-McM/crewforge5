@@ -7,6 +7,8 @@ disable-model-invocation: true
 
 # Pre-Commit Review Fleet
 
+> **Retiring (spec phase 8).** This skill serves team-sprint's phase 7 and ad-hoc staged diffs. A feature folder's accepted `crewforge5/<slug>/plan.md` is reviewed by `/crewforge5:review` (the `crewforge5:review` workflow: Bugs/Security/Compliance, two skeptics per finding), which replaces it once the flow driver is retired.
+
 ## Why This Skill Exists
 
 A human pre-commit review is one perspective. Real bugs hide in the gaps

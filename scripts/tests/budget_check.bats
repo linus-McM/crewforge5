@@ -51,6 +51,7 @@ three_entry_points() {
   mkcmd plan "Stage 1."
   mkcmd design "Stage 2."
   mkcmd build "Stage 3."
+  mkcmd review "Stage 4."
   mkcmd rules-install "Install rules."
 }
 
@@ -72,12 +73,12 @@ three_entry_points() {
   [ "$listed" = "execute init " ]
 }
 
-@test "the plan, design, build and rules-install commands are the listed commands" {
+@test "the plan, design, build, review and rules-install commands are the listed commands" {
   run bash "$GATE" --verbose
   [ "$status" -eq 0 ]
   local listed
   listed="$(printf '%s\n' "$output" | awk '$2 == "cmd" { print $3 }' | sort | tr '\n' ' ')"
-  [ "$listed" = "build design plan rules-install " ]
+  [ "$listed" = "build design plan review rules-install " ]
 }
 
 @test "a fifth command fails the gate under a budget it never approaches" {

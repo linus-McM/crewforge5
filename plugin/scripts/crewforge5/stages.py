@@ -11,7 +11,7 @@ from .project import fail
 # stage -> the artifact it writes. The order is the pipeline: each accepted artifact gates the next stage.
 ARTIFACTS = {"plan": "intent.md", "design": "spec.md", "build": "plan.md"}
 ORDER = list(ARTIFACTS)
-# An accepted plan.md goes to the execute alias (R-S7), which runs `/crewforge5:build implement` and then review.
+# An accepted plan.md goes to the execute alias (R-S7): `/crewforge5:build implement`, then `/crewforge5:review run|review`.
 AFTER_BUILD = "/crewforge5:execute"
 
 
@@ -122,7 +122,9 @@ def next_for(feature: Path, states: dict[str, str]) -> str:
             return command(stage, "new", feature.name)
         if states[artifact] != "accepted":
             return command(stage, "check", feature.name)
-    return AFTER_BUILD
+    from . import review  # review imports build, which imports this module
+
+    return review.next_for(feature)
 
 
 def status(root: Path, slug: str | None) -> dict:

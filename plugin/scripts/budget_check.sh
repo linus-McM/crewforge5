@@ -29,7 +29,7 @@ set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
-# The tree measures ~495 tok. The budget sits one description's worth above
+# The tree measures ~480 tok. The budget sits one description's worth above
 # that: enough that an honest rewording does not turn CI red, too little to
 # absorb a whole new listed surface without somebody noticing. Shrinking the
 # tree means lowering this too — slack nobody bounds is just a bigger number,
@@ -60,8 +60,8 @@ root, budget, verbose = Path(sys.argv[1]), int(sys.argv[2]), sys.argv[3] == "1"
 # through the catalogue. `plan` moved to commands/ (R-S2); its old bash flow is
 # the hidden `plan-legacy`.
 ENTRY_SKILLS = ["init", "execute"]
-# The public slash commands: the planning stages plus the rules installer.
-ENTRY_COMMANDS = ["build", "design", "plan", "rules-install"]
+# The public slash commands: the planning and review stages plus the rules installer.
+ENTRY_COMMANDS = ["build", "design", "plan", "review", "rules-install"]
 
 def frontmatter(path):
     text = path.read_text(errors="replace")

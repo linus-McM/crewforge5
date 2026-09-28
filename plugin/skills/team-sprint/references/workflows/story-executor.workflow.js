@@ -165,7 +165,7 @@ const WORKTREE = cfg.worktree || '.'
 // Agent types are INJECTED, never hardcoded — the crew manifest decides them.
 const TEST_WRITER = cfg.testWriterAgent
 const ENGINEER = cfg.engineerAgent
-const REVIEWER = cfg.reviewerAgent || 'code-reviewer'
+const REVIEWER = cfg.reviewerAgent || 'general-purpose' // the plugin's code-reviewer agent is retired (R-P1); the crew's code_reviewer is passed in
 // coverage_check.sh --mode comes from config; hardcoding 'new' broke whole-mode repos.
 const COVERAGE_MODE = cfg.coverageMode
 // state.sh keys off the plan path; the counter cannot be persisted without it.

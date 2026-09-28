@@ -16,7 +16,7 @@ Arguments: $ARGUMENTS
    - Order of work: numbered steps, each one story: one behaviour, committable green on its own, observable acceptance criteria, and the failing test written first (`1. <behaviour> — test: <path>::<name> fails first`). `check` refuses a step that names no test.
    - Risks: what could break, the riskiest step (put it early), options rejected; `Tech lead: <name>` when `Risk: high`.
    - Proof: the commands and their expected output.
-3. Critique: run `crewforge5:plan-critic` with `{slug}` (blast radius, test-first, ordering, spec coverage; a skeptic per finding). Apply or explicitly reject each confirmed issue. Inline fallback: put the plan through those four lenses yourself, one Agent per lens when it helps. Iterate until an engineer who never saw this conversation could implement from plan.md alone.
+3. Critique: run `crewforge5:plan-critic` with `{slug}` (blast radius, test-first, ordering, spec coverage, cross-boundary; a skeptic per finding). Apply or explicitly reject each confirmed issue. Inline fallback: put the plan through those five lenses yourself, one Agent per lens when it helps. Iterate until an engineer who never saw this conversation could implement from plan.md alone.
 4. `crewforge5 build check` until `ok`.
 
 ## check
@@ -28,7 +28,7 @@ Only a human accepts. Ask (AskUserQuestion) the engineer, or the named tech lead
 ## implement  (after accept; set `[commands] test` in `.crewforge5.toml`)
 Per Order-of-work step: write only its failing test; `crewforge5 build red <n>` must be `ok` (if the tests pass, the test is wrong or the behaviour exists: stop and say so); make the smallest change; `crewforge5 build green <n>`; `crewforge5 build sync` (list each `unplanned` file in plan.md in the same commit, or revert it); commit `build(<slug>): <step>`. A step is done only when red then green report `ok`.
 Parallel: group steps with disjoint files into waves and run `crewforge5:story-executor` with `{slug, steps: [n...], developer: <crew developer agent, if any>}`: one worktree agent per step returns a branch with a test commit and a change commit. Per step, in order: `git cherry-pick -n <test_commit>`, `build red <n>`, `git cherry-pick -n <commit>`, `build green <n>`, `build sync`, commit; delete the branch. Inline fallback: do the steps one by one as above.
-When every step is green run `/simplify`, then `crewforge5 build sync` once more. Next: the review stage (`/crewforge5:review`, in a later release).
+When every step is green run `/simplify`, then `crewforge5 build sync` once more. Next: `/crewforge5:review run`.
 
 ## fix on | fix off
 Bug-fix mode: reproduce the bug as a failing test and commit it, `crewforge5 build fix on` (the pre-edit hook then denies edits to test files), make it pass, `crewforge5 build fix off`.

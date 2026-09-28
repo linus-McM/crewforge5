@@ -1,4 +1,4 @@
-"""Stage-boundary checkpoints (R-A3): after each accept, `cli.main` commits the home directory and `[checkpoint] paths`.
+"""Stage-boundary checkpoints (R-A3): after each accept and `review review`, `cli.main` commits the home directory and `[checkpoint] paths`.
 
 The commit carries a pathspec, so source and tests stay out and work already staged in the index survives.
 A checkpoint never decides the stage's verdict: `cli.main` reports a refusal under `checkpoint`.

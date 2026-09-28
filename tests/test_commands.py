@@ -114,3 +114,38 @@ def test_execute_takes_an_accepted_feature_plan():
     skill = (PLUGIN_ROOT / "skills/execute/SKILL.md").read_text()
     alias = skill.split("## An accepted `crewforge5/<slug>/plan.md`", 1)[1].split("\n## ", 1)[0]
     assert "/crewforge5:build implement --slug <slug>" in alias and "accepted" in alias and "crewforge5:story-executor" in alias
+    order = [alias.index(s) for s in ("/crewforge5:build implement", "/crewforge5:review run", "/crewforge5:review review")]
+    assert order == sorted(order), "R-S7: build, then review run, then review review"
+    assert "Print the underlying commands you ran" in alias and "shortcut" in alias
+
+
+def test_build_hands_on_to_review_run():
+    assert "Next: `/crewforge5:review run`" in section("build", "implement")
+
+
+def test_review_command_is_least_privilege_and_opens_with_the_preamble():
+    """R-S1, R-V5 for /crewforge5:review: run | review | evals, no AskUserQuestion needed (no human accept)."""
+    path = COMMANDS / "review.md"
+    fm = frontmatter(path)
+    tools = [t.strip() for t in fm["allowed-tools"].split(",")]
+    assert set(tools) <= ALLOWED and "Bash" not in tools
+    assert {"Bash(uv run *)", "Agent", "Workflow"} <= set(tools)
+    for action in ("run", "review", "evals", "status"):
+        assert action in fm["argument-hint"]
+    body = path.read_text().split("\n---\n", 1)[1]
+    assert body.startswith((TEMPLATES / "command-preamble.md").read_text().strip())
+    for action in ("run", "review", "evals", "status"):
+        assert re.search(rf"^## {action}\b", body, re.MULTILINE), f"review.md has no `## {action}` section"
+
+
+def test_review_runs_the_verifier_then_the_workflow_with_a_reviewer_fallback():
+    """R-T2, R-W2, R-W3, R-P1: run spawns the verifier; review runs crewforge5:review, else the reviewer agent."""
+    run_ = section("review", "run")
+    assert "crewforge5 review run" in run_ and "crewforge5:verifier" in run_ and "fresh context" in run_
+    review = section("review", "review")
+    steps = [line for line in review.splitlines() if re.search(r"(?<!/)crewforge5:review\b(?!er)", line)]
+    assert steps and all("Inline fallback:" in line and "crewforge5:reviewer" in line for line in steps)
+    assert "two skeptics" in review and "five nits" in review
+    assert review.index("red→green") < review.index("crewforge5 review review")
+    assert "review(<slug>): review — review.md" in review
+    assert "claude -p" in section("review", "evals") and "agent-evals.yml" in section("review", "evals")

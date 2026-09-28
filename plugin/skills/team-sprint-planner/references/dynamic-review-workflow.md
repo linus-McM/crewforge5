@@ -191,7 +191,7 @@ const boundaryPrompt =
 
 const wave = (await parallel([
   () => agent(boundaryPrompt,
-    { label: 'review:boundary', phase: 'Discovery', agentType: 'boundary-reviewer', effort: HIGH, schema: FINDINGS }),
+    { label: 'review:boundary', phase: 'Discovery', effort: HIGH, schema: FINDINGS }),
   ...chunks.map((ids, i) => () => agent(
     `Adversarially review ONLY stories ${ids.join(', ')} in the plan at ${PLAN} against the ` +
     `code under ${REPOS.join(' and ')}. Contradictions, drift from the code as it exists, ` +
@@ -307,7 +307,7 @@ for (let cycle = 1; cycle <= 2; cycle += 1) {          // hard cap: 2 cycles (F8
   const sweep = (await parallel([
     () => agent(boundaryPrompt +
       `\n\nKNOWN AND FIXED (report only NEW CRITICAL/HIGH not in this ledger digest):\n${digest}`,
-      { label: `closeout:boundary-${cycle}`, phase: 'Close-out', agentType: 'boundary-reviewer', effort: HIGH, schema: FINDINGS }),
+      { label: `closeout:boundary-${cycle}`, phase: 'Close-out', effort: HIGH, schema: FINDINGS }),
     () => agent(
       `Review the FINAL text of the whole plan at ${PLAN} against ${REPOS.join(' and ')}. ` +
       `These findings are known and fixed — report only NEW CRITICAL/HIGH:\n${digest}`,

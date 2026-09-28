@@ -2,7 +2,7 @@
 
 red succeeds only when the tests fail, green only when they pass after a red for the same step. Each success
 appends `{step, phase, sha, ts, exit}`. `complete(feature)` says whether every Order-of-work step in plan.md has a
-red followed by a green; `review run` (a later phase) refuses until it does, and `require` is that refusal.
+red followed by a green; `review run` refuses until it does, and `require` is that refusal.
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ from . import project as p
 from .project import fail
 
 LOG = "tdd.jsonl"
+REVIEW_RUN = "/crewforge5:review run"
 TAIL = 20
 
 
@@ -69,6 +70,8 @@ def cycle(root: Path, slug: str | None, phase: str, raw_step: str | None) -> dic
     entry = {"step": step, "phase": phase, "sha": p.head(root), "ts": p.now_iso(), "exit": result["exit"]}
     p.append_jsonl(feature / LOG, entry)
     after = f"implement the smallest change, then `crewforge5 build green {step}`" if phase == "red" else "`crewforge5 build sync`, then commit"
+    if phase == "green" and complete(feature)["complete"]:
+        after += f"; every step is green: `/simplify`, `crewforge5 build sync`, then {REVIEW_RUN} --slug {feature.name}"
     return {"ok": True, "slug": feature.name, "step": step, "phase": phase, "cycles": pairs([*log, entry]).get(step, 0), "tail": result["tail"], "next": after}
 
 

@@ -121,12 +121,12 @@ hidden_skills() {
   local named
   named="$(grep -oE '/crewforge5:[a-z_-]+' "$README" | sed 's|/crewforge5:||' \
            | sort -u | tr '\n' ' ')"
-  [ "$named" = "build design execute init plan plan-legacy rules-install " ]
+  [ "$named" = "build design execute init plan plan-legacy review rules-install " ]
 }
 
 @test "README gives every stage command a row in the entry-point table" {
   local s
-  for s in design build; do
+  for s in design build review; do
     grep -qE "^\| \`/crewforge5:$s\` \|" "$README"
   done
 }

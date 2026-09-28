@@ -64,16 +64,15 @@ Every stack claim baked into a generated agent must trace to the stack profile o
 | Role | enabled | reuse if present | tools to grant generated agent | role layer focus |
 |------|---------|------------------|-------------------------------|------------------|
 | developer (base) | yes | `python-pro`/`golang-pro`/`typescript-pro`/`rn-engineer`/`powershell-engineer` | Read, Write, Edit, Bash, Glob, Grep | built in Phase 2 — seed for all others |
-| architect | yes | `architect-reviewer` | Read, Glob, Grep, Bash | layering, module boundaries, dep direction, SOLID, idiomatic project layout |
+| architect | yes | — | Read, Glob, Grep, Bash | layering, module boundaries, dep direction, SOLID, idiomatic project layout |
 | tester | yes | `go-svelte-test`/`rn-test` | Read, Write, Edit, Glob, Grep, Bash | framework, fixtures, mocking, RED-phase TDD (`crewforge5 build red <n>`, the `## Done` section), coverage cmd + threshold from profile |
 | profiler | yes | `go-svelte-performance`/`rn-optimizer` | Read, Write, Edit, Bash, Glob, Grep | hot-path + memory, lang profiler from profile, benchmark harness |
 | security | yes | `security-reviewer` | Read, Grep, Glob, Bash | lang vuln classes + SAST tool from profile; anti-fabrication on findings. Registry agent is stack-agnostic and covers all security surfaces — reuse fits most stacks |
-| code-reviewer | yes | `code-reviewer` | Read, Write, Edit, Bash, Glob, Grep | correctness + bugs on a diff; deliver findings as the final agent return (this row grants no SendMessage — final return IS the delivery) |
+| code-reviewer | yes | — | Read, Write, Edit, Bash, Glob, Grep | correctness + bugs on a diff; deliver findings as the final agent return (this row grants no SendMessage — final return IS the delivery) |
 | simplifier | yes | — | Read, Edit, Glob, Grep, Bash | dedup, reduce, idiomatic refactor; quality only, no bug-hunt |
 | docs-writer | yes | — | Read, Write, Edit, Glob, Grep | docstrings/API docs/README in the lang's doc convention |
 | dependency-auditor | yes | — | Read, Grep, Glob, Bash | lockfile/CVE/license via the dep tool from profile (pip-audit/npm audit/govulncheck/cargo-audit) |
 | accessibility | only if frontend/UI stack | `frontend-design` | Read, Edit, Glob, Grep, Bash | a11y; enable ONLY for react-native/web stacks, skip otherwise |
-| boundary-reviewer | **always** | `boundary-reviewer` | Read, Grep, Glob, Bash | cross-language / cross-repo / deployment-config review (Assumption Inversion + Deployment Reality). **Do NOT seed this one with the Stack Knowledge block** — see below |
 
 Grant each generated agent the minimal tools in its row — no web/research tools (research was done at survey time). Every generated agent inherits the anti-fabrication rule.
 
@@ -104,14 +103,7 @@ Each generated agent's prompt carries a `## Skills` section naming the skills it
 - **Non-interactive only**: crew agents run headless as subagents. A skill with an AskUserQuestion intake gate or an interactive loop has no user to ask — never assign one (same constraint CLAUDE.md puts on `context: fork` skills).
 - **Stack- and role-fit**: assign a skill only when its trigger description matches the role's remit for the detected stack — e.g. `rn-engineer` to a react-native developer, `ac-validate` to the tester, `graphify` to recon-heavy roles like architect. On doubt, omit: an irrelevant skill is prompt noise the agent pays for every spawn.
 
-**`boundary-reviewer` is the deliberate exception to the shared seed.** Every other role gets
-the `## Stack Knowledge (inherited)` block so the crew shares one understanding of the stack.
-This role must NOT — its entire remit is the ground the stack profile does not cover. A crew
-resolved for a Go repo supplies nine Go-specialised roles for a system that may span Go +
-Python + CDK TypeScript + a React-Native client in a separate repository; that composition
-*encodes* the blind spot, and seeding this role with it would reproduce the failure. Reuse the
-registry `boundary-reviewer` verbatim and generate nothing; it is language-agnostic by design,
-so there is no per-language variant to build.
+**Cross-boundary review is not a crew role.** The review of what crosses language, repo and deployment boundaries (Assumption Inversion, Deployment Reality) is the boundary lens of the `crewforge5:review` and `crewforge5:plan-critic` workflows and of the `crewforge5:reviewer` agent; it is language-agnostic by design, so the factory generates nothing for it and never seeds it with the Stack Knowledge block.
 
 ## Phase 4 — Manifest
 
@@ -124,8 +116,7 @@ so there is no per-language variant to build.
   "crew": {
     "architect":"", "developer":"", "tester":"", "profiler":"",
     "security":"", "code_reviewer":"", "simplifier":"",
-    "docs_writer":"", "dependency_auditor":"", "accessibility":"",
-    "boundary_reviewer":""
+    "docs_writer":"", "dependency_auditor":"", "accessibility":""
   },
   "validation": { "<agent_name>":"A", "...":"..." },
   "skills": { "<role>": ["<skill-name>", "..."] },
@@ -133,7 +124,7 @@ so there is no per-language variant to build.
   "reused": ["<registry names>"]
 }
 ```
-`commands` copied verbatim from the verified profile. `crew` maps each role to the agent name team-sprint should spawn (generated or reused). Omit `accessibility` if the stack is not frontend. `validation` grades every crew member except registry reuses: freshly generated agents get the grade earned this run; prior-run crew agents carry their recorded grade. `boundary_reviewer` is always `"boundary-reviewer"` (registry, reused verbatim, never generated) — it is language-agnostic by design. The key is provenance only: no consumer reads it today (team-sprint's phases never resolve it, and team-sprint-planner hardcodes the registry `boundary-reviewer` in its review workflow) — it records crew composition and reserves the override point. `skills` records each generated role's assigned skills (omit roles with none) — provenance for refreshes; the operative copy is the `## Skills` section inside each agent.
+`commands` copied verbatim from the verified profile. `crew` maps each role to the agent name team-sprint should spawn (generated or reused). Omit `accessibility` if the stack is not frontend. `validation` grades every crew member except registry reuses: freshly generated agents get the grade earned this run; prior-run crew agents carry their recorded grade. `skills` records each generated role's assigned skills (omit roles with none) — provenance for refreshes; the operative copy is the `## Skills` section inside each agent.
 
 ## Phase 5 — Stack rule file
 

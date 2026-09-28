@@ -33,7 +33,7 @@ def body(text: str) -> str:
 
 
 def test_every_catalog_entry_ships_one_script_and_nothing_else_ships():
-    assert workflows.CATALOG == {"plan": "intent-scout", "design": "design-panel", "build": "plan-critic", "implement": "story-executor"}
+    assert workflows.CATALOG == {"plan": "intent-scout", "design": "design-panel", "build": "plan-critic", "implement": "story-executor", "review": "review"}
     assert sorted(p.stem for p in SCRIPTS) == sorted(workflows.CATALOG.values())
 
 
@@ -205,3 +205,21 @@ def test_story_executor_leaves_the_evidence_to_the_gate():
     assert "Do not run `crewforge5 build red|green`" in text
     assert "args.steps is required" in text and "/^\\d+$/.test(n)" in text, "step numbers are shape-checked before reaching shell text"
     assert "never rewrite, encode, split or relocate a command to get past a hook" in text
+
+
+def test_review_folds_the_retired_reviewers_in_as_lenses_with_two_skeptics():
+    """R-W2, R-P1: Bugs/Security/Compliance against REVIEW.md; architecture joins Compliance, boundary joins Bugs."""
+    text = (workflows.DIR / "review.js").read_text()
+    assert "PASSES = ['Bugs', 'Security', 'Compliance']" in text and "REVIEW.md" in text
+    assert "pass: 'Compliance', lens: 'architecture'" in text and "SOLID" in text
+    assert "pass: 'Bugs', lens: 'boundary'" in text and "Assumption Inversion" in text and "Deployment Reality" in text
+    assert "const NITS = 5" in text and "LENSES.length" in text, "two skeptics; both refuting drops, one downgrades to Nit"
+    assert "never rewrite, encode, split or relocate a command to get past a hook" in text
+    assert "boundary" in (workflows.DIR / "plan-critic.js").read_text()
+
+
+def test_the_retired_reviewer_agents_are_gone():
+    agents = sorted(p.stem for p in (PLUGIN_ROOT / "agents").glob("*.md"))
+    assert "reviewer" in agents and "verifier" in agents
+    assert not {"architect-reviewer", "boundary-reviewer", "code-reviewer"} & set(agents)
+    assert not (PLUGIN_ROOT / "skills/code-reviewer").exists()

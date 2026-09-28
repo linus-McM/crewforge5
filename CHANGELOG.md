@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+Phase 6 of `docs/specs/cc-sdlc-alignment.md` (review stage).
+
+- `/crewforge5:review run | review | evals` over the CLI. `review run` is refused until every Order-of-work step has a red→green pair (R-T2), runs `[commands] test|lint|build` and writes `crewforge5/<slug>/test-report.json`; the command then spawns the fresh-context `verifier`.
+- `review review` needs that report passing at HEAD, validates `review.md` (`## Bugs|Security|Compliance`, `Important:`/`Nit:` bullets with `path:line`, at most five nits) and is a checkpoint boundary: `review(<slug>): review — review.md` (R-A3). `review evals` runs `evals/*.json` through `claude -p`, gated on `[evals] threshold`; `templates/agent-evals.yml` for CI.
+- `crewforge5:review` workflow: three passes against `REVIEW.md`, two skeptics per finding (one refutation downgrades to Nit, two drop it), nits capped at five; its inline fallback is the read-only `reviewer` agent (R-W2). `plan-critic` gains a cross-boundary lens.
+- **Breaking:** agents `architect-reviewer`, `boundary-reviewer` and `code-reviewer`, and the `code-reviewer` skill, are removed; architecture and boundary review are lenses of the review workflow. New agents: `reviewer` (opus) and `verifier` (sonnet), both read-only (R-P1).
+- `/crewforge5:execute` on an accepted plan.md runs `build implement`, then `review run` and `review review`, and prints them (R-S7). `build green|sync` and `status` point at `/crewforge5:review run` once every step is green.
+- Team-sprint's phase 7 and `pre-commit-review-fleet` stay for stamped plans until phase 8.
+- Always-loaded: ~480 tok across 13 entries (was ~524 tok, 13).
+
 Phase 5 of `docs/specs/cc-sdlc-alignment.md` (build stage: TDD evidence, guardrail hooks, story executor).
 
 - `crewforge5 build red|green <step>` run `[commands] test` (red must fail, green must pass after a red) and append `{step, phase, sha, ts, exit}` to `crewforge5/<slug>/tdd.jsonl`; `tdd.complete()` checks every Order-of-work step has a red→green pair (R-T1, R-T2). `build sync` lists files changed since acceptance that plan.md does not name; `build fix on|off` is bug-fix mode (R-T3, R-T4). State: `build-state.json`.

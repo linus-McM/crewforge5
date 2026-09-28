@@ -75,7 +75,16 @@ def sync(root: Path, slug: str | None) -> dict:
             base=base,
             next=f"list them in {p.rel(root, feature / 'plan.md')} or revert them, then `crewforge5 build sync`",
         )
-    return {"ok": True, "slug": feature.name, "planned": plan, "changed": changed, "unplanned": [], "base": base, "next": f"commit `build({feature.name}): <step>`"}
+    after = f"commit `build({feature.name}): <step>`"
+    if tdd_complete(feature):
+        after += f"; every step is green: `/simplify` and sync once more, then /crewforge5:review run --slug {feature.name}"
+    return {"ok": True, "slug": feature.name, "planned": plan, "changed": changed, "unplanned": [], "base": base, "next": after}
+
+
+def tdd_complete(feature: Path) -> bool:
+    from . import tdd  # tdd imports this module
+
+    return tdd.complete(feature)["complete"]
 
 
 def fix(root: Path, slug: str | None, state: str | None) -> dict:

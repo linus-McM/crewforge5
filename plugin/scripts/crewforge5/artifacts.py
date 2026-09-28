@@ -1,4 +1,4 @@
-"""Markdown artifact helpers: intent.md, spec.md and plan.md share one shape (the cc_sdlc templates).
+"""Markdown artifact helpers: intent.md, spec.md and plan.md share one shape (the cc_sdlc templates); review.md has only the sections.
 
 A document is a `# Kind: Title` line, a metadata line (`Author: x. Status: draft. Risk: low.`),
 then `## Section` blocks. A section holding only `<placeholder>` text counts as unfilled.
@@ -18,6 +18,7 @@ REQUIRED = {
     "intent.md": ["Problem", "Proposed outcome", "Affected users and systems", "Constraints", "Open questions"],
     "spec.md": ["Requirements", "Design", "Concerns", "Open questions", "Proof"],
     "plan.md": ["Files that change", "Order of work", "Risks", "Proof"],
+    "review.md": ["Bugs", "Security", "Compliance"],  # REVIEW.md's three passes; no Status/Risk line
 }
 # plan.md's Order of work: numbered steps, each naming the failing test written first (R-S2).
 STEP = re.compile(r"^\s*(\d+)[.)]\s+(.*)$", re.MULTILINE)
@@ -72,11 +73,16 @@ def validate(md: str, required: list[str]) -> list[str]:
             problems.append(f"missing metadata: {field}:")
         elif value not in allowed[field]:
             problems.append(f"invalid {field}: {value} (one of {', '.join(allowed[field])})")
-    found = sections(md)
+    return problems + section_problems(md, required)
+
+
+def section_problems(md: str, required: list[str]) -> list[str]:
+    """Each required `## Section` present and filled."""
+    found, problems = sections(md), []
     for heading in required:
         if heading not in found:
             problems.append(f"missing section: {heading}")
-        elif not filled(found[heading]):
+        elif not found[heading].strip() or not filled(found[heading]):
             problems.append(f"unfilled section: {heading}")
     return problems
 

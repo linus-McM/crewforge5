@@ -6,11 +6,16 @@ home = "crewforge5"         # feature folders live in <home>/<slug>/; CREWFORGE5
 
 [commands]
 test = ""                   # the project's test command; `build red` needs it to fail, `build green` to pass
+lint = ""                   # optional; `review run` runs test, lint and build and writes test-report.json
+build = ""                  # optional
 
 [build]
 require_adversarial_stamp = false   # `build check` needs an adversarial-review stamp in plan.md when true
 protected_paths = []        # globs the pre-edit hook never lets Claude edit, e.g. "src/gen/**"
 test_globs = ["tests/**", "test/**", "test_*.py", "*_test.py", "*_test.go", "*.test.*", "*.spec.*", "*.bats"]   # read-only while `build fix on`
+
+[evals]
+threshold = 1.0             # minimum pass rate of evals/*.json for `review evals`
 
 [hooks]
 enabled = true              # guardrail hooks (pre/post-edit, bash-guard, learn-capture, learn-nudge) in this project; CREWFORGE5_HOOKS=off in settings.json env also disables

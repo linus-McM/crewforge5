@@ -8,7 +8,8 @@ they belong, executes work with them, and stops them rotting.
 /crewforge5:plan    → a goal becomes crewforge5/<slug>/intent.md, accepted by a human
 /crewforge5:design  → the accepted intent becomes spec.md, accepted by a human
 /crewforge5:build   → the accepted spec becomes a test-first plan.md, accepted by a human
-/crewforge5:execute → a reviewed plan becomes a merged commit, crew and gates included
+/crewforge5:review  → the implemented plan is checked, reviewed against REVIEW.md and checkpointed
+/crewforge5:execute → the shortcut: build implement then review; or a stamped plan becomes a merged commit
 ```
 
 That is the whole surface. Everything underneath — the crew factory, the
@@ -36,9 +37,10 @@ forms of the others are ambiguous in the same way.
 | `/crewforge5:plan` | Stage 1: interview the originator into `intent.md` (`new "<title>" | check | accept | status`) | "plan this feature" |
 | `/crewforge5:design` | Stage 2: the accepted intent becomes `spec.md` with Concerns and a Requirements trace | "design this feature" |
 | `/crewforge5:build` | Stage 3: plan mode against the accepted spec writes `plan.md`, every step naming its failing test | "write the build plan" |
-| `/crewforge5:execute` | A reviewed plan becomes a merged commit — TDD agent fleet in an isolated worktree, coverage, AC/DoD and review-fleet gates, then an integration diagram and distilled learnings | "run a sprint", "execute this plan" |
+| `/crewforge5:review` | Stage 4: `run` (test/lint/build into `test-report.json`, refused without red→green evidence), `review` (`review.md` from the review workflow, committed), `evals` | "review this feature" |
+| `/crewforge5:execute` | On an accepted `plan.md`, the shortcut for `build implement` then `review run` and `review review`. On a stamped `docs/plans/` plan, a reviewed plan becomes a merged commit — TDD agent fleet in an isolated worktree, coverage, AC/DoD and review-fleet gates, then an integration diagram and distilled learnings | "run a sprint", "execute this plan" |
 
-`plan`, `design` and `build` are slash commands over the verdict CLI (below).
+`plan`, `design`, `build` and `review` are slash commands over the verdict CLI (below).
 `init` and `execute` are still flow skills; each is a state machine over a `phases.json` manifest: a phase is offered,
 its gate is run, and the verdict is written to state before the next phase is
 offered. A gate announced in prose and never run did not happen.
@@ -85,11 +87,10 @@ in the catalogue, so a flow reaches one through
 | `adversarial-review` | `/crewforge5:plan-legacy`, `/crewforge5:execute` | plan-legacy phase 7; execute phase 2 under `scheduling: graph` |
 | `team-sprint` | `/crewforge5:execute` | phases 0–7 are its phase docs, wrapped unchanged |
 | `sprint-watchdog` | `/crewforge5:execute` | phase 0, the pre-sprint audit |
-| `pre-commit-review-fleet` | `/crewforge5:execute` | phase 7, over the sprint diff |
+| `pre-commit-review-fleet` | `/crewforge5:execute` | phase 7, over the sprint diff (a stamped plan; `/crewforge5:review` replaces it in spec phase 8) |
 | `drawio` | `/crewforge5:execute` | phase 8, the integration diagram |
 | `self-improve` | `/crewforge5:execute` | phase 9, distilling the ledger |
 | `ac-validate` | — | assigned to a generated crew member by `crew-factory`; no phase drives it |
-| `code-reviewer` | — | same — a crew-assignable skill, distinct from the `code-reviewer` agent |
 | `playwright-cli` | — | same, for frontend AC verification |
 | `plugin-forge` | — | nothing drives it; reachable by name only |
 | `graphify` | `/crewforge5:plan-legacy`, `/crewforge5:execute` | plan-legacy phase 1 and execute phase 0 — the knowledge-graph half of recon |
@@ -103,18 +104,18 @@ them. That is the plugin's rent, and it is measured rather than asserted:
 bash "$CREWFORGE5_ROOT/scripts/budget_check.sh" --verbose
 ```
 
-The bundle is **~524 tokens** always-loaded across 13 catalogue entries, against
+The bundle is **~480 tokens** always-loaded across 13 catalogue entries, against
 a budget of **550** — one description's worth of headroom, so rewording a
 trigger phrase does not turn the build red, while a whole new listed surface
-still cannot slip in unpriced. The other **26 skills** carry
+still cannot slip in unpriced. The other **25 skills** carry
 `disable-model-invocation: true`, so they cost nothing until a flow resolves one
 or you call it by name. That discipline is the only reason a bundle this size is
 affordable, and `budget_check.sh` fails the build over the budget rather than
 moving it.
 
 Cost is only half of what the gate asserts. It also checks *which* skills are
-listed: exactly the `init` and `execute` skills and the `plan`, `design`, `build`
-and `rules-install` commands. An extra entry point with a short description used
+listed: exactly the `init` and `execute` skills and the `plan`, `design`, `build`,
+`review` and `rules-install` commands. An extra entry point with a short description used
 to pay its tokens and walk through unnoticed.
 
 `claude plugin details crewforge5` reports a larger always-on number because its
@@ -214,8 +215,8 @@ default.
 
 The gate layer is moving to a Python 3.11 standard-library CLI, following
 `docs/specs/cc-sdlc-alignment.md` in the repository. `/crewforge5:plan`,
-`/crewforge5:design` and `/crewforge5:build` run on it; `init` and `execute`
-are still bash flows:
+`/crewforge5:design`, `/crewforge5:build` and `/crewforge5:review` run on it;
+`init` and `execute` are still bash flows:
 
 ```bash
 uv run --no-project "${CLAUDE_PLUGIN_ROOT}/scripts/crewforge5.py" <stage> <action> [arg] [--slug <slug>]
@@ -242,20 +243,33 @@ then a green. `build sync` lists every file changed since the plan was accepted
 in the same commit, or revert it. `build fix on|off` is bug-fix mode, in which
 the `pre-edit` hook denies edits to test files. `crewforge5/<slug>/build-state.json`
 holds the acceptance commit and fix mode. `/crewforge5:execute` on an accepted
-plan.md is an alias for `/crewforge5:build implement`.
+plan.md is the shortcut for `/crewforge5:build implement` then `/crewforge5:review
+run` and `review`, and prints the commands it ran.
+
+**Review.** `review run` is refused until every Order-of-work step has a
+red→green pair in `tdd.jsonl`; it then runs `[commands] test`, `lint` and
+`build` and writes `crewforge5/<slug>/test-report.json`, and the command spawns
+the read-only `verifier` agent (sonnet, fresh context) against plan.md's Proof.
+`review review` needs that report passing at HEAD, then validates
+`crewforge5/<slug>/review.md`: `## Bugs`, `## Security` and `## Compliance`
+(the passes in `templates/REVIEW.md`), each finding a bullet starting
+`Important:` or `Nit:` with `path:line`, at most five nits. It is a checkpoint
+boundary. `review evals` runs every `evals/*.json` through `claude -p` and fails
+under `[evals] threshold`; `templates/agent-evals.yml` runs it in CI.
 
 Config lives in `.crewforge5.toml` (the first `new` writes it from
 `templates/crewforge5.toml`). It is deep-merged over the defaults:
 `[project] home` (the feature folder, default `crewforge5`, or set
-`CREWFORGE5_HOME`), `[commands] test` (what `build red|green` run),
+`CREWFORGE5_HOME`), `[commands] test` (what `build red|green` run; `review
+run` adds `lint` and `build`), `[evals] threshold`,
 `[build] require_adversarial_stamp` (when true, `build check` needs the
 planner's `adversarial-review: status=clean|user-override` stamp in `plan.md`),
 `[build] protected_paths` and `test_globs` (read by the `pre-edit` hook), and
 `[hooks] enabled`.
 
-**Checkpoints.** Each `accept` commits only the plugin's output, which is the
-home directory plus `[checkpoint] paths`. The commit subject is
-`<stage>(<slug>): accept — <artifact>`, with `(+N files)` when other files are
+**Checkpoints.** Each `accept`, and `review review`, commits only the plugin's
+output, which is the home directory plus `[checkpoint] paths`. The commit subject
+is `<stage>(<slug>): <action> — <artifact>`, with `(+N files)` when other files are
 included. The commit uses a pathspec, so it never stages source or tests, and
 work you have already staged stays staged. It is skipped during a merge or
 rebase, or when nothing changed. A failed commit is reported under `checkpoint`
@@ -271,7 +285,11 @@ Every layer has one off switch in config and one environment variable:
 
 **Workflows.** Each planning command runs one read-only Workflow script from
 `workflows/`, as `crewforge5:<name>`: `intent-scout` (plan), `design-panel`
-(design) and `plan-critic` (build). `build implement` runs `story-executor`
+(design), `plan-critic` (build) and `review` (review: Bugs, Security and
+Compliance passes against `REVIEW.md` with the architecture and cross-boundary
+lenses of the retired `architect-reviewer` and `boundary-reviewer` agents folded
+in, two skeptics per finding, at most five nits; its inline fallback is the
+read-only `reviewer` agent, opus). `build implement` runs `story-executor`
 over a wave of independent steps: one agent per step in its own git worktree,
 writing only there and returning a branch with a test commit and a change
 commit, which the command applies step by step around `build red` and `build

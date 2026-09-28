@@ -1,6 +1,6 @@
 export const meta = {
   "name": "plan-critic",
-  "description": "Build stage: attack a draft plan.md from four lenses (blast radius, test-first, ordering, coverage of the spec), then have a skeptic try to refute each finding",
+  "description": "Build stage: attack a draft plan.md from five lenses (blast radius, test-first, ordering, coverage of the spec, cross-boundary), then have a skeptic try to refute each finding",
   "whenToUse": "After filling plan.md and before `crewforge5 build check`, to interrogate the plan. Read-only and advisory. args: {slug, home?, pack?}",
   "phases": [
     {"title": "Critique", "detail": "one critic per lens"},
@@ -50,6 +50,8 @@ const LENSES = [
   { key: 'test-first', ask: 'Does every Order-of-work step name a failing test that would really fail before the change? Flag steps whose test could pass today or that change code with no test.' },
   { key: 'ordering', ask: 'Which step is riskiest, is it early enough to fail fast, and can every step be committed green on its own?' },
   { key: 'coverage', ask: 'Does every spec.md requirement map to a step and a Proof command? Flag requirements with no step and steps with no requirement.' },
+  // The retired boundary-reviewer agent, as a lens: the ground a single-stack reading of the plan does not cover.
+  { key: 'boundary', ask: 'Across language, repo and deployment boundaries: does every input the plan assumes have a producer (by path) that can emit it (Assumption Inversion), and do the environments, real callers and deployable units match the plan (Deployment Reality)?' },
 ]
 
 const results = await pipeline(
